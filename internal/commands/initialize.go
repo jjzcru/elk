@@ -113,17 +113,6 @@ func createConfigFile() {
 	}
 }
 
-func isPathExist(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return true, err
-}
-
 func getDefaultElkfilePath() string {
 	usr, _ := user.Current()
 	return path.Join(usr.HomeDir, ".elk", "Elkfile.yml")
@@ -151,6 +140,6 @@ events in the configuration file.
 
 var configTemplate = `# DO NOT modify this file directly
 # for alter this file
-path: 
+paths: 
   - "{{.}}"
 `

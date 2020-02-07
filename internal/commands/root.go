@@ -16,9 +16,7 @@ var rootCmd = &cobra.Command{
 	Use:   "elk",
 	Short: "Task runner",
 	Run: func(cmd *cobra.Command, args []string) {
-		var result = cmd.Flag("author").Value.String()
-		fmt.Printf("Result: %s \n", result)
-		fmt.Printf("Inside rootCmd PersistentPreRun with args: %v\n", args)
+		fmt.Printf("Placeholder text")
 	},
 }
 
@@ -36,7 +34,7 @@ func init() {
 	registerCommands()
 }
 
-func getHermesFilePath() (string, error) {
+func getElkFilePath() (string, error) {
 	// Hermesfile was not provided by the flag
 	if len(hermesFilePath) == 0 {
 		currentDir, err := os.Getwd()
@@ -60,14 +58,11 @@ func getHermesFilePath() (string, error) {
 		return hermesFilePath, nil
 	}
 
-	return "", fmt.Errorf("Elkfile.yml was not found in the path or system")
+	return "", fmt.Errorf("the file 'Elkfile.yml' was not found in the path or system")
 }
 
 func registerCommands() {
-	// runCmd := getRunCmd()
-
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(initCmd)
-	/*rootCmd.AddCommand(initCmd)
-	rootCmd.AddCommand(runCmd)*/
+	rootCmd.AddCommand(runCmd)
 }
