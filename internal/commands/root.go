@@ -12,7 +12,7 @@ var version = "1"
 
 var rootCmd = &cobra.Command{
 	Use:   "elk",
-	Short: "Task runner",
+	Short: "A simple yml based task runner",
 }
 
 // Execute starts the CLI application
@@ -33,4 +33,5 @@ func init() {
 func printError(err string) {
 	fmt.Print(aurora.Bold(aurora.Red("ERROR: ")))
 	_, _ = fmt.Fprintf(os.Stderr, err)
+	fmt.Println()
 }

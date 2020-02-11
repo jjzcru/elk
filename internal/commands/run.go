@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"sync"
 
 	"github.com/jjzcru/elk/pkg/engine"
 	"gopkg.in/yaml.v2"
@@ -16,14 +17,12 @@ import (
 
 var runCmd = &cobra.Command{
 	Use:   "run",
-	Short: "Run task declared in Elkfile",
+	Short: "Run one or more task in a terminal",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			printError("A task name is required")
 			return
 		}
-
-		task := args[0]
 
 		elk, err := getElk()
 
@@ -40,16 +39,27 @@ var runCmd = &cobra.Command{
 
 		clientEngine := engine.New(elk, logger)
 
-		if !clientEngine.HasTask(task) {
-			printError(fmt.Sprintf("task '%s' should exist", task))
-			return
+		var wg sync.WaitGroup
+
+		for _, task := range args {
+			wg.Add(1)
+			go func(task string, wg *sync.WaitGroup) {
+				defer wg.Done()
+
+				if !clientEngine.HasTask(task) {
+					printError(fmt.Sprintf("task '%s' do not exist", task))
+					return
+				}
+
+				err = clientEngine.Run(task)
+				if err != nil {
+					printError(err.Error())
+					return
+				}
+			}(task, &wg)
 		}
 
-		err = clientEngine.Run(task)
-		if err != nil {
-			printError(err.Error())
-			return
-		}
+		wg.Wait()
 	},
 }
 
