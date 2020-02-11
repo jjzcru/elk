@@ -70,16 +70,26 @@ func (e *Engine) Run(taskName string) error {
 	}
 
 	var envs []string
-	for k, v := range task.Env {
-		envs = append(envs, fmt.Sprintf("%s=%s", k, v))
-	}
-
+	// Load Env variables from system
 	for _, env := range os.Environ() {
 		envs = append(envs, env)
 	}
 
+	// Load Env variables from global vars in Elkfile
+	for k, v := range e.elk.Env {
+		envs = append(envs, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	// Load Env variables from global vars in Elkfile
+	for k, v := range task.Env {
+		envs = append(envs, fmt.Sprintf("%s=%s", k, v))
+	}
+
 	for _, command := range task.Cmds {
 		err = e.runCommand(task, envs, command)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

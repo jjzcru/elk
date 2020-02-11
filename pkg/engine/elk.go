@@ -3,6 +3,7 @@ package engine
 // Elk is the structure of the application
 type Elk struct {
 	Version string
+	Env     map[string]string
 	Tasks   map[string]Task
 }
 
