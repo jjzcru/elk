@@ -3,7 +3,6 @@ package commands
 import (
 	"fmt"
 	"os"
-	"os/user"
 	"path"
 	"text/template"
 
@@ -13,10 +12,15 @@ import (
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Create elk configuration file",
-	Long:  fmt.Sprintf(`Create the configuration file where the daemon is going to read the properties (default: %s)`, getDefaultElkfilePath()),
+	Short: "Create Elkfile in current directory",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := createElkFile(getDefaultElkfilePath())
+		elkFilePath, err := getElkfilePath()
+		if err != nil {
+			_ = fmt.Errorf(err.Error())
+			return
+		}
+
+		err = createElkFile(elkFilePath)
 		if err != nil {
 			_ = fmt.Errorf(err.Error())
 		}
@@ -69,9 +73,13 @@ func createElkFile(elkFilePath string) error {
 	return nil
 }
 
-func getDefaultElkfilePath() string {
-	usr, _ := user.Current()
-	return path.Join(usr.HomeDir, ".elk", "Elkfile.yml")
+func getElkfilePath() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	return path.Join(dir, "Elkfile.yml"), nil
 }
 
 var elkTemplate = `version: '1'
