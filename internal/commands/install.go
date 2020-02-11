@@ -21,7 +21,8 @@ var installCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := install()
 		if err != nil {
-			_ = fmt.Errorf("%s", err.Error())
+			printError("A task name is required")
+			return
 		}
 		fmt.Println("Elk was installed successfully")
 	},
@@ -63,19 +64,27 @@ func isInstallationDirExist(installationDirPath string) (bool, error) {
 		return false, nil
 	}
 
+	if _, err := os.Stat(path.Join(installationDirPath, "config.yml")); os.IsNotExist(err) {
+		return false, nil
+	}
+
 	return true, nil
 }
 
 func createInstallationDir(installationDirPath string) error {
-	err := os.Mkdir(installationDirPath, 0777)
-	if err != nil {
-		return err
+	if _, err := os.Stat(installationDirPath); os.IsNotExist(err) {
+		err := os.Mkdir(installationDirPath, 0777)
+		if err != nil {
+
+			return err
+		}
 	}
 
 	return createInstallConfigFile(installationDirPath)
 }
 
 func createInstallConfigFile(installationDirPath string) error {
+
 	configPath := path.Join(installationDirPath, "config.yml")
 	configFile, err := os.Create(configPath)
 

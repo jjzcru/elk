@@ -11,25 +11,17 @@ import (
 	"github.com/jjzcru/elk/pkg/engine"
 	"gopkg.in/yaml.v2"
 
-	"github.com/logrusorgru/aurora"
 	"github.com/spf13/cobra"
 )
 
 var runCmd = &cobra.Command{
 	Use:   "run",
-	Short: "Run task declared in the 'Elkfile.yml'",
+	Short: "Run task declared in Elkfile",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			printError("A task name is required")
 			return
 		}
-
-		/*elkFilePath, err := getElkFilePath()
-		if err != nil {
-			printError(err.Error())
-			return
-		}
-		fmt.Printf("Elkfile path: '%s'\n", elkFilePath)*/
 
 		task := args[0]
 
@@ -49,7 +41,7 @@ var runCmd = &cobra.Command{
 		clientEngine := engine.New(elk, logger)
 
 		if !clientEngine.HasTask(task) {
-			printError(fmt.Sprintf("event '%s' should exist", task))
+			printError(fmt.Sprintf("task '%s' should exist", task))
 			return
 		}
 
@@ -61,18 +53,15 @@ var runCmd = &cobra.Command{
 	},
 }
 
-func printError(err string) {
-	fmt.Print(aurora.Bold(aurora.Red("ERROR: ")))
-
-	fmt.Fprintf(os.Stderr, err)
-}
-
 func getElk() (*engine.Elk, error) {
-	usr, _ := user.Current()
-	elkConfigPath := path.Join(usr.HomeDir, ".elk", "Elkfile.yml")
+	elkConfigPath, err := getElkFilePath()
+	if err != nil {
+		return nil, err
+	}
+
 	elk := engine.Elk{}
 	if _, err := os.Stat(elkConfigPath); os.IsNotExist(err) {
-		return nil, errors.New("Elk is not installed, please run \n elk init")
+		return nil, errors.New(fmt.Sprintf("the path for Elkfile.yml do not exist '%s'", elkConfigPath))
 	}
 
 	data, err := ioutil.ReadFile(elkConfigPath)
@@ -88,23 +77,55 @@ func getElk() (*engine.Elk, error) {
 	return &elk, nil
 }
 
-/*func getConfig() (*engine.Config, error) {
-	usr, _ := user.Current()
-	elkConfigPath := path.Join(usr.HomeDir, ".elk", "Elkfile.yml")
+func getElkFilePath() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	var elkFilePath string
+	isLocal := isLocalElkFile(path.Join(dir, "Elkfile.yml"))
+	if isLocal {
+		elkFilePath = path.Join(dir, "Elkfile.yml")
+	} else {
+		elkFilePath, err = getGlobalElkFile()
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return elkFilePath, nil
+}
+
+func isLocalElkFile(localDirectory string) bool {
+	if _, err := os.Stat(localDirectory); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
+func getGlobalElkFile() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	configPath := path.Join(usr.HomeDir, ".elk", "config.yml")
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		return "", errors.New("Elk is not installed, please run \nelk install")
+	}
+
 	config := engine.Config{}
-	if _, err := os.Stat(elkConfigPath); os.IsNotExist(err) {
-		return nil, errors.New("Elk is not installed, please run \n elk install")
-	}
 
-	data, err := ioutil.ReadFile(elkConfigPath)
+	configData, err := ioutil.ReadFile(configPath)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	err = yaml.Unmarshal(data, &config)
+	err = yaml.Unmarshal(configData, &config)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return &config, nil
-}*/
+	return config.Path, nil
+}

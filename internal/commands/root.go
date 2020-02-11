@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"github.com/logrusorgru/aurora"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -27,4 +28,9 @@ func init() {
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(runCmd)
+}
+
+func printError(err string) {
+	fmt.Print(aurora.Bold(aurora.Red("ERROR: ")))
+	_, _ = fmt.Fprintf(os.Stderr, err)
 }
