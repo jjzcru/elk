@@ -24,12 +24,12 @@ var runCmd = &cobra.Command{
 			return
 		}
 
-		elkFilePath, err := getElkFilePath()
+		/*elkFilePath, err := getElkFilePath()
 		if err != nil {
 			printError(err.Error())
 			return
 		}
-		fmt.Printf("Elkfile path: '%s'\n", elkFilePath)
+		fmt.Printf("Elkfile path: '%s'\n", elkFilePath)*/
 
 		task := args[0]
 
@@ -63,6 +63,7 @@ var runCmd = &cobra.Command{
 
 func printError(err string) {
 	fmt.Print(aurora.Bold(aurora.Red("ERROR: ")))
+
 	fmt.Fprintf(os.Stderr, err)
 }
 

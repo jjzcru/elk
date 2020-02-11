@@ -16,5 +16,5 @@ type Task struct {
 
 // Config is the structure of the global configurations
 type Config struct {
-	Paths []string
+	Path string
 }
