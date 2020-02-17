@@ -71,7 +71,7 @@ func getElk() (*engine.Elk, error) {
 
 	elk := engine.Elk{}
 	if _, err := os.Stat(elkConfigPath); os.IsNotExist(err) {
-		return nil, errors.New(fmt.Sprintf("the path for Elkfile.yml do not exist '%s'", elkConfigPath))
+		return nil, fmt.Errorf("the path for elk.yml do not exist '%s'", elkConfigPath)
 	}
 
 	data, err := ioutil.ReadFile(elkConfigPath)
@@ -94,9 +94,9 @@ func getElkFilePath() (string, error) {
 	}
 
 	var elkFilePath string
-	isLocal := isLocalElkFile(path.Join(dir, "Elkfile.yml"))
+	isLocal := isLocalElkFile(path.Join(dir, "elk.yml"))
 	if isLocal {
-		elkFilePath = path.Join(dir, "Elkfile.yml")
+		elkFilePath = path.Join(dir, "elk.yml")
 	} else {
 		elkFilePath, err = getGlobalElkFile()
 		if err != nil {

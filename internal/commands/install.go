@@ -98,7 +98,7 @@ func createInstallConfigFile(installationDirPath string) error {
 		return err
 	}
 
-	err = response.Execute(configFile, path.Join(usr.HomeDir, "Elkfile.yml"))
+	err = response.Execute(configFile, path.Join(usr.HomeDir, "elk.yml"))
 
 	return createGlobalIfNotExist()
 }
@@ -109,13 +109,13 @@ func createGlobalIfNotExist() error {
 		return err
 	}
 
-	existGlobal, err := isExistGlobalElkFile(path.Join(usr.HomeDir, "Elkfile.yml"))
+	existGlobal, err := isExistGlobalElkFile(path.Join(usr.HomeDir, "elk.yml"))
 	if err != nil {
 		return err
 	}
 
 	if !existGlobal {
-		elkFilePath := path.Join(usr.HomeDir, "Elkfile.yml")
+		elkFilePath := path.Join(usr.HomeDir, "elk.yml")
 		fmt.Printf("Elkfile: %s\n", elkFilePath)
 		return createElkFile(elkFilePath)
 	}
