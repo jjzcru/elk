@@ -3,16 +3,24 @@ package config
 import (
 	"errors"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"os"
 	"os/user"
 	"path"
+	"path/filepath"
 
 	"github.com/jjzcru/elk/pkg/engine"
 	"github.com/logrusorgru/aurora"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
+
+// ConfigTemplate Template for the config.yml
+var ConfigTemplate = `# DO NOT modify this file directly
+# for alter this file
+path: "{{.}}"
+`
 
 // Cmd Command that works with configuration
 var Cmd = &cobra.Command{
@@ -25,13 +33,60 @@ var SetCmd = &cobra.Command{
 	Use:   "set",
 	Short: "Set the path for the global configuration file",
 	Run: func(cmd *cobra.Command, args []string) {
-		dir, err := os.Getwd()
+		if len(args) == 0 {
+			PrintError("A file path is required")
+			return
+		}
+		targetPath := args[0]
+
+		if !fileExists(targetPath) {
+			PrintError(fmt.Sprintf("The file path \"%s\" do not exist", targetPath))
+			return
+		}
+
+		elkFilePath, err := filepath.Abs(targetPath)
 		if err != nil {
 			PrintError(err.Error())
 			return
 		}
 
-		fmt.Println(dir)
+		_, err = GetElk(elkFilePath, false)
+		if err != nil {
+			PrintError(err.Error())
+			return
+		}
+
+		response, err := template.New("config").Parse(ConfigTemplate)
+		if err != nil {
+			PrintError(err.Error())
+			return
+		}
+
+		usr, err := user.Current()
+		if err != nil {
+			PrintError(err.Error())
+			return
+		}
+
+		configPath := path.Join(usr.HomeDir, ".elk", "config.yml")
+		if err != nil {
+			PrintError(err.Error())
+			return
+		}
+
+		configFile, err := os.Create(configPath)
+		if err != nil {
+			PrintError(err.Error())
+			return
+		}
+
+		err = response.Execute(configFile, elkFilePath)
+		if err != nil {
+			PrintError(err.Error())
+			return
+		}
+
+		fmt.Println(elkFilePath)
 	},
 }
 
@@ -40,34 +95,41 @@ var GetCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Get the path for the global configuration file",
 	Run: func(cmd *cobra.Command, args []string) {
-		usr, err := user.Current()
+		configPath, err := getConfigPath()
 		if err != nil {
 			PrintError(err.Error())
 			return
 		}
 
-		configPath := path.Join(usr.HomeDir, ".elk", "config.yml")
-
-		if !fileExists(configPath) {
-			PrintError(fmt.Sprintf("The installation path \"%s\" do not exist. \nPlease run \"elk install\" to create it", configPath))
-			return
-		}
-
-		config := engine.Config{}
-
-		configData, err := ioutil.ReadFile(configPath)
-		if err != nil {
-			PrintError(err.Error())
-			return
-		}
-
-		err = yaml.Unmarshal(configData, &config)
-		if err != nil {
-			PrintError(err.Error())
-		}
-
-		fmt.Println(config.Path)
+		fmt.Println(configPath)
 	},
+}
+
+func getConfigPath() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	configPath := path.Join(usr.HomeDir, ".elk", "config.yml")
+
+	if !fileExists(configPath) {
+		return "", fmt.Errorf("The installation path \"%s\" do not exist. \nPlease run \"elk install\" to create it", configPath)
+	}
+
+	config := engine.Config{}
+
+	configData, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		return "", err
+	}
+
+	err = yaml.Unmarshal(configData, &config)
+	if err != nil {
+		return "", err
+	}
+
+	return config.Path, nil
 }
 
 func fileExists(filename string) bool {

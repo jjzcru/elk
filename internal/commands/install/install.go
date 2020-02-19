@@ -12,11 +12,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var configTemplate = `# DO NOT modify this file directly
-# for alter this file
-path: "{{.}}"
-`
-
 // Cmd Command that install elk in the system
 var Cmd = &cobra.Command{
 	Use:   "install",
@@ -96,7 +91,7 @@ func createInstallConfigFile(installationDirPath string) error {
 		return err
 	}
 
-	response, err := template.New("config").Parse(configTemplate)
+	response, err := template.New("config").Parse(config.ConfigTemplate)
 	if err != nil {
 		return err
 	}
