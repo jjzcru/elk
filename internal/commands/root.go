@@ -2,8 +2,9 @@ package commands
 
 import (
 	"fmt"
-	"github.com/logrusorgru/aurora"
 	"os"
+
+	"github.com/logrusorgru/aurora"
 
 	"github.com/spf13/cobra"
 )
@@ -28,6 +29,8 @@ func init() {
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(runCmd)
+
+	runCmd.Flags().BoolP("global", "g", false, "Run from the path set in config")
 }
 
 func printError(err string) {
