@@ -9,13 +9,13 @@ func getTestEngine() *Engine {
 	elk := &Elk{
 		Version: "1",
 		Tasks: map[string]Task{
-			"hello": Task{
+			"hello": {
 				Description: "Empty Task",
 				Cmds: []string{
 					"clear",
 				},
 			},
-			"world": Task{
+			"world": {
 				Deps: []string{
 					"hello",
 				},
@@ -57,16 +57,18 @@ func TestHasCircularDependency(t *testing.T) {
 func TestRun(t *testing.T) {
 	engine := getTestEngine()
 
-	err := engine.Run("world")
-	if err != nil {
-		t.Error(err.Error())
+	for taskName := range engine.elk.Tasks {
+		err := engine.Run(taskName)
+		if err != nil {
+			t.Error(err.Error())
+		}
 	}
 }
 
-func TestGetEnvFromFile(t *testing.T) {
+/*func TestGetEnvFromFile(t *testing.T) {
 	filePath := "/tmp/example"
 	_, err := getEnvFromFile(filePath)
 	if err != nil {
 		t.Error((err.Error()))
 	}
-}
+}*/

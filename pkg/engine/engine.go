@@ -131,7 +131,10 @@ func (e *Engine) runTaskDependencies(taskName string, detached bool) error {
 		return nil
 	}
 
-	err = e.HasCircularDependency(taskName, make(map[string]bool))
+	visitedNodes := make(map[string]bool)
+	visitedNodes[taskName] = true
+
+	err = e.HasCircularDependency(taskName, visitedNodes)
 	if err != nil {
 		return err
 	}
@@ -164,7 +167,7 @@ func (e *Engine) HasCircularDependency(taskName string, visitedNodes map[string]
 		return err
 	}
 
-	if len(task.Deps) == 0 {
+	if len(append(task.Deps, task.DetachedDeps...)) == 0 {
 		return nil
 	}
 
@@ -180,10 +183,12 @@ func (e *Engine) HasCircularDependency(taskName string, visitedNodes map[string]
 
 	visitedNodes[taskName] = true
 
-	for _, dep := range dependencyGraph[taskName] {
-		err = e.HasCircularDependency(dep, visitedNodes)
-		if err != nil {
-			return err
+	for _, dep := range dependencyGraph {
+		for _, d := range dep {
+			err = e.HasCircularDependency(d, visitedNodes)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -213,14 +218,15 @@ func getEnvFromFile(filePath string) ([]string, error) {
 
 func (e *Engine) getDependencyGraph(task *Task) (map[string][]string, error) {
 	dependencyGraph := make(map[string][]string)
-	for _, dep := range task.Deps {
+	deps := append(task.Deps, task.DetachedDeps...)
+	for _, dep := range deps {
 		// Validate that the dependency is a valid task
-		_, exists := e.elk.Tasks[dep]
+		t, exists := e.elk.Tasks[dep]
 		if exists == false {
 			return dependencyGraph, fmt.Errorf("The dependency '%s' do not exist as a task", dep)
 		}
 
-		dependencyGraph[dep] = append(dependencyGraph[dep], dep)
+		dependencyGraph[dep] = append(t.Deps, t.DetachedDeps...)
 	}
 	return dependencyGraph, nil
 }
