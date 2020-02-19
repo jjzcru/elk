@@ -12,19 +12,18 @@ func getTestEngine() *Engine {
 			"hello": Task{
 				Description: "Empty Task",
 				Cmds: []string{
-					"echo Hello",
+					"clear",
 				},
 			},
 			"world": Task{
 				Deps: []string{
 					"hello",
-					"world",
 				},
 				Env: map[string]string{
 					"FOO": "BAR",
 				},
 				Cmds: []string{
-					"echo World $FOO",
+					"clear",
 				},
 			},
 		},
@@ -61,5 +60,13 @@ func TestRun(t *testing.T) {
 	err := engine.Run("world")
 	if err != nil {
 		t.Error(err.Error())
+	}
+}
+
+func TestGetEnvFromFile(t *testing.T) {
+	filePath := "/tmp/example"
+	_, err := getEnvFromFile(filePath)
+	if err != nil {
+		t.Error((err.Error()))
 	}
 }

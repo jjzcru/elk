@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -94,6 +95,17 @@ func (e *Engine) Run(taskName string) error {
 		envs = append(envs, fmt.Sprintf("%s=%s", k, v))
 	}
 
+	if len(task.EnvFile) > 0 {
+		envsInFile, err := getEnvFromFile(task.EnvFile)
+		if err != nil {
+			return err
+		}
+
+		for _, env := range envsInFile {
+			envs = append(envs, env)
+		}
+	}
+
 	// Load Env variables from global vars in Elkfile
 	for k, v := range task.Env {
 		envs = append(envs, fmt.Sprintf("%s=%s", k, v))
@@ -176,6 +188,27 @@ func (e *Engine) HasCircularDependency(taskName string, visitedNodes map[string]
 	}
 
 	return nil
+}
+
+func getEnvFromFile(filePath string) ([]string, error) {
+	var envs []string
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		return envs, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		envs = append(envs, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		return envs, err
+	}
+
+	return envs, nil
 }
 
 func (e *Engine) getDependencyGraph(task *Task) (map[string][]string, error) {

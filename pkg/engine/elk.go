@@ -15,6 +15,7 @@ type Task struct {
 	Dir          string
 	Deps         []string
 	DetachedDeps []string `yaml:"detached_deps"`
+	EnvFile      string   `yaml:"env_file"`
 }
 
 // Config is the structure of the global configurations
