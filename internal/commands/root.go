@@ -37,6 +37,8 @@ func start() {
 	rootCmd.AddCommand(config.Cmd)
 
 	rootCmd.PersistentFlags().BoolP("global", "g", false, "Run from the path set in config")
+	rootCmd.PersistentFlags().StringP("log", "l", "", "Specify a file log as output for a task run as detached")
+	rootCmd.PersistentFlags().BoolP("detached", "d", false, "Run the command in detached mode")
 	rootCmd.PersistentFlags().StringP("file", "f", "", "Specify an alternate elk file \n(default: elk.yml)")
 
 	ls.Cmd.Flags().BoolP("all", "a", false, "Print tasks details")

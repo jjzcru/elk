@@ -1,0 +1,39 @@
+
+> shifter@1.26.0 build /home/jjzcru/Workspace/Canvasflow/shifter
+> node node_modules/gulp/bin/gulp.js build
+
+[18:29:16] Requiring external module babel-register
+[18:29:16] Using gulpfile ~/Workspace/Canvasflow/shifter/gulpfile.babel.js
+[18:29:16] Starting 'build'...
+[18:29:16] Starting 'clearScreen'...
+[2J[0f[18:29:16] Finished 'clearScreen' after 491 μs
+[18:29:16] Starting 'cleanDist'...
+[18:29:16] Finished 'cleanDist' after 78 ms
+[18:29:16] Starting 'buildJs'...
+[18:29:27] Finished 'buildJs' after 10 s
+[18:29:27] Starting 'copyPlaceholder'...
+[18:29:27] Finished 'copyPlaceholder' after 4.16 ms
+[18:29:27] Starting 'copySupport'...
+[18:29:27] Finished 'copySupport' after 8.32 ms
+[18:29:27] Finished 'build' after 10 s
+
+ENVIROMENTAL VARIABLES:
+-----------------------
+TEMP_PATH: 		/tmp
+ASSETS_PATH: 		/home/jjzcru/Workspace/Canvasflow/shifter/dist/presentation/assets
+ARTICLE_IMAGES_PATH: 		/home/jjzcru/Documents/articles
+LOGPATH: 		/home/jjzcru/Workspace/Canvasflow/shifter/logs
+-----------------------
+
+[HealthCheckRoute::create] Creating health-check route.
+[PublisherRoute::create] Creating publisher route.
+[TransformRoute::create] Creating transform route.
+[ComponentRoute::create] Creating component route.
+[PDFRoute::create] Creating pdf route.
+[AuthRoute::create] Creating authentication route.
+
+-----------------------
+
+VERSION: 1.26.0
+Server is running in PORT: 5051
+[1;31mERROR: [0m
