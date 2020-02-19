@@ -34,10 +34,8 @@ func start() {
 	rootCmd.AddCommand(run.Cmd)
 	rootCmd.AddCommand(ls.Cmd)
 
-	run.Cmd.Flags().BoolP("global", "g", false, "Run from the path set in config")
-	run.Cmd.Flags().StringP("file", "f", "", "Specify an alternate elk file \n(default: elk.yml)")
+	rootCmd.PersistentFlags().BoolP("global", "g", false, "Run from the path set in config")
+	rootCmd.PersistentFlags().StringP("file", "f", "", "Specify an alternate elk file \n(default: elk.yml)")
 
-	ls.Cmd.Flags().BoolP("global", "g", false, "Run from the path set in config")
-	ls.Cmd.Flags().StringP("file", "f", "", "Specify an alternate elk file \n(default: elk.yml)")
 	ls.Cmd.Flags().BoolP("all", "a", false, "Print tasks details")
 }
