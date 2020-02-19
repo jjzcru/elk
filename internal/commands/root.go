@@ -2,8 +2,9 @@ package commands
 
 import (
 	"fmt"
-	"github.com/logrusorgru/aurora"
 	"os"
+
+	"github.com/logrusorgru/aurora"
 
 	"github.com/spf13/cobra"
 )
@@ -12,7 +13,7 @@ var version = "1"
 
 var rootCmd = &cobra.Command{
 	Use:   "elk",
-	Short: "Task runner",
+	Short: "A simple yml based task runner",
 }
 
 // Execute starts the CLI application
@@ -28,9 +29,13 @@ func init() {
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(runCmd)
+
+	runCmd.Flags().BoolP("global", "g", false, "Run from the path set in config")
+	runCmd.Flags().StringP("file", "f", "", "Specify an alternate elk file \n(default: elk.yml)")
 }
 
 func printError(err string) {
 	fmt.Print(aurora.Bold(aurora.Red("ERROR: ")))
 	_, _ = fmt.Fprintf(os.Stderr, err)
+	fmt.Println()
 }

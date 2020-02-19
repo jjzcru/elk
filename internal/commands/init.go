@@ -12,7 +12,7 @@ import (
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Create Elkfile in current directory",
+	Short: "Create a 'elk.yml' file in current directory",
 	Run: func(cmd *cobra.Command, args []string) {
 		elkFilePath, err := getElkfilePath()
 		if err != nil {
@@ -79,7 +79,7 @@ func getElkfilePath() (string, error) {
 		return "", err
 	}
 
-	return path.Join(dir, "Elkfile.yml"), nil
+	return path.Join(dir, "elk.yml"), nil
 }
 
 var elkTemplate = `version: '1'

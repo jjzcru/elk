@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -62,6 +63,20 @@ func (e *Engine) Run(taskName string) error {
 		return err
 	}
 
+	if len(task.DetachedDeps) > 0 {
+		err = e.runTaskDependencies(taskName, true)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(task.Deps) > 0 {
+		err = e.runTaskDependencies(taskName, false)
+		if err != nil {
+			return err
+		}
+	}
+
 	if len(task.Dir) == 0 {
 		task.Dir, err = os.Getwd()
 		if err != nil {
@@ -70,19 +85,144 @@ func (e *Engine) Run(taskName string) error {
 	}
 
 	var envs []string
-	for k, v := range task.Env {
-		envs = append(envs, fmt.Sprintf("%s=%s", k, v))
-	}
-
+	// Load Env variables from system
 	for _, env := range os.Environ() {
 		envs = append(envs, env)
 	}
 
+	// Load Env variables from global vars in Elkfile
+	for k, v := range e.elk.Env {
+		envs = append(envs, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	if len(task.EnvFile) > 0 {
+		envsInFile, err := getEnvFromFile(task.EnvFile)
+		if err != nil {
+			return err
+		}
+
+		for _, env := range envsInFile {
+			envs = append(envs, env)
+		}
+	}
+
+	// Load Env variables from global vars in Elkfile
+	for k, v := range task.Env {
+		envs = append(envs, fmt.Sprintf("%s=%s", k, v))
+	}
+
 	for _, command := range task.Cmds {
 		err = e.runCommand(task, envs, command)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
+}
+
+func (e *Engine) runTaskDependencies(taskName string, detached bool) error {
+	task, err := e.GetTask(taskName)
+	if err != nil {
+		return err
+	}
+
+	if len(task.Deps) == 0 {
+		return nil
+	}
+
+	err = e.HasCircularDependency(taskName, make(map[string]bool))
+	if err != nil {
+		return err
+	}
+
+	deps := task.Deps
+	if detached {
+		deps = task.DetachedDeps
+	}
+
+	for _, dep := range deps {
+		if detached {
+			go func() {
+				_ = e.Run(dep)
+			}()
+		} else {
+			err = e.Run(dep)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// HasCircularDependency checks if a task has a circular dependency
+func (e *Engine) HasCircularDependency(taskName string, visitedNodes map[string]bool) error {
+	task, err := e.GetTask(taskName)
+	if err != nil {
+		return err
+	}
+
+	if len(task.Deps) == 0 {
+		return nil
+	}
+
+	dependencyGraph, err := e.getDependencyGraph(task)
+	if err != nil {
+		return err
+	}
+
+	_, hasVisitNode := visitedNodes[taskName]
+	if hasVisitNode {
+		return fmt.Errorf("The task '%s' has a circular dependency", taskName)
+	}
+
+	visitedNodes[taskName] = true
+
+	for _, dep := range dependencyGraph[taskName] {
+		err = e.HasCircularDependency(dep, visitedNodes)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func getEnvFromFile(filePath string) ([]string, error) {
+	var envs []string
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		return envs, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		envs = append(envs, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		return envs, err
+	}
+
+	return envs, nil
+}
+
+func (e *Engine) getDependencyGraph(task *Task) (map[string][]string, error) {
+	dependencyGraph := make(map[string][]string)
+	for _, dep := range task.Deps {
+		// Validate that the dependency is a valid task
+		_, exists := e.elk.Tasks[dep]
+		if exists == false {
+			return dependencyGraph, fmt.Errorf("The dependency '%s' do not exist as a task", dep)
+		}
+
+		dependencyGraph[dep] = append(dependencyGraph[dep], dep)
+	}
+	return dependencyGraph, nil
 }
 
 func (e *Engine) runCommand(task *Task, envs []string, command string) error {
