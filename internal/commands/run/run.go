@@ -1,4 +1,4 @@
-package commands
+package run
 
 import (
 	"fmt"
@@ -11,7 +11,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var runCmd = &cobra.Command{
+// Cmd Command that runs a task
+var Cmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run one or more task in a terminal",
 	Run: func(cmd *cobra.Command, args []string) {

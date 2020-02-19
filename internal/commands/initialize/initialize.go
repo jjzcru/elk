@@ -1,4 +1,4 @@
-package commands
+package init
 
 import (
 	"fmt"
@@ -10,7 +10,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var initCmd = &cobra.Command{
+// Cmd Command that initialize elk in current directory
+var Cmd = &cobra.Command{
 	Use:   "init",
 	Short: "Create a 'elk.yml' file in current directory",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -20,14 +21,14 @@ var initCmd = &cobra.Command{
 			return
 		}
 
-		err = createElkFile(elkFilePath)
+		err = CreateElkFile(elkFilePath)
 		if err != nil {
 			_ = fmt.Errorf(err.Error())
 		}
 	},
 }
 
-func createElkFile(elkFilePath string) error {
+func CreateElkFile(elkFilePath string) error {
 	response, err := template.New("installation").Parse(installationTemplate)
 	if err != nil {
 		panic(err)

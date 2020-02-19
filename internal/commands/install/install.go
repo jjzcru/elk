@@ -1,4 +1,4 @@
-package commands
+package install
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/jjzcru/elk/internal/commands/config"
+	in "github.com/jjzcru/elk/internal/commands/initialize"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +17,8 @@ var configTemplate = `# DO NOT modify this file directly
 path: "{{.}}"
 `
 
-var installCmd = &cobra.Command{
+// Cmd Command that install elk in the system
+var Cmd = &cobra.Command{
 	Use:   "install",
 	Short: "Install elk in the system",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -118,7 +120,7 @@ func createGlobalIfNotExist() error {
 	if !existGlobal {
 		elkFilePath := path.Join(usr.HomeDir, "elk.yml")
 		fmt.Printf("Elkfile: %s\n", elkFilePath)
-		return createElkFile(elkFilePath)
+		return in.CreateElkFile(elkFilePath)
 	}
 
 	return nil

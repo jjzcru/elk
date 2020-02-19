@@ -14,7 +14,7 @@ import (
 // Cmd Command that display the task in the elk file
 var Cmd = &cobra.Command{
 	Use:   "ls",
-	Short: "List the task in the elk file",
+	Short: "List tasks",
 	Run: func(cmd *cobra.Command, args []string) {
 		isGlobal, err := cmd.Flags().GetBool("global")
 		if err != nil {

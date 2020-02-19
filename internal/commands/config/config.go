@@ -13,6 +13,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// GetElk get an elk pointer from a file path
 func GetElk(filePath string, isGlobal bool) (*engine.Elk, error) {
 	var elkConfigPath string
 	var err error
