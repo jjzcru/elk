@@ -31,6 +31,7 @@ func init() {
 	rootCmd.AddCommand(runCmd)
 
 	runCmd.Flags().BoolP("global", "g", false, "Run from the path set in config")
+	runCmd.Flags().StringP("file", "f", "", "Specify an alternate elk file \n(default: elk.yml)")
 }
 
 func printError(err string) {

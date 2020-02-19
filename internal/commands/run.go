@@ -19,14 +19,24 @@ var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run one or more task in a terminal",
 	Run: func(cmd *cobra.Command, args []string) {
-		isGlobal, _ := cmd.Flags().GetBool("global")
+		isGlobal, err := cmd.Flags().GetBool("global")
+		if err != nil {
+			printError(err.Error())
+			return
+		}
+
+		elkFilePath, err := cmd.Flags().GetString("file")
+		if err != nil {
+			printError(err.Error())
+			return
+		}
 
 		if len(args) == 0 {
 			printError("A task name is required")
 			return
 		}
 
-		elk, err := getElk(isGlobal)
+		elk, err := getElk(elkFilePath, isGlobal)
 
 		if err != nil {
 			printError(err.Error())
@@ -65,10 +75,17 @@ var runCmd = &cobra.Command{
 	},
 }
 
-func getElk(isGlobal bool) (*engine.Elk, error) {
-	elkConfigPath, err := getElkFilePath(isGlobal)
-	if err != nil {
-		return nil, err
+func getElk(filePath string, isGlobal bool) (*engine.Elk, error) {
+	var elkConfigPath string
+	var err error
+
+	if len(filePath) > 0 {
+		elkConfigPath = filePath
+	} else {
+		elkConfigPath, err = getElkFilePath(isGlobal)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	elk := engine.Elk{}
