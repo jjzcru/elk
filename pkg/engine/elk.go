@@ -9,10 +9,12 @@ type Elk struct {
 
 // Task is the data structure for the task to run
 type Task struct {
-	Cmds        []string
-	Env         map[string]string
-	Description string
-	Dir         string
+	Cmds         []string
+	Env          map[string]string
+	Description  string
+	Dir          string
+	Deps         []string
+	DetachedDeps []string `yaml:"detached_deps"`
 }
 
 // Config is the structure of the global configurations

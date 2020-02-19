@@ -62,6 +62,20 @@ func (e *Engine) Run(taskName string) error {
 		return err
 	}
 
+	if len(task.DetachedDeps) > 0 {
+		err = e.runTaskDependencies(taskName, true)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(task.Deps) > 0 {
+		err = e.runTaskDependencies(taskName, false)
+		if err != nil {
+			return err
+		}
+	}
+
 	if len(task.Dir) == 0 {
 		task.Dir, err = os.Getwd()
 		if err != nil {
@@ -93,6 +107,89 @@ func (e *Engine) Run(taskName string) error {
 	}
 
 	return nil
+}
+
+func (e *Engine) runTaskDependencies(taskName string, detached bool) error {
+	task, err := e.GetTask(taskName)
+	if err != nil {
+		return err
+	}
+
+	if len(task.Deps) == 0 {
+		return nil
+	}
+
+	err = e.HasCircularDependency(taskName, make(map[string]bool))
+	if err != nil {
+		return err
+	}
+
+	deps := task.Deps
+	if detached {
+		deps = task.DetachedDeps
+	}
+
+	for _, dep := range deps {
+		if detached {
+			go func() {
+				_ = e.Run(dep)
+			}()
+		} else {
+			err = e.Run(dep)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// HasCircularDependency checks if a task has a circular dependency
+func (e *Engine) HasCircularDependency(taskName string, visitedNodes map[string]bool) error {
+	task, err := e.GetTask(taskName)
+	if err != nil {
+		return err
+	}
+
+	if len(task.Deps) == 0 {
+		return nil
+	}
+
+	dependencyGraph, err := e.getDependencyGraph(task)
+	if err != nil {
+		return err
+	}
+
+	_, hasVisitNode := visitedNodes[taskName]
+	if hasVisitNode {
+		return fmt.Errorf("The task '%s' has a circular dependency", taskName)
+	}
+
+	visitedNodes[taskName] = true
+
+	for _, dep := range dependencyGraph[taskName] {
+		err = e.HasCircularDependency(dep, visitedNodes)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (e *Engine) getDependencyGraph(task *Task) (map[string][]string, error) {
+	dependencyGraph := make(map[string][]string)
+	for _, dep := range task.Deps {
+		// Validate that the dependency is a valid task
+		_, exists := e.elk.Tasks[dep]
+		if exists == false {
+			return dependencyGraph, fmt.Errorf("The dependency '%s' do not exist as a task", dep)
+		}
+
+		dependencyGraph[dep] = append(dependencyGraph[dep], dep)
+	}
+	return dependencyGraph, nil
 }
 
 func (e *Engine) runCommand(task *Task, envs []string, command string) error {
