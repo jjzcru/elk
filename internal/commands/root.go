@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jjzcru/elk/internal/commands/config"
 	in "github.com/jjzcru/elk/internal/commands/initialize"
 	"github.com/jjzcru/elk/internal/commands/install"
 	"github.com/jjzcru/elk/internal/commands/ls"
@@ -33,9 +34,13 @@ func start() {
 	rootCmd.AddCommand(in.Cmd)
 	rootCmd.AddCommand(run.Cmd)
 	rootCmd.AddCommand(ls.Cmd)
+	rootCmd.AddCommand(config.Cmd)
 
 	rootCmd.PersistentFlags().BoolP("global", "g", false, "Run from the path set in config")
 	rootCmd.PersistentFlags().StringP("file", "f", "", "Specify an alternate elk file \n(default: elk.yml)")
 
 	ls.Cmd.Flags().BoolP("all", "a", false, "Print tasks details")
+
+	config.Cmd.AddCommand(config.GetCmd)
+	config.Cmd.AddCommand(config.SetCmd)
 }

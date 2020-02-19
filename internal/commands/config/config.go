@@ -10,8 +10,73 @@ import (
 
 	"github.com/jjzcru/elk/pkg/engine"
 	"github.com/logrusorgru/aurora"
+	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
+
+// Cmd Command that works with configuration
+var Cmd = &cobra.Command{
+	Use:   "config",
+	Short: "Work with the global installation",
+}
+
+// SetCmd Command that set the global file
+var SetCmd = &cobra.Command{
+	Use:   "set",
+	Short: "Set the path for the global configuration file",
+	Run: func(cmd *cobra.Command, args []string) {
+		dir, err := os.Getwd()
+		if err != nil {
+			PrintError(err.Error())
+			return
+		}
+
+		fmt.Println(dir)
+	},
+}
+
+// GetCmd Command that get the global file
+var GetCmd = &cobra.Command{
+	Use:   "get",
+	Short: "Get the path for the global configuration file",
+	Run: func(cmd *cobra.Command, args []string) {
+		usr, err := user.Current()
+		if err != nil {
+			PrintError(err.Error())
+			return
+		}
+
+		configPath := path.Join(usr.HomeDir, ".elk", "config.yml")
+
+		if !fileExists(configPath) {
+			PrintError(fmt.Sprintf("The installation path \"%s\" do not exist. \nPlease run \"elk install\" to create it", configPath))
+			return
+		}
+
+		config := engine.Config{}
+
+		configData, err := ioutil.ReadFile(configPath)
+		if err != nil {
+			PrintError(err.Error())
+			return
+		}
+
+		err = yaml.Unmarshal(configData, &config)
+		if err != nil {
+			PrintError(err.Error())
+		}
+
+		fmt.Println(config.Path)
+	},
+}
+
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
 
 // GetElk get an elk pointer from a file path
 func GetElk(filePath string, isGlobal bool) (*engine.Elk, error) {
@@ -89,7 +154,7 @@ func getGlobalElkFile() (string, error) {
 
 	configPath := path.Join(usr.HomeDir, ".elk", "config.yml")
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return "", errors.New("Elk is not installed, please run \nelk install")
+		return "", errors.New("Elk is not installed, \nPlease run \"elk install\"")
 	}
 
 	config := engine.Config{}
