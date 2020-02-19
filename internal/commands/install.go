@@ -7,6 +7,7 @@ import (
 	"path"
 	"text/template"
 
+	"github.com/jjzcru/elk/internal/commands/config"
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +22,7 @@ var installCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := install()
 		if err != nil {
-			printError("A task name is required")
+			config.PrintError("A task name is required")
 			return
 		}
 		fmt.Println("Elk was installed successfully")

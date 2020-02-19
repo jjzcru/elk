@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/logrusorgru/aurora"
+	"github.com/jjzcru/elk/internal/commands/ls"
 
 	"github.com/spf13/cobra"
 )
@@ -29,13 +29,12 @@ func init() {
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(runCmd)
+	rootCmd.AddCommand(ls.Cmd)
 
 	runCmd.Flags().BoolP("global", "g", false, "Run from the path set in config")
 	runCmd.Flags().StringP("file", "f", "", "Specify an alternate elk file \n(default: elk.yml)")
-}
 
-func printError(err string) {
-	fmt.Print(aurora.Bold(aurora.Red("ERROR: ")))
-	_, _ = fmt.Fprintf(os.Stderr, err)
-	fmt.Println()
+	ls.Cmd.Flags().BoolP("global", "g", false, "Run from the path set in config")
+	ls.Cmd.Flags().StringP("file", "f", "", "Specify an alternate elk file \n(default: elk.yml)")
+	ls.Cmd.Flags().BoolP("all", "a", false, "Print tasks details")
 }
