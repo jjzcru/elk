@@ -139,7 +139,7 @@ func (e *Engine) runTaskDependencies(taskName string, detached bool) error {
 		return err
 	}
 
-	if len(task.Deps) == 0 {
+	if len(append(task.Deps, task.DetachedDeps...)) == 0 {
 		return nil
 	}
 
