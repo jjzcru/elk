@@ -11,23 +11,28 @@ import (
 )
 
 // Cmd Command that initialize elk in current directory
-var Cmd = &cobra.Command{
-	Use:   "init",
-	Short: "Create a 'elk.yml' file in current directory",
-	Run: func(cmd *cobra.Command, args []string) {
-		elkFilePath, err := getElkfilePath()
-		if err != nil {
-			_ = fmt.Errorf(err.Error())
-			return
-		}
+func Cmd() *cobra.Command {
+	var command = &cobra.Command{
+		Use:   "init",
+		Short: "Create a 'elk.yml' file in current directory",
+		Run: func(cmd *cobra.Command, args []string) {
+			elkFilePath, err := getElkfilePath()
+			if err != nil {
+				_ = fmt.Errorf(err.Error())
+				return
+			}
 
-		err = CreateElkFile(elkFilePath)
-		if err != nil {
-			_ = fmt.Errorf(err.Error())
-		}
-	},
+			err = CreateElkFile(elkFilePath)
+			if err != nil {
+				_ = fmt.Errorf(err.Error())
+			}
+		},
+	}
+
+	return command
 }
 
+// CreateElkFile create an elk file in path
 func CreateElkFile(elkFilePath string) error {
 	response, err := template.New("installation").Parse(installationTemplate)
 	if err != nil {

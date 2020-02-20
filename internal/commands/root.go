@@ -29,22 +29,12 @@ func Execute() {
 }
 
 func start() {
-	runCmd := run.Cmd()
-
-	rootCmd.AddCommand(version.Cmd)
-	rootCmd.AddCommand(install.Cmd)
-	rootCmd.AddCommand(in.Cmd)
-	rootCmd.AddCommand(runCmd)
-	rootCmd.AddCommand(ls.Cmd)
-	rootCmd.AddCommand(config.Cmd)
+	rootCmd.AddCommand(version.Cmd())
+	rootCmd.AddCommand(install.Cmd())
+	rootCmd.AddCommand(in.Cmd())
+	rootCmd.AddCommand(run.Cmd())
+	rootCmd.AddCommand(ls.Cmd())
+	rootCmd.AddCommand(config.Cmd())
 
 	rootCmd.PersistentFlags().BoolP("global", "g", false, "Run from the path set in config")
-	rootCmd.PersistentFlags().StringP("log", "l", "", "Specify a file log as output for a task run as detached")
-	rootCmd.PersistentFlags().BoolP("detached", "d", false, "Run the command in detached mode")
-	rootCmd.PersistentFlags().StringP("file", "f", "", "Specify an alternate elk file \n(default: elk.yml)")
-
-	ls.Cmd.Flags().BoolP("all", "a", false, "Print tasks details")
-
-	config.Cmd.AddCommand(config.GetCmd)
-	config.Cmd.AddCommand(config.SetCmd)
 }

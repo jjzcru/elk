@@ -13,17 +13,21 @@ import (
 )
 
 // Cmd Command that install elk in the system
-var Cmd = &cobra.Command{
-	Use:   "install",
-	Short: "Install elk in the system",
-	Run: func(cmd *cobra.Command, args []string) {
-		err := install()
-		if err != nil {
-			config.PrintError("A task name is required")
-			return
-		}
-		fmt.Println("Elk was installed successfully")
-	},
+func Cmd() *cobra.Command {
+	var command = &cobra.Command{
+		Use:   "install",
+		Short: "Install elk in the system",
+		Run: func(cmd *cobra.Command, args []string) {
+			err := install()
+			if err != nil {
+				config.PrintError("A task name is required")
+				return
+			}
+			fmt.Println("Elk was installed successfully")
+		},
+	}
+
+	return command
 }
 
 func install() error {

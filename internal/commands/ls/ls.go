@@ -12,44 +12,50 @@ import (
 )
 
 // Cmd Command that display the task in the elk file
-var Cmd = &cobra.Command{
-	Use:   "ls",
-	Short: "List tasks",
-	Run: func(cmd *cobra.Command, args []string) {
-		isGlobal, err := cmd.Flags().GetBool("global")
-		if err != nil {
-			config.PrintError(err.Error())
-		}
+func Cmd() *cobra.Command {
+	var command = &cobra.Command{
+		Use:   "ls",
+		Short: "List tasks",
+		Run: func(cmd *cobra.Command, args []string) {
+			isGlobal, err := cmd.Flags().GetBool("global")
+			if err != nil {
+				config.PrintError(err.Error())
+			}
 
-		elkFilePath, err := cmd.Flags().GetString("file")
-		if err != nil {
-			config.PrintError(err.Error())
-			return
-		}
+			elkFilePath, err := cmd.Flags().GetString("file")
+			if err != nil {
+				config.PrintError(err.Error())
+				return
+			}
 
-		shouldPrintAll, err := cmd.Flags().GetBool("all")
-		if err != nil {
-			config.PrintError(err.Error())
-			return
-		}
+			shouldPrintAll, err := cmd.Flags().GetBool("all")
+			if err != nil {
+				config.PrintError(err.Error())
+				return
+			}
 
-		elk, err := config.GetElk(elkFilePath, isGlobal)
+			elk, err := config.GetElk(elkFilePath, isGlobal)
 
-		if err != nil {
-			config.PrintError(err.Error())
-			return
-		}
+			if err != nil {
+				config.PrintError(err.Error())
+				return
+			}
 
-		w := new(tabwriter.Writer)
-		w.Init(os.Stdout, 24, 8, 0, '\t', 0)
-		defer w.Flush()
+			w := new(tabwriter.Writer)
+			w.Init(os.Stdout, 24, 8, 0, '\t', 0)
+			defer w.Flush()
 
-		if shouldPrintAll {
-			printAll(w, elk)
-		} else {
-			printPlain(w, elk)
-		}
-	},
+			if shouldPrintAll {
+				printAll(w, elk)
+			} else {
+				printPlain(w, elk)
+			}
+		},
+	}
+
+	command.Flags().BoolP("all", "a", false, "Print tasks details")
+
+	return command
 }
 
 func printAll(w *tabwriter.Writer, elk *engine.Elk) {

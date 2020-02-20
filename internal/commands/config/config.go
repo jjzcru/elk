@@ -23,9 +23,16 @@ path: "{{.}}"
 `
 
 // Cmd Command that works with configuration
-var Cmd = &cobra.Command{
-	Use:   "config",
-	Short: "Work with the global installation",
+func Cmd() *cobra.Command {
+	var command = &cobra.Command{
+		Use:   "config",
+		Short: "Work with the global installation",
+	}
+
+	command.AddCommand(GetCmd)
+	command.AddCommand(SetCmd)
+
+	return command
 }
 
 // SetCmd Command that set the global file

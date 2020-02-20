@@ -120,6 +120,9 @@ func Cmd() *cobra.Command {
 	}
 
 	command.Flags().StringSliceVarP(&envs, "env", "e", []string{}, "")
+	command.Flags().BoolP("detached", "d", false, "Run the command in detached mode")
+	command.Flags().StringP("file", "f", "", "Specify an alternate elk file \n(default: elk.yml)")
+	command.Flags().StringP("log", "l", "", "Specify a file log as output for a task run as detached")
 
 	return command
 }
