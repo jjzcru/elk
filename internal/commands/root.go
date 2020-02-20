@@ -29,10 +29,12 @@ func Execute() {
 }
 
 func start() {
+	runCmd := run.Cmd()
+
 	rootCmd.AddCommand(version.Cmd)
 	rootCmd.AddCommand(install.Cmd)
 	rootCmd.AddCommand(in.Cmd)
-	rootCmd.AddCommand(run.Cmd)
+	rootCmd.AddCommand(runCmd)
 	rootCmd.AddCommand(ls.Cmd)
 	rootCmd.AddCommand(config.Cmd)
 

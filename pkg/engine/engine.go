@@ -53,7 +53,7 @@ func (e *Engine) GetTask(taskName string) (*Task, error) {
 }
 
 // Run task declared in Elkfile
-func (e *Engine) Run(taskName string) error {
+func (e *Engine) Run(taskName string, cmdEnvs ...string) error {
 	if !e.HasTask(taskName) {
 		return errors.New("task not found")
 	}
@@ -123,6 +123,13 @@ func (e *Engine) Run(taskName string) error {
 		envs = append(envs, fmt.Sprintf("%s=%s", k, v))
 	}
 
+	// Load Env variables from the -e flag
+	for _, env := range cmdEnvs {
+		envs = append(envs, strings.Trim(env, " "))
+	}
+
+	envs = uniqueEnvs(envs)
+
 	for _, command := range task.Cmds {
 		err = e.runCommand(task, envs, command)
 		if err != nil {
@@ -131,6 +138,22 @@ func (e *Engine) Run(taskName string) error {
 	}
 
 	return nil
+}
+
+func uniqueEnvs(envs []string) []string {
+	response := []string{}
+	envMap := make(map[string]string)
+	for _, env := range envs {
+		result := strings.Split(env, "=")
+		key := result[0]
+		envMap[key] = env
+	}
+
+	for _, v := range envMap {
+		response = append(response, v)
+	}
+
+	return response
 }
 
 func (e *Engine) runTaskDependencies(taskName string, detached bool) error {

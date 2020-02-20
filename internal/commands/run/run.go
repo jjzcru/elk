@@ -14,107 +14,114 @@ import (
 )
 
 // Cmd Command that runs a task
-var Cmd = &cobra.Command{
-	Use:   "run",
-	Short: "Run one or more task in a terminal",
-	Run: func(cmd *cobra.Command, args []string) {
-		isDetached, err := cmd.Flags().GetBool("detached")
-		if err != nil {
-			config.PrintError(err.Error())
-			return
-		}
-
-		if isDetached {
-			logFilePath, err := cmd.Flags().GetString("log")
+func Cmd() *cobra.Command {
+	var envs []string
+	var command = &cobra.Command{
+		Use:   "run",
+		Short: "Run one or more task in a terminal",
+		Run: func(cmd *cobra.Command, args []string) {
+			isDetached, err := cmd.Flags().GetBool("detached")
 			if err != nil {
 				config.PrintError(err.Error())
 				return
 			}
 
-			cwd, err := os.Getwd()
-			if err != nil {
-				config.PrintError(err.Error())
-				return
-			}
-
-			command := removeDetachedFlag(os.Args)
-			cmd := exec.Command(command[0], command[1:]...)
-			cmd.Dir = cwd
-
-			if len(logFilePath) > 0 {
-				f, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			if isDetached {
+				logFilePath, err := cmd.Flags().GetString("log")
 				if err != nil {
 					config.PrintError(err.Error())
 					return
 				}
 
-				cmd.Stdout = f
+				cwd, err := os.Getwd()
+				if err != nil {
+					config.PrintError(err.Error())
+					return
+				}
+
+				command := removeDetachedFlag(os.Args)
+				cmd := exec.Command(command[0], command[1:]...)
+				cmd.Dir = cwd
+
+				if len(logFilePath) > 0 {
+					f, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+					if err != nil {
+						config.PrintError(err.Error())
+						return
+					}
+
+					cmd.Stdout = f
+				}
+
+				err = cmd.Start()
+				if err != nil {
+					config.PrintError(err.Error())
+					return
+				}
+
+				cmd.Process.Release()
+				return
 			}
 
-			err = cmd.Start()
+			isGlobal, err := cmd.Flags().GetBool("global")
 			if err != nil {
 				config.PrintError(err.Error())
 				return
 			}
 
-			cmd.Process.Release()
-			return
-		}
+			elkFilePath, err := cmd.Flags().GetString("file")
+			if err != nil {
+				config.PrintError(err.Error())
+				return
+			}
 
-		isGlobal, err := cmd.Flags().GetBool("global")
-		if err != nil {
-			config.PrintError(err.Error())
-			return
-		}
+			if len(args) == 0 {
+				config.PrintError("A task name is required")
+				return
+			}
 
-		elkFilePath, err := cmd.Flags().GetString("file")
-		if err != nil {
-			config.PrintError(err.Error())
-			return
-		}
+			elk, err := config.GetElk(elkFilePath, isGlobal)
 
-		if len(args) == 0 {
-			config.PrintError("A task name is required")
-			return
-		}
+			if err != nil {
+				config.PrintError(err.Error())
+				return
+			}
 
-		elk, err := config.GetElk(elkFilePath, isGlobal)
+			logger := &engine.Logger{
+				StdoutWriter: os.Stdout,
+				StderrWriter: os.Stderr,
+				StdinReader:  os.Stdin,
+			}
 
-		if err != nil {
-			config.PrintError(err.Error())
-			return
-		}
+			clientEngine := engine.New(elk, logger)
 
-		logger := &engine.Logger{
-			StdoutWriter: os.Stdout,
-			StderrWriter: os.Stderr,
-			StdinReader:  os.Stdin,
-		}
+			var wg sync.WaitGroup
 
-		clientEngine := engine.New(elk, logger)
+			for _, task := range args {
+				wg.Add(1)
+				go func(task string, wg *sync.WaitGroup) {
+					defer wg.Done()
 
-		var wg sync.WaitGroup
+					if !clientEngine.HasTask(task) {
+						config.PrintError(fmt.Sprintf("task '%s' do not exist", task))
+						return
+					}
 
-		for _, task := range args {
-			wg.Add(1)
-			go func(task string, wg *sync.WaitGroup) {
-				defer wg.Done()
+					err = clientEngine.Run(task, envs...)
+					if err != nil {
+						config.PrintError(err.Error())
+						return
+					}
+				}(task, &wg)
+			}
 
-				if !clientEngine.HasTask(task) {
-					config.PrintError(fmt.Sprintf("task '%s' do not exist", task))
-					return
-				}
+			wg.Wait()
+		},
+	}
 
-				err = clientEngine.Run(task)
-				if err != nil {
-					config.PrintError(err.Error())
-					return
-				}
-			}(task, &wg)
-		}
+	command.Flags().StringSliceVarP(&envs, "env", "e", []string{}, "")
 
-		wg.Wait()
-	},
+	return command
 }
 
 func removeDetachedFlag(args []string) []string {
