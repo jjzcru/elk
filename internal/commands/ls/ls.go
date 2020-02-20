@@ -53,8 +53,9 @@ var Cmd = &cobra.Command{
 }
 
 func printAll(w *tabwriter.Writer, elk *engine.Elk) {
-	fmt.Fprintf(w, "\n%s\t%s\t%s\t\n", "Task", "Description", "Dependencies")
-	fmt.Fprintf(w, "%s\t%s\t%s\t\n", "----", "----", "----")
+	fmt.Fprintf(w, "\n%s\t%s\t%s\t\n", "TASK", "DESCRIPTION", "DEPENDENCIES")
+	/*fmt.Fprintf(w, "\n%s\t%s\t%s\t\n", "Task", "Description", "Dependencies")*/
+	fmt.Fprintf(w, "%s\t%s\t%s\t\n", "----", "-----------", "------------")
 
 	for taskName, task := range elk.Tasks {
 		fmt.Fprintf(w, "%s\t%s\t%s\t\n", taskName, task.Description, strings.Join(append(task.Deps, task.DetachedDeps...), ", "))
@@ -62,8 +63,9 @@ func printAll(w *tabwriter.Writer, elk *engine.Elk) {
 }
 
 func printPlain(w *tabwriter.Writer, elk *engine.Elk) {
-	fmt.Fprintf(w, "\n%s\t%s\t\n", "Task", "Description")
-	fmt.Fprintf(w, "%s\t%s\t\n", "----", "----")
+	fmt.Fprintf(w, "\n%s\t%s\t\n", "TASK", "DESCRIPTION")
+	/*fmt.Fprintf(w, "\n%s\t%s\t\n", "Task", "Description")*/
+	fmt.Fprintf(w, "%s\t%s\t\n", "----", "-----------")
 
 	for taskName, task := range elk.Tasks {
 		fmt.Fprintf(w, "%s\t%s\t\n", taskName, task.Description)

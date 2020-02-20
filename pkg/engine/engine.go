@@ -144,7 +144,6 @@ func (e *Engine) runTaskDependencies(taskName string, detached bool) error {
 	}
 
 	visitedNodes := make(map[string]bool)
-	visitedNodes[taskName] = true
 
 	err = e.HasCircularDependency(taskName, visitedNodes)
 	if err != nil {
