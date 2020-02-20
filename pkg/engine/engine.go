@@ -248,6 +248,20 @@ func (e *Engine) runCommand(task *Task, envs []string, command string) error {
 		return err
 	}
 
+	stdinReader := e.logger.StdinReader
+	stdoutWriter := e.logger.StdoutWriter
+	stderrWriter := e.logger.StderrWriter
+
+	if len(task.Log) > 0 {
+		logFile, err := os.OpenFile(task.Log, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return err
+		}
+
+		stdoutWriter = logFile
+		stderrWriter = logFile
+	}
+
 	r, err := interp.New(
 		interp.Dir(task.Dir),
 		interp.Env(expand.ListEnviron(envs...)),
@@ -255,7 +269,7 @@ func (e *Engine) runCommand(task *Task, envs []string, command string) error {
 		interp.Module(interp.DefaultExec),
 		interp.Module(interp.OpenDevImpls(interp.DefaultOpen)),
 
-		interp.StdIO(e.logger.StdinReader, e.logger.StdoutWriter, e.logger.StderrWriter),
+		interp.StdIO(stdinReader, stdoutWriter, stderrWriter),
 	)
 
 	if err != nil {

@@ -14,6 +14,7 @@ type Task struct {
 	Env          map[string]string
 	Description  string
 	Dir          string
+	Log          string
 	Deps         []string
 	DetachedDeps []string `yaml:"detached_deps"`
 	EnvFile      string   `yaml:"env_file"`
