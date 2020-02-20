@@ -90,6 +90,18 @@ func (e *Engine) Run(taskName string) error {
 		envs = append(envs, env)
 	}
 
+	// Load Env variables from a file
+	if len(e.elk.EnvFile) > 0 {
+		envsInFile, err := getEnvFromFile(e.elk.EnvFile)
+		if err != nil {
+			return err
+		}
+
+		for _, env := range envsInFile {
+			envs = append(envs, env)
+		}
+	}
+
 	// Load Env variables from global vars in Elkfile
 	for k, v := range e.elk.Env {
 		envs = append(envs, fmt.Sprintf("%s=%s", k, v))

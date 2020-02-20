@@ -4,6 +4,7 @@ package engine
 type Elk struct {
 	Version string
 	Env     map[string]string
+	EnvFile string `yaml:"env_file"`
 	Tasks   map[string]Task
 }
 
