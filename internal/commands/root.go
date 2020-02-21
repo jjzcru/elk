@@ -9,6 +9,7 @@ import (
 	"github.com/jjzcru/elk/internal/commands/install"
 	"github.com/jjzcru/elk/internal/commands/ls"
 	"github.com/jjzcru/elk/internal/commands/run"
+	"github.com/jjzcru/elk/internal/commands/static"
 	"github.com/jjzcru/elk/internal/commands/version"
 
 	"github.com/spf13/cobra"
@@ -35,6 +36,7 @@ func start() {
 	rootCmd.AddCommand(run.Cmd())
 	rootCmd.AddCommand(ls.Cmd())
 	rootCmd.AddCommand(config.Cmd())
+	rootCmd.AddCommand(static.Cmd())
 
 	rootCmd.PersistentFlags().BoolP("global", "g", false, "Run from the path set in config")
 }
