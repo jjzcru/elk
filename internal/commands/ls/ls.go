@@ -2,12 +2,12 @@ package ls
 
 import (
 	"fmt"
+	"github.com/jjzcru/elk/pkg/primitives"
 	"os"
 	"strings"
 	"text/tabwriter"
 
 	"github.com/jjzcru/elk/internal/commands/config"
-	"github.com/jjzcru/elk/pkg/engine"
 	"github.com/spf13/cobra"
 )
 
@@ -58,7 +58,7 @@ func Cmd() *cobra.Command {
 	return command
 }
 
-func printAll(w *tabwriter.Writer, elk *engine.Elk) {
+func printAll(w *tabwriter.Writer, elk *primitives.Elk) {
 	fmt.Fprintf(w, "\n%s\t%s\t%s\t\n", "TASK", "DESCRIPTION", "DEPENDENCIES")
 	/*fmt.Fprintf(w, "\n%s\t%s\t%s\t\n", "Task", "Description", "Dependencies")*/
 	fmt.Fprintf(w, "%s\t%s\t%s\t\n", "----", "-----------", "------------")
@@ -68,7 +68,7 @@ func printAll(w *tabwriter.Writer, elk *engine.Elk) {
 	}
 }
 
-func printPlain(w *tabwriter.Writer, elk *engine.Elk) {
+func printPlain(w *tabwriter.Writer, elk *primitives.Elk) {
 	fmt.Fprintf(w, "\n%s\t%s\t\n", "TASK", "DESCRIPTION")
 	/*fmt.Fprintf(w, "\n%s\t%s\t\n", "Task", "Description")*/
 	fmt.Fprintf(w, "%s\t%s\t\n", "----", "-----------")

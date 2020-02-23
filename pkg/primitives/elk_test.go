@@ -1,4 +1,4 @@
-package model
+package primitives
 
 import (
 	"testing"

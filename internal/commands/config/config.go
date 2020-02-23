@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"github.com/jjzcru/elk/pkg/primitives"
 	"html/template"
 	"io/ioutil"
 	"os"
@@ -10,7 +11,6 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/jjzcru/elk/pkg/engine"
 	"github.com/logrusorgru/aurora"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -124,7 +124,7 @@ func getConfigPath() (string, error) {
 		return "", fmt.Errorf("The installation path \"%s\" do not exist. \nPlease run \"elk install\" to create it", configPath)
 	}
 
-	config := engine.Config{}
+	config := primitives.Config{}
 
 	configData, err := ioutil.ReadFile(configPath)
 	if err != nil {
@@ -148,7 +148,7 @@ func fileExists(filename string) bool {
 }
 
 // GetElk get an elk pointer from a file path
-func GetElk(filePath string, isGlobal bool) (*engine.Elk, error) {
+func GetElk(filePath string, isGlobal bool) (*primitives.Elk, error) {
 	var elkConfigPath string
 	var err error
 
@@ -161,7 +161,7 @@ func GetElk(filePath string, isGlobal bool) (*engine.Elk, error) {
 		}
 	}
 
-	elk := engine.Elk{}
+	elk := primitives.Elk{}
 	if _, err := os.Stat(elkConfigPath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("the path for elk.yml do not exist '%s'", elkConfigPath)
 	}
@@ -226,7 +226,7 @@ func getGlobalElkFile() (string, error) {
 		return "", errors.New("Elk is not installed, \nPlease run \"elk install\"")
 	}
 
-	config := engine.Config{}
+	config := primitives.Config{}
 
 	configData, err := ioutil.ReadFile(configPath)
 	if err != nil {

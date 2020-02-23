@@ -2,11 +2,11 @@ package init
 
 import (
 	"fmt"
+	elk2 "github.com/jjzcru/elk/pkg/primitives"
 	"os"
 	"path"
 	"text/template"
 
-	"github.com/jjzcru/elk/pkg/engine"
 	"github.com/spf13/cobra"
 )
 
@@ -41,9 +41,9 @@ func CreateElkFile(elkFilePath string) error {
 
 	err = response.Execute(os.Stdout, "")
 
-	elk := engine.Elk{
+	elk := elk2.Elk{
 		Version: "1",
-		Tasks: map[string]engine.Task{
+		Tasks: map[string]elk2.Task{
 			"shutdown": {
 				Cmds: []string{
 					"shutdown",

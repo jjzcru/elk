@@ -1,4 +1,4 @@
-package model
+package primitives
 
 import (
 	"bufio"
@@ -44,6 +44,15 @@ func (e *Elk) HasTask(name string) bool {
 
 // LoadEnvFile Log to the variable env the values
 func (e *Elk) LoadEnvFile() error {
+	if e.Env == nil {
+		e.Env = make(map[string]string)
+	}
+
+	envCopy := make(map[string]string)
+	for k, v := range e.Env {
+		envCopy[k] = v
+	}
+
 	if len(e.EnvFile) > 0 {
 		info, err := os.Stat(e.EnvFile)
 		if os.IsNotExist(err) {
@@ -61,17 +70,28 @@ func (e *Elk) LoadEnvFile() error {
 		defer file.Close()
 
 		scanner := bufio.NewScanner(file)
+
 		envs := e.Env
 		for scanner.Scan() {
-			parts := strings.SplitAfter(scanner.Text(), "=")
-			e.Env[parts[0]] = parts[1]
+			parts := strings.SplitAfterN(scanner.Text(), "=", 2)
+			env := strings.ReplaceAll(parts[0], "=", "")
+			value := parts[1]
+			e.Env[env] = value
 		}
 
 		for env, value := range envs {
 			e.Env[env] = value
 		}
 
+		for env, value := range envCopy {
+			e.Env[env] = value
+		}
+
 		for _, task := range e.Tasks {
+			if task.Env == nil {
+				task.Env = make(map[string]string)
+			}
+
 			taskEnvs := task.Env
 			for env, value := range e.Env {
 				task.Env[env] = value
@@ -89,6 +109,23 @@ func (e *Elk) LoadEnvFile() error {
 	}
 
 	return nil
+}
+
+// LoadEnvsInTasks Load env variable from elk to its tasks
+func (e *Elk) LoadEnvsInTasks() {
+	for _, task := range e.Tasks {
+		envs := make(map[string]string)
+		for k, v := range e.Env {
+			envs[k] = v
+		}
+
+		for k, v := range task.Env {
+			envs[k] = v
+		}
+
+		task.OverwriteEnvs(envs)
+	}
+
 }
 
 // OverwriteEnvs Overwrites the env variable in the elk file and all the tasks

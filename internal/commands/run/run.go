@@ -59,7 +59,7 @@ func Cmd() *cobra.Command {
 					return
 				}
 
-				cmd.Process.Release()
+				_ = cmd.Process.Release()
 				return
 			}
 
@@ -87,13 +87,12 @@ func Cmd() *cobra.Command {
 				return
 			}
 
-			logger := &engine.Logger{
-				StdoutWriter: os.Stdout,
-				StderrWriter: os.Stderr,
-				StdinReader:  os.Stdin,
+			executer := engine.DefaultExecuter{
+				Logger: &engine.DefaultLogger,
 			}
 
-			clientEngine := engine.New(elk, logger)
+			elk.OverwriteEnvs(engine.MapEnvs(envs))
+			clientEngine := engine.New(elk, executer)
 
 			var wg sync.WaitGroup
 
@@ -102,12 +101,12 @@ func Cmd() *cobra.Command {
 				go func(task string, wg *sync.WaitGroup) {
 					defer wg.Done()
 
-					if !clientEngine.HasTask(task) {
+					if !elk.HasTask(task) {
 						config.PrintError(fmt.Sprintf("task '%s' do not exist", task))
 						return
 					}
 
-					err = clientEngine.Run(task, envs...)
+					err = clientEngine.Run(task)
 					if err != nil {
 						config.PrintError(err.Error())
 						return
@@ -128,7 +127,7 @@ func Cmd() *cobra.Command {
 }
 
 func removeDetachedFlag(args []string) []string {
-	cmd := []string{}
+	var cmd []string
 
 	for _, arg := range args {
 		if len(arg) > 0 && arg != "-d" && arg != "--detached" {

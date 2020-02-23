@@ -1,4 +1,4 @@
-package model
+package primitives
 
 import (
 	"bufio"
@@ -20,6 +20,7 @@ type Task struct {
 	EnvFile      string   `yaml:"env_file"`
 }
 
+// SetDetached make a task run in attached mode
 func (t *Task) SetDetached(detached bool) {
 	t.detached = detached
 }
@@ -31,6 +32,10 @@ func (t *Task) IsDetached() bool {
 
 // LoadEnvFile Log to the variable env the values
 func (t *Task) LoadEnvFile() error {
+	if t.Env == nil {
+		t.Env = make(map[string]string)
+	}
+
 	if len(t.EnvFile) > 0 {
 		info, err := os.Stat(t.EnvFile)
 		if os.IsNotExist(err) {
@@ -48,10 +53,13 @@ func (t *Task) LoadEnvFile() error {
 		defer file.Close()
 
 		scanner := bufio.NewScanner(file)
+
 		envs := t.Env
 		for scanner.Scan() {
-			parts := strings.SplitAfter(scanner.Text(), "=")
-			t.Env[parts[0]] = parts[1]
+			parts := strings.SplitAfterN(scanner.Text(), "=", 2)
+			env := strings.ReplaceAll(parts[0], "=", "")
+			value := parts[1]
+			t.Env[env] = value
 		}
 
 		for env, value := range envs {
@@ -69,7 +77,7 @@ func (t *Task) OverwriteEnvs(envs map[string]string) {
 	}
 }
 
-// Get Envs return env variables as string
+// GetEnvs return env variables as string
 func (t *Task) GetEnvs() []string {
 	var envs []string
 	for env, value := range t.Env {

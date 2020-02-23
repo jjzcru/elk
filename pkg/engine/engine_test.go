@@ -1,14 +1,16 @@
 package engine
 
 import (
-	"os"
+	"fmt"
 	"testing"
+
+	"github.com/jjzcru/elk/pkg/primitives"
 )
 
 func getTestEngine() *Engine {
-	elk := &Elk{
+	elk := &primitives.Elk{
 		Version: "1",
-		Tasks: map[string]Task{
+		Tasks: map[string]primitives.Task{
 			"hello": {
 				Description: "Empty Task",
 				Cmds: []string{
@@ -29,35 +31,18 @@ func getTestEngine() *Engine {
 		},
 	}
 
-	logger := &Logger{
-		StdoutWriter: os.Stdout,
-		StderrWriter: os.Stderr,
-		StdinReader:  os.Stdin,
-	}
-
 	return &Engine{
-		elk:    elk,
-		logger: logger,
-	}
-}
-
-func TestHasCircularDependency(t *testing.T) {
-	engine := getTestEngine()
-
-	visitedNodes := make(map[string]bool)
-
-	for taskName := range engine.elk.Tasks {
-		err := engine.HasCircularDependency(taskName, visitedNodes)
-		if err != nil {
-			t.Error(err.Error())
-		}
+		Elk: elk,
+		Executer: DefaultExecuter{
+			Logger: &DefaultLogger,
+		},
 	}
 }
 
 func TestRun(t *testing.T) {
 	engine := getTestEngine()
 
-	for taskName := range engine.elk.Tasks {
+	for taskName := range engine.Elk.Tasks {
 		err := engine.Run(taskName)
 		if err != nil {
 			t.Error(err.Error())
@@ -65,10 +50,13 @@ func TestRun(t *testing.T) {
 	}
 }
 
-/*func TestGetEnvFromFile(t *testing.T) {
-	filePath := "/tmp/example"
-	_, err := getEnvFromFile(filePath)
-	if err != nil {
-		t.Error((err.Error()))
+func TestMapEnvs(t *testing.T) {
+	key := "FOO"
+	value := "http://localhost:7777?id=20"
+
+	envs := []string{fmt.Sprintf("%s=%s", key, value)}
+	envMap := MapEnvs(envs)
+	if envMap[key] != value {
+		t.Errorf("The key '%s' should have a value of '%s' but have a value of '%s' instead", key, value, envMap[key])
 	}
-}*/
+}
