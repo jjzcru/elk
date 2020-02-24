@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"github.com/jjzcru/elk/internal/commands/kill"
 	"os"
 
 	"github.com/jjzcru/elk/internal/commands/config"
@@ -34,6 +35,7 @@ func start() {
 	rootCmd.AddCommand(install.Cmd())
 	rootCmd.AddCommand(in.Cmd())
 	rootCmd.AddCommand(run.Cmd())
+	rootCmd.AddCommand(kill.Cmd())
 	rootCmd.AddCommand(ls.Cmd())
 	rootCmd.AddCommand(config.Cmd())
 	rootCmd.AddCommand(static.Cmd())
