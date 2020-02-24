@@ -2,10 +2,14 @@ package static
 
 import (
 	"fmt"
+	"github.com/logrusorgru/aurora"
+	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strconv"
 	"strings"
-	"net/http"
+	"syscall"
 
 	"github.com/jjzcru/elk/internal/commands/config"
 	"github.com/spf13/cobra"
@@ -18,9 +22,17 @@ func Cmd() *cobra.Command {
 		Use:   "static",
 		Short: "Load a static file website",
 		Run: func(cmd *cobra.Command, args []string) {
+			var err error
 			path := "."
+
 			if len(args) > 0 {
 				path = args[0]
+			}
+
+			path, err = getWorkingDirectoryPath(path)
+			if err != nil {
+				config.PrintError(err.Error())
+				return
 			}
 
 			isDetached, err := cmd.Flags().GetBool("detached")
@@ -38,6 +50,8 @@ func Cmd() *cobra.Command {
 
 				command := removeDetachedFlag(os.Args)
 				cmd := exec.Command(command[0], command[1:]...)
+				pid := os.Getpid()
+				cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true, Pgid: pid}
 				cmd.Dir = cwd
 
 				err = cmd.Start()
@@ -46,7 +60,7 @@ func Cmd() *cobra.Command {
 					return
 				}
 
-				cmd.Process.Release()
+				fmt.Printf("%d", pid)
 				return
 			}
 
@@ -60,7 +74,10 @@ func Cmd() *cobra.Command {
 			fs := http.FileServer(http.Dir(path))
 			http.Handle("/", fs)
 
-			fmt.Printf("Server listening on port: %d\n", port)
+
+
+			fmt.Printf("Static files: %s\n", aurora.Cyan(path))
+			fmt.Printf("Server listening on port 🚀: %s\n", aurora.Cyan(strconv.Itoa(port)))
 			err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 			if err != nil {
 				config.PrintError(err.Error())
@@ -75,8 +92,26 @@ func Cmd() *cobra.Command {
 	return command
 }
 
+func getWorkingDirectoryPath(path string) (string, error) {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return "", err
+	}
+
+	if !fileInfo.IsDir() {
+		path = filepath.Dir(path)
+	}
+
+	absolutePath, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+
+	return absolutePath, nil
+}
+
 func removeDetachedFlag(args []string) []string {
-	cmd := []string{}
+	var cmd []string
 
 	for _, arg := range args {
 		if len(arg) > 0 && arg != "-d" && arg != "--detached" {

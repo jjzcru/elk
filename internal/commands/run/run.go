@@ -2,13 +2,14 @@ package run
 
 import (
 	"fmt"
-	"github.com/jjzcru/elk/pkg/primitives"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
+
+	"github.com/jjzcru/elk/pkg/primitives"
 
 	"github.com/jjzcru/elk/internal/commands/config"
 	"github.com/jjzcru/elk/pkg/engine"
@@ -30,6 +31,12 @@ func Cmd() *cobra.Command {
 			}
 
 			logFilePath, err := cmd.Flags().GetString("log")
+			if err != nil {
+				config.PrintError(err.Error())
+				return
+			}
+
+			ignoreLog, err := cmd.Flags().GetBool("ignore-log")
 			if err != nil {
 				config.PrintError(err.Error())
 				return
@@ -109,13 +116,17 @@ func Cmd() *cobra.Command {
 						logFilePath = absolutePath
 					}
 
-
 					for name, task := range elk.Tasks {
 
 						if len(logFilePath) > 0 {
 							task.Log = logFilePath
-							elk.Tasks[name] = task
 						}
+
+						if ignoreLog {
+							task.Log = ""
+						}
+
+						elk.Tasks[name] = task
 						/*err := elk.HasCircularDependency(task)
 						if err != nil {
 							return err
@@ -151,6 +162,7 @@ func Cmd() *cobra.Command {
 	}
 
 	command.Flags().StringSliceVarP(&envs, "env", "e", []string{}, "")
+	command.Flags().Bool("ignore-log", true, "Force task to output to stdout")
 	command.Flags().BoolP("detached", "d", false, "Run the command in detached mode and returns the PGID")
 	command.Flags().StringP("file", "f", "", "Run elk in a specific file")
 	command.Flags().StringP("log", "l", "", "File that log output from a task")

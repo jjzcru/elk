@@ -18,7 +18,7 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "elk",
-	Short: "A simple yml based task runner",
+	Short: "Simple yml based task runner 🦌",
 }
 
 // Execute starts the CLI application
