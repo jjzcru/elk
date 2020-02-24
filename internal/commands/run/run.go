@@ -2,6 +2,7 @@ package run
 
 import (
 	"fmt"
+	"github.com/fsnotify/fsnotify"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -25,6 +26,12 @@ func Cmd() *cobra.Command {
 		Short: "Run one or more task in a terminal",
 		Run: func(cmd *cobra.Command, args []string) {
 			isDetached, err := cmd.Flags().GetBool("detached")
+			if err != nil {
+				config.PrintError(err.Error())
+				return
+			}
+
+			isWatch, err := cmd.Flags().GetBool("watch")
 			if err != nil {
 				config.PrintError(err.Error())
 				return
@@ -117,7 +124,6 @@ func Cmd() *cobra.Command {
 					}
 
 					for name, task := range elk.Tasks {
-
 						if len(logFilePath) > 0 {
 							task.Log = logFilePath
 						}
@@ -149,10 +155,63 @@ func Cmd() *cobra.Command {
 						return
 					}
 
+					t, _ := elk.GetTask(task)
+					if err != nil {
+						config.PrintError(err.Error())
+						return
+					}
+
 					err = clientEngine.Run(task)
 					if err != nil {
 						config.PrintError(err.Error())
 						return
+					}
+
+					if len(t.Watch) > 0 && isWatch {
+						files, err := t.GetWatcherFiles(t.Watch)
+						if err != nil {
+							config.PrintError(err.Error())
+							return
+						}
+
+						watcher, err := fsnotify.NewWatcher()
+						if err != nil {
+							config.PrintError(err.Error())
+							return
+						}
+						defer watcher.Close()
+
+						for _, file := range files {
+							err = watcher.Add(file)
+							if err != nil {
+								config.PrintError(err.Error())
+								return
+							}
+						}
+
+						for {
+							select {
+							case event := <-watcher.Events:
+								switch {
+								case event.Op&fsnotify.Write == fsnotify.Write:
+									fallthrough
+								case event.Op&fsnotify.Create == fsnotify.Create:
+									fallthrough
+								case event.Op&fsnotify.Remove == fsnotify.Remove:
+									fallthrough
+								case event.Op&fsnotify.Rename == fsnotify.Rename:
+									// fmt.Printf("%s: %s\n", event.Op, event.Name)
+									err = clientEngine.Run(task)
+									if err != nil {
+										config.PrintError(err.Error())
+										return
+									}
+								}
+							case err := <-watcher.Errors:
+								config.PrintError(err.Error())
+								return
+							}
+						}
 					}
 				}(task, &wg)
 			}
@@ -162,8 +221,9 @@ func Cmd() *cobra.Command {
 	}
 
 	command.Flags().StringSliceVarP(&envs, "env", "e", []string{}, "")
-	command.Flags().Bool("ignore-log", true, "Force task to output to stdout")
+	command.Flags().Bool("ignore-log", false, "Force task to output to stdout")
 	command.Flags().BoolP("detached", "d", false, "Run the command in detached mode and returns the PGID")
+	command.Flags().BoolP("watch", "w", false, "Enable watch mode")
 	command.Flags().StringP("file", "f", "", "Run elk in a specific file")
 	command.Flags().StringP("log", "l", "", "File that log output from a task")
 

@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -14,7 +16,8 @@ type Task struct {
 	detached     bool
 	Description  string
 	Dir          string
-	Log          string
+	Log          string `yaml:"log"`
+	Watch		 string
 	Deps         []string
 	IgnoreError  bool     `yaml:"ignore_error"`
 	DetachedDeps []string `yaml:"detached_deps"`
@@ -86,4 +89,30 @@ func (t *Task) GetEnvs() []string {
 	}
 
 	return envs
+}
+
+// GetWatcherFiles return a list of the files that are going to be watched
+func (t *Task) GetWatcherFiles(reg string) ([]string, error) {
+	dir := t.Dir
+	re := regexp.MustCompile(reg)
+	var files []string
+	walk := func(fn string, fi os.FileInfo, err error) error {
+		if re.MatchString(fn) == false {
+			return nil
+		}
+		if fi.IsDir() {
+			// fmt.Println(fn + string(os.PathSeparator))
+		} else {
+			// fmt.Println(fn)
+			files = append(files, fn)
+		}
+		return nil
+	}
+
+	err := filepath.Walk(dir, walk)
+	if err != nil {
+		return files, err
+	}
+
+	return files, nil
 }

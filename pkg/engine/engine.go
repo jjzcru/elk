@@ -11,7 +11,7 @@ import (
 type Engine struct {
 	Elk      *primitives.Elk
 	Executer Executer
-	Build func(*primitives.Elk) error
+	Build    func(*primitives.Elk) error
 }
 
 // New creates a new instance of the engine

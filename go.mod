@@ -3,6 +3,7 @@ module github.com/jjzcru/elk
 go 1.13
 
 require (
+	github.com/fsnotify/fsnotify v1.4.7
 	github.com/jjzcru/hermes v0.2.0
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/logrusorgru/aurora v0.0.0-20181002194514-a7b3b318ed4e
