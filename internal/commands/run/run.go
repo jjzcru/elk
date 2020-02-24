@@ -2,10 +2,13 @@ package run
 
 import (
 	"fmt"
+	"github.com/jjzcru/elk/pkg/primitives"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 
 	"github.com/jjzcru/elk/internal/commands/config"
 	"github.com/jjzcru/elk/pkg/engine"
@@ -26,13 +29,13 @@ func Cmd() *cobra.Command {
 				return
 			}
 
-			if isDetached {
-				logFilePath, err := cmd.Flags().GetString("log")
-				if err != nil {
-					config.PrintError(err.Error())
-					return
-				}
+			logFilePath, err := cmd.Flags().GetString("log")
+			if err != nil {
+				config.PrintError(err.Error())
+				return
+			}
 
+			if isDetached {
 				cwd, err := os.Getwd()
 				if err != nil {
 					config.PrintError(err.Error())
@@ -41,17 +44,9 @@ func Cmd() *cobra.Command {
 
 				command := removeDetachedFlag(os.Args)
 				cmd := exec.Command(command[0], command[1:]...)
+				pid := os.Getpid()
+				cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true, Pgid: pid}
 				cmd.Dir = cwd
-
-				if len(logFilePath) > 0 {
-					f, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-					if err != nil {
-						config.PrintError(err.Error())
-						return
-					}
-
-					cmd.Stdout = f
-				}
 
 				err = cmd.Start()
 				if err != nil {
@@ -59,7 +54,9 @@ func Cmd() *cobra.Command {
 					return
 				}
 
-				_ = cmd.Process.Release()
+				// _ = cmd.Process.Release()
+
+				fmt.Printf("%d", pid)
 				return
 			}
 
@@ -92,7 +89,42 @@ func Cmd() *cobra.Command {
 			}
 
 			elk.OverwriteEnvs(engine.MapEnvs(envs))
-			clientEngine := engine.New(elk, executer)
+			// clientEngine := engine.New(elk, executer)
+			clientEngine := &engine.Engine{
+				Elk:      elk,
+				Executer: executer,
+				Build: func(elk *primitives.Elk) error {
+					// Validate if there is a circular dependency
+					if len(logFilePath) > 0 {
+						_, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+						if err != nil {
+							return err
+						}
+
+						absolutePath, err := filepath.Abs(logFilePath)
+						if err != nil {
+							return err
+						}
+
+						logFilePath = absolutePath
+					}
+
+
+					for name, task := range elk.Tasks {
+
+						if len(logFilePath) > 0 {
+							task.Log = logFilePath
+							elk.Tasks[name] = task
+						}
+						/*err := elk.HasCircularDependency(task)
+						if err != nil {
+							return err
+						}*/
+					}
+
+					return nil
+				},
+			}
 
 			var wg sync.WaitGroup
 
@@ -119,7 +151,7 @@ func Cmd() *cobra.Command {
 	}
 
 	command.Flags().StringSliceVarP(&envs, "env", "e", []string{}, "")
-	command.Flags().BoolP("detached", "d", false, "Run the command in detached mode")
+	command.Flags().BoolP("detached", "d", false, "Run the command in detached mode and returns the PGID")
 	command.Flags().StringP("file", "f", "", "Run elk in a specific file")
 	command.Flags().StringP("log", "l", "", "File that log output from a task")
 

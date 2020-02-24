@@ -11,6 +11,7 @@ import (
 type Engine struct {
 	Elk      *primitives.Elk
 	Executer Executer
+	Build func(*primitives.Elk) error
 }
 
 // New creates a new instance of the engine
@@ -23,7 +24,11 @@ func New(elk *primitives.Elk, executer Executer) *Engine {
 
 // Run task declared in Elkfile
 func (e *Engine) Run(task string) error {
-	var err error
+	err := e.Build(e.Elk)
+	if err != nil {
+		return err
+	}
+
 	if !e.Elk.HasTask(task) {
 		return fmt.Errorf("task '%s' not found", task)
 	}
