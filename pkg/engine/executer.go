@@ -31,6 +31,23 @@ func (e DefaultExecuter) Execute(elk *primitives.Elk, name string) (int, error) 
 		return pid, err
 	}
 
+	if len(task.Deps) > 0 {
+		for _, dep := range task.Deps {
+			_, err := e.Execute(elk, dep)
+			if err != nil {
+				return pid, err
+			}
+		}
+	}
+
+	if len(task.DetachedDeps) > 0 {
+		for _, dep := range task.DetachedDeps {
+			go func() {
+				_, _ = e.Execute(elk, dep)
+			}()
+		}
+	}
+
 	if len(task.Dir) == 0 {
 		task.Dir, err = os.Getwd()
 		if err != nil {
@@ -83,7 +100,7 @@ func (e DefaultExecuter) Execute(elk *primitives.Elk, name string) (int, error) 
 		ctx := context.Background()
 
 		err = r.Run(ctx, p)
-		if err != nil {
+		if err != nil && !task.IgnoreError {
 			return pid, err
 		}
 	}

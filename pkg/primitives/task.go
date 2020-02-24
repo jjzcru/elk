@@ -16,6 +16,7 @@ type Task struct {
 	Dir          string
 	Log          string
 	Deps         []string
+	IgnoreError  bool     `yaml:"ignore_error"`
 	DetachedDeps []string `yaml:"detached_deps"`
 	EnvFile      string   `yaml:"env_file"`
 }
