@@ -152,12 +152,13 @@ func Cmd() *cobra.Command {
 				go func(task string, wg *sync.WaitGroup) {
 					defer wg.Done()
 
-					if !elk.HasTask(task) {
-						config.PrintError(fmt.Sprintf("task '%s' do not exist", task))
+					t, err := elk.GetTask(task)
+					if err != nil {
+						config.PrintError(err.Error())
 						return
 					}
 
-					t, _ := elk.GetTask(task)
+					err = elk.HasCircularDependency(task)
 					if err != nil {
 						config.PrintError(err.Error())
 						return
@@ -208,7 +209,7 @@ func Cmd() *cobra.Command {
 								case event.Op&fsnotify.Rename == fsnotify.Rename:
 									now := time.Now().Second()
 									difference := now - previousTime
-									if fsEventType != event.Op.String() || eventFile != event.Name  || difference > 5 {
+									if fsEventType != event.Op.String() || eventFile != event.Name || difference > 5 {
 										fsEventType = event.Op.String()
 										eventFile = event.Name
 										previousTime = now
