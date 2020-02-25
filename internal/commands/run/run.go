@@ -2,13 +2,15 @@ package run
 
 import (
 	"fmt"
-	"github.com/fsnotify/fsnotify"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
+	"time"
+
+	"github.com/fsnotify/fsnotify"
 
 	"github.com/jjzcru/elk/pkg/primitives"
 
@@ -189,6 +191,10 @@ func Cmd() *cobra.Command {
 							}
 						}
 
+						previousTime := time.Now().Second()
+						fsEventType := ""
+						eventFile := ""
+
 						for {
 							select {
 							case event := <-watcher.Events:
@@ -200,11 +206,18 @@ func Cmd() *cobra.Command {
 								case event.Op&fsnotify.Remove == fsnotify.Remove:
 									fallthrough
 								case event.Op&fsnotify.Rename == fsnotify.Rename:
-									// fmt.Printf("%s: %s\n", event.Op, event.Name)
-									err = clientEngine.Run(task)
-									if err != nil {
-										config.PrintError(err.Error())
-										return
+									now := time.Now().Second()
+									difference := now - previousTime
+									if fsEventType != event.Op.String() || eventFile != event.Name  || difference > 5 {
+										fsEventType = event.Op.String()
+										eventFile = event.Name
+										previousTime = now
+
+										err = clientEngine.Run(task)
+										if err != nil {
+											config.PrintError(err.Error())
+											return
+										}
 									}
 								}
 							case err := <-watcher.Errors:

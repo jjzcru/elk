@@ -2,10 +2,11 @@ package ls
 
 import (
 	"fmt"
-	"github.com/jjzcru/elk/pkg/primitives"
 	"os"
 	"strings"
 	"text/tabwriter"
+
+	"github.com/jjzcru/elk/pkg/primitives"
 
 	"github.com/jjzcru/elk/internal/commands/config"
 	"github.com/spf13/cobra"
@@ -54,6 +55,7 @@ func Cmd() *cobra.Command {
 	}
 
 	command.Flags().BoolP("all", "a", false, "Print tasks details")
+	command.Flags().StringP("file", "f", "", "Run elk in a specific file")
 
 	return command
 }

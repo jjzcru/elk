@@ -17,7 +17,7 @@ type Task struct {
 	Description  string
 	Dir          string
 	Log          string `yaml:"log"`
-	Watch		 string
+	Watch        string
 	Deps         []string
 	IgnoreError  bool     `yaml:"ignore_error"`
 	DetachedDeps []string `yaml:"detached_deps"`
@@ -101,9 +101,8 @@ func (t *Task) GetWatcherFiles(reg string) ([]string, error) {
 			return nil
 		}
 		if fi.IsDir() {
-			// fmt.Println(fn + string(os.PathSeparator))
+			files = append(files, fn+string(os.PathSeparator))
 		} else {
-			// fmt.Println(fn)
 			files = append(files, fn)
 		}
 		return nil
