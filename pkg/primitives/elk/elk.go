@@ -1,10 +1,13 @@
-package primitives
+package elk
 
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
 // Elk is the structure of the application
@@ -131,12 +134,17 @@ func (e *Elk) LoadEnvsInTasks() {
 
 // OverwriteEnvs Overwrites the env variable in the elk file and all the tasks
 func (e *Elk) OverwriteEnvs(envs map[string]string) {
+	if e.Env == nil {
+		e.Env = make(map[string]string)
+	}
+
 	for env, value := range envs {
 		e.Env[env] = value
 	}
 
-	for _, task := range e.Tasks {
+	for name, task := range e.Tasks {
 		task.OverwriteEnvs(envs)
+		e.Tasks[name] = task
 	}
 }
 
@@ -189,4 +197,23 @@ func (e *Elk) getDependencyGraph(task *Task) (map[string][]string, error) {
 		dependencyGraph[dep] = append(t.Deps, t.DetachedDeps...)
 	}
 	return dependencyGraph, nil
+}
+
+func FromFile(filePath string) (*Elk, error) {
+	elk := Elk{}
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("path do not exist: '%s'", filePath)
+	}
+
+	data, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	err = yaml.Unmarshal(data, &elk)
+	if err != nil {
+		return nil, err
+	}
+
+	return &elk, nil
 }

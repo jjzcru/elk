@@ -3,10 +3,10 @@ package engine
 import (
 	"context"
 	"fmt"
+	"github.com/jjzcru/elk/pkg/primitives/elk"
 	"os"
 	"strings"
 
-	"github.com/jjzcru/elk/pkg/primitives"
 	"mvdan.cc/sh/expand"
 	"mvdan.cc/sh/interp"
 	"mvdan.cc/sh/syntax"
@@ -14,7 +14,7 @@ import (
 
 // Executer runs a task and returns a PID and an error
 type Executer interface {
-	Execute(context.Context, *primitives.Elk, string) (int, error)
+	Execute(context.Context, *elk.Elk, string) (int, error)
 }
 
 // DefaultExecuter Execute task with a POSIX emulator
@@ -23,7 +23,7 @@ type DefaultExecuter struct {
 }
 
 // Execute task and returns a PID
-func (e DefaultExecuter) Execute(ctx context.Context, elk *primitives.Elk, name string) (int, error) {
+func (e DefaultExecuter) Execute(ctx context.Context, elk *elk.Elk, name string) (int, error) {
 	pid := os.Getpid()
 
 	task, err := elk.GetTask(name)
@@ -80,6 +80,13 @@ func (e DefaultExecuter) Execute(ctx context.Context, elk *primitives.Elk, name 
 			return pid, err
 		}
 
+		for env, value := range task.GetOverwriteEnv() {
+			if task.Env == nil {
+				task.Env = make(map[string]string)
+			}
+			task.Env[env] = value
+		}
+
 		envs := uniqueEnvs(append(os.Environ(), getEnvs(task.Env)...))
 
 		r, err := interp.New(
@@ -97,7 +104,7 @@ func (e DefaultExecuter) Execute(ctx context.Context, elk *primitives.Elk, name 
 			return pid, err
 		}
 
-		ctx, _:=context.WithCancel(ctx)
+		ctx, _ := context.WithCancel(ctx)
 		err = r.Run(ctx, p)
 		if err != nil && !task.IgnoreError {
 			return pid, err

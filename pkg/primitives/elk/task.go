@@ -1,4 +1,4 @@
-package primitives
+package elk
 
 import (
 	"bufio"
@@ -12,6 +12,7 @@ import (
 // Task is the data structure for the task to run
 type Task struct {
 	Cmds         []string
+	overwriteEnv map[string]string
 	Env          map[string]string
 	detached     bool
 	Description  string
@@ -32,6 +33,10 @@ func (t *Task) SetDetached(detached bool) {
 // IsDetached Check if the task is detached
 func (t *Task) IsDetached() bool {
 	return t.detached
+}
+
+func (t *Task) GetOverwriteEnv() map[string]string {
+	return t.overwriteEnv
 }
 
 // LoadEnvFile Log to the variable env the values
@@ -76,8 +81,12 @@ func (t *Task) LoadEnvFile() error {
 
 // OverwriteEnvs Overwrites the env variable in the task
 func (t *Task) OverwriteEnvs(envs map[string]string) {
+	if t.overwriteEnv == nil {
+		t.overwriteEnv = make(map[string]string)
+	}
+
 	for env, value := range envs {
-		t.Env[env] = value
+		t.overwriteEnv[env] = value
 	}
 }
 

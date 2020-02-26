@@ -1,4 +1,4 @@
-package primitives
+package elk
 
 import (
 	"testing"

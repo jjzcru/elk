@@ -1,16 +1,16 @@
 package engine
 
 import (
+	"context"
 	"fmt"
+	elk2 "github.com/jjzcru/elk/pkg/primitives/elk"
 	"testing"
-
-	"github.com/jjzcru/elk/pkg/primitives"
 )
 
 func getTestEngine() *Engine {
-	elk := &primitives.Elk{
+	elk := &elk2.Elk{
 		Version: "1",
-		Tasks: map[string]primitives.Task{
+		Tasks: map[string]elk2.Task{
 			"hello": {
 				Description: "Empty Task",
 				Cmds: []string{
@@ -42,11 +42,15 @@ func getTestEngine() *Engine {
 func TestRun(t *testing.T) {
 	engine := getTestEngine()
 
+	ctx := context.Background()
+
 	for taskName := range engine.Elk.Tasks {
-		err := engine.Run(taskName)
+		ctx, cancel := context.WithCancel(ctx)
+		err := engine.Run(ctx, taskName)
 		if err != nil {
 			t.Error(err.Error())
 		}
+		cancel()
 	}
 }
 

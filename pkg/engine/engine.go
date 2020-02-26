@@ -3,23 +3,23 @@ package engine
 import (
 	"context"
 	"fmt"
+	"github.com/jjzcru/elk/pkg/primitives/elk"
 	"strings"
-
-	"github.com/jjzcru/elk/pkg/primitives"
 )
 
 // Engine is the data structure responsible of processing the content
 type Engine struct {
-	Elk      *primitives.Elk
+	Elk      *elk.Elk
 	Executer Executer
-	Build    func(*primitives.Elk) error
+	Build    func(*elk.Elk) error
 }
 
 // New creates a new instance of the engine
-func New(elk *primitives.Elk, executer Executer) *Engine {
+func New(elk *elk.Elk, executer Executer, build func(*elk.Elk) error) *Engine {
 	return &Engine{
 		Elk:      elk,
 		Executer: executer,
+		Build:    build,
 	}
 }
 

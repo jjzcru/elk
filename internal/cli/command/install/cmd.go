@@ -2,25 +2,26 @@ package install
 
 import (
 	"fmt"
+	"github.com/jjzcru/elk/internal/cli/templates"
+	"github.com/jjzcru/elk/internal/cli/utils"
 	"os"
 	"os/user"
 	"path"
 	"text/template"
 
-	"github.com/jjzcru/elk/internal/commands/config"
-	in "github.com/jjzcru/elk/internal/commands/initialize"
+	in "github.com/jjzcru/elk/internal/cli/command/initialize"
 	"github.com/spf13/cobra"
 )
 
-// Cmd Command that install elk in the system
-func Cmd() *cobra.Command {
-	var command = &cobra.Command{
+// NewInstallCommand returns a cobra command for 'install' sub command
+func NewInstallCommand() *cobra.Command {
+	command := &cobra.Command{
 		Use:   "install",
 		Short: "Install elk in the system",
 		Run: func(cmd *cobra.Command, args []string) {
 			err := install()
 			if err != nil {
-				config.PrintError("A task name is required")
+				utils.PrintError(err)
 				return
 			}
 			fmt.Println("Elk was installed successfully")
@@ -61,12 +62,8 @@ func getInstallationPath(dir string) (string, error) {
 	return path.Join(usr.HomeDir, dir), nil
 }
 
-func isInstallationDirExist(installationDirPath string) (bool, error) {
-	if _, err := os.Stat(installationDirPath); os.IsNotExist(err) {
-		return false, nil
-	}
-
-	if _, err := os.Stat(path.Join(installationDirPath, "config.yml")); os.IsNotExist(err) {
+func isInstallationDirExist(dirPath string) (bool, error) {
+	if !utils.IsPathExist(dirPath) || !utils.IsPathExist(path.Join(dirPath, "config.yml")) {
 		return false, nil
 	}
 
@@ -74,10 +71,9 @@ func isInstallationDirExist(installationDirPath string) (bool, error) {
 }
 
 func createInstallationDir(installationDirPath string) error {
-	if _, err := os.Stat(installationDirPath); os.IsNotExist(err) {
+	if !utils.IsPathExist(installationDirPath) {
 		err := os.Mkdir(installationDirPath, 0777)
 		if err != nil {
-
 			return err
 		}
 	}
@@ -86,7 +82,6 @@ func createInstallationDir(installationDirPath string) error {
 }
 
 func createInstallConfigFile(installationDirPath string) error {
-
 	configPath := path.Join(installationDirPath, "config.yml")
 	configFile, err := os.Create(configPath)
 
@@ -95,12 +90,15 @@ func createInstallConfigFile(installationDirPath string) error {
 		return err
 	}
 
-	response, err := template.New("config").Parse(config.ConfigTemplate)
+	response, err := template.New("config").Parse(templates.Config)
 	if err != nil {
 		return err
 	}
 
 	err = response.Execute(configFile, path.Join(usr.HomeDir, "elk.yml"))
+	if err != nil {
+		return err
+	}
 
 	return createGlobalIfNotExist()
 }
@@ -111,24 +109,12 @@ func createGlobalIfNotExist() error {
 		return err
 	}
 
-	existGlobal, err := isExistGlobalElkFile(path.Join(usr.HomeDir, "elk.yml"))
-	if err != nil {
-		return err
-	}
+	elkFilePath := path.Join(usr.HomeDir, "elk.yml")
 
-	if !existGlobal {
-		elkFilePath := path.Join(usr.HomeDir, "elk.yml")
-		fmt.Printf("Elkfile: %s\n", elkFilePath)
+	if !utils.IsPathExist(elkFilePath) {
+		fmt.Printf("Elk file: %s\n", elkFilePath)
 		return in.CreateElkFile(elkFilePath)
 	}
 
 	return nil
-}
-
-func isExistGlobalElkFile(elkFilePath string) (bool, error) {
-	if _, err := os.Stat(elkFilePath); os.IsNotExist(err) {
-		return false, nil
-	}
-
-	return true, nil
 }

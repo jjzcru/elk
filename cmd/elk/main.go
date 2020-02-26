@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/jjzcru/elk/internal/commands"
-	"github.com/jjzcru/elk/internal/commands/version"
+	"github.com/jjzcru/elk/internal/cli/command/commands"
+	"github.com/jjzcru/elk/internal/cli/command/version"
 )
 
 var v = "0.1.0"
