@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -22,8 +23,8 @@ func New(elk *primitives.Elk, executer Executer) *Engine {
 	}
 }
 
-// Run task declared in Elkfile
-func (e *Engine) Run(task string) error {
+// Run task declared in elk.yml file
+func (e *Engine) Run(ctx context.Context, task string) error {
 	err := e.Build(e.Elk)
 	if err != nil {
 		return err
@@ -41,7 +42,7 @@ func (e *Engine) Run(task string) error {
 
 	e.Elk.LoadEnvsInTasks()
 
-	_, err = e.Executer.Execute(e.Elk, task)
+	_, err = e.Executer.Execute(ctx, e.Elk, task)
 	if err != nil {
 		return err
 	}

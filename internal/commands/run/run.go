@@ -1,16 +1,15 @@
 package run
 
 import (
+	"context"
 	"fmt"
+	"github.com/fsnotify/fsnotify"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
-	"time"
-
-	"github.com/fsnotify/fsnotify"
 
 	"github.com/jjzcru/elk/pkg/primitives"
 
@@ -147,10 +146,14 @@ func Cmd() *cobra.Command {
 
 			var wg sync.WaitGroup
 
+			ctx := context.Background()
+
 			for _, task := range args {
 				wg.Add(1)
 				go func(task string, wg *sync.WaitGroup) {
 					defer wg.Done()
+
+					taskCtx, cancel := context.WithCancel(ctx)
 
 					t, err := elk.GetTask(task)
 					if err != nil {
@@ -164,7 +167,7 @@ func Cmd() *cobra.Command {
 						return
 					}
 
-					err = clientEngine.Run(task)
+					err = clientEngine.Run(taskCtx, task)
 					if err != nil {
 						config.PrintError(err.Error())
 						return
@@ -192,10 +195,6 @@ func Cmd() *cobra.Command {
 							}
 						}
 
-						previousTime := time.Now().Second()
-						fsEventType := ""
-						eventFile := ""
-
 						for {
 							select {
 							case event := <-watcher.Events:
@@ -207,19 +206,16 @@ func Cmd() *cobra.Command {
 								case event.Op&fsnotify.Remove == fsnotify.Remove:
 									fallthrough
 								case event.Op&fsnotify.Rename == fsnotify.Rename:
-									now := time.Now().Second()
-									difference := now - previousTime
-									if fsEventType != event.Op.String() || eventFile != event.Name || difference > 5 {
-										fsEventType = event.Op.String()
-										eventFile = event.Name
-										previousTime = now
+									go func() {
+										cancel()
+										taskCtx, cancel = context.WithCancel(ctx)
 
-										err = clientEngine.Run(task)
-										if err != nil {
+										err = clientEngine.Run(taskCtx, task)
+										if err != nil && err != context.Canceled {
 											config.PrintError(err.Error())
 											return
 										}
-									}
+									}()
 								}
 							case err := <-watcher.Errors:
 								config.PrintError(err.Error())
@@ -254,21 +250,4 @@ func removeDetachedFlag(args []string) []string {
 	}
 
 	return cmd
-}
-
-type detachedLogger struct{}
-
-func (d detachedLogger) Write(p []byte) (n int, err error) {
-	f, err := os.OpenFile("/home/jjzcru/Desktop/test.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return len(p), err
-	}
-
-	defer f.Close()
-
-	_, err = f.Write(p)
-	if err != nil {
-		return len(p), err
-	}
-	return len(p), nil
 }

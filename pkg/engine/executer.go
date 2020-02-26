@@ -14,7 +14,7 @@ import (
 
 // Executer runs a task and returns a PID and an error
 type Executer interface {
-	Execute(*primitives.Elk, string) (int, error)
+	Execute(context.Context, *primitives.Elk, string) (int, error)
 }
 
 // DefaultExecuter Execute task with a POSIX emulator
@@ -23,7 +23,7 @@ type DefaultExecuter struct {
 }
 
 // Execute task and returns a PID
-func (e DefaultExecuter) Execute(elk *primitives.Elk, name string) (int, error) {
+func (e DefaultExecuter) Execute(ctx context.Context, elk *primitives.Elk, name string) (int, error) {
 	pid := os.Getpid()
 
 	task, err := elk.GetTask(name)
@@ -33,7 +33,7 @@ func (e DefaultExecuter) Execute(elk *primitives.Elk, name string) (int, error) 
 
 	if len(task.Deps) > 0 {
 		for _, dep := range task.Deps {
-			_, err := e.Execute(elk, dep)
+			_, err := e.Execute(ctx, elk, dep)
 			if err != nil {
 				return pid, err
 			}
@@ -43,7 +43,7 @@ func (e DefaultExecuter) Execute(elk *primitives.Elk, name string) (int, error) 
 	if len(task.DetachedDeps) > 0 {
 		for _, dep := range task.DetachedDeps {
 			go func() {
-				_, _ = e.Execute(elk, dep)
+				_, _ = e.Execute(ctx, elk, dep)
 			}()
 		}
 	}
@@ -97,8 +97,7 @@ func (e DefaultExecuter) Execute(elk *primitives.Elk, name string) (int, error) 
 			return pid, err
 		}
 
-		ctx := context.Background()
-
+		ctx, _:=context.WithCancel(ctx)
 		err = r.Run(ctx, p)
 		if err != nil && !task.IgnoreError {
 			return pid, err
