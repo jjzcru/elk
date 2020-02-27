@@ -29,28 +29,9 @@ func NewKillCommand() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			isPgid, err := cmd.Flags().GetBool("pgid")
+			err := run(cmd, args)
 			if err != nil {
 				utils.PrintError(err)
-				return
-			}
-
-			for _, arg := range args {
-				id, err := strconv.Atoi(arg)
-				if err != nil {
-					utils.PrintError(err)
-					return
-				}
-
-				if !isPgid {
-					id = id * -1
-				}
-
-				err = syscall.Kill(id*-1, syscall.SIGKILL)
-				if err != nil {
-					utils.PrintError(err)
-					return
-				}
 			}
 		},
 	}
@@ -58,4 +39,29 @@ func NewKillCommand() *cobra.Command {
 	cmd.Flags().BoolP("pgid", "g", false, "Kill process by PGID")
 
 	return cmd
+}
+
+func run(cmd *cobra.Command, args []string) error {
+	isPgid, err := cmd.Flags().GetBool("pgid")
+	if err != nil {
+		return err
+	}
+
+	for _, arg := range args {
+		id, err := strconv.Atoi(arg)
+		if err != nil {
+			return err
+		}
+
+		if !isPgid {
+			id = id * -1
+		}
+
+		err = syscall.Kill(id*-1, syscall.SIGKILL)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

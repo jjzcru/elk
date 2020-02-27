@@ -18,7 +18,7 @@ func NewListCommand() *cobra.Command {
 		Use:   "ls",
 		Short: "List tasks",
 		Run: func(cmd *cobra.Command, args []string) {
-			err := run(cmd)
+			err := run(cmd, args)
 			if err != nil {
 				utils.PrintError(err)
 			}
@@ -32,7 +32,7 @@ func NewListCommand() *cobra.Command {
 	return cmd
 }
 
-func run(cmd *cobra.Command) error {
+func run(cmd *cobra.Command, _ []string) error {
 	isGlobal, err := cmd.Flags().GetBool("global")
 	if err != nil {
 		return err

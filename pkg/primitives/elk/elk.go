@@ -22,18 +22,17 @@ type Elk struct {
 // GetTask Get a task object by its name
 func (e *Elk) GetTask(name string) (*Task, error) {
 	if !e.HasTask(name) {
-		return nil, fmt.Errorf("task '%s' not found", name)
+		// return nil, fmt.Errorf("task '%s' not found", name)
+		return nil, ErrTaskNotFound
 	}
 
-	var response *Task
-	for taskName, task := range e.Tasks {
-		if taskName == name {
-			response = &task
-			break
-		}
+	err := e.HasCircularDependency(name)
+	if err != nil {
+		return nil, err
 	}
 
-	return response, nil
+	task := e.Tasks[name]
+	return &task, nil
 }
 
 // HasTask return a boolean if the incoming event exist
@@ -166,7 +165,8 @@ func (e *Elk) HasCircularDependency(name string, visitedNodes ...string) error {
 
 	for _, node := range visitedNodes {
 		if node == name {
-			return fmt.Errorf("the task '%s' has a circular dependency", name)
+			// return fmt.Errorf("the task '%s' has a circular dependency", name)
+			return ErrCircularDependency
 		}
 	}
 
@@ -213,6 +213,24 @@ func FromFile(filePath string) (*Elk, error) {
 	err = yaml.Unmarshal(data, &elk)
 	if err != nil {
 		return nil, err
+	}
+
+	if elk.Tasks == nil {
+		elk.Tasks = make(map[string]Task)
+	}
+
+	if elk.Env == nil {
+		elk.Env = make(map[string]string)
+	}
+
+	for name := range elk.Tasks {
+		task := elk.Tasks[name]
+
+		if task.Env == nil {
+			task.Env = make(map[string]string)
+		}
+
+		elk.Tasks[name] = task
 	}
 
 	return &elk, nil

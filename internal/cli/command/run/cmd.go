@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/fsnotify/fsnotify"
-	"github.com/jjzcru/elk/internal/cli/utils"
-	"github.com/jjzcru/elk/pkg/primitives/elk"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sync"
 	"syscall"
+
+	"github.com/fsnotify/fsnotify"
+	"github.com/jjzcru/elk/internal/cli/utils"
+	"github.com/jjzcru/elk/pkg/primitives/elk"
 
 	"github.com/jjzcru/elk/internal/cli/command/config"
 	"github.com/jjzcru/elk/pkg/engine"
@@ -25,6 +26,10 @@ func NewRunCommand() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "run",
 		Short: "Run one or more task in a terminal",
+		Args:  cobra.MinimumNArgs(1),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return validate(cmd, args)
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			err := run(cmd, args, envs)
 			if err != nil {
@@ -178,13 +183,15 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 				return
 			}
 
-			err = clientEngine.Run(taskCtx, task)
-			if err != nil {
-				utils.PrintError(err)
-				return
-			}
-
 			if len(t.Watch) > 0 && isWatch {
+				go func() {
+					err = clientEngine.Run(taskCtx, task)
+					if err != nil {
+						utils.PrintError(err)
+						return
+					}
+				}()
+
 				files, err := t.GetWatcherFiles(t.Watch)
 				if err != nil {
 					utils.PrintError(err)
@@ -232,6 +239,12 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 						utils.PrintError(err)
 						return
 					}
+				}
+			} else {
+				err = clientEngine.Run(taskCtx, task)
+				if err != nil {
+					utils.PrintError(err)
+					return
 				}
 			}
 		}(task, &wg)
