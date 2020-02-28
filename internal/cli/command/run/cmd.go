@@ -2,19 +2,10 @@ package run
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"sync"
-	"syscall"
-
-	"github.com/fsnotify/fsnotify"
-	"github.com/jjzcru/elk/internal/cli/utils"
-	"github.com/jjzcru/elk/pkg/primitives/elk"
-
 	"github.com/jjzcru/elk/internal/cli/command/config"
+	"github.com/jjzcru/elk/internal/cli/utils"
+	"sync"
+
 	"github.com/jjzcru/elk/pkg/engine"
 
 	"github.com/spf13/cobra"
@@ -29,6 +20,7 @@ func NewRunCommand() *cobra.Command {
 		Args:  cobra.MinimumNArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return validate(cmd, args)
+			// return validate(cmd, args, &e)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			err := run(cmd, args, envs)
@@ -60,37 +52,9 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 		return err
 	}
 
-	logFilePath, err := cmd.Flags().GetString("log")
+	elkFilePath, err := cmd.Flags().GetString("file")
 	if err != nil {
 		return err
-	}
-
-	ignoreLog, err := cmd.Flags().GetBool("ignore-log")
-	if err != nil {
-		return err
-	}
-
-	if isDetached {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-
-		command := utils.RemoveDetachedFlag(os.Args)
-		cmd := exec.Command(command[0], command[1:]...)
-		pid := os.Getpid()
-		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true, Pgid: pid}
-		cmd.Dir = cwd
-
-		err = cmd.Start()
-		if err != nil {
-			return err
-		}
-
-		// _ = cmd.Process.Release()
-
-		fmt.Printf("%d", pid)
-		return nil
 	}
 
 	isGlobal, err := cmd.Flags().GetBool("global")
@@ -98,23 +62,10 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 		return err
 	}
 
-	elkFilePath, err := cmd.Flags().GetString("file")
-	if err != nil {
-		return err
-	}
-
-	if len(args) == 0 {
-		return errors.New("A task name is required")
-	}
-
+	// Check if the file path is set
 	e, err := config.GetElk(elkFilePath, isGlobal)
-
 	if err != nil {
 		return err
-	}
-
-	executer := engine.DefaultExecuter{
-		Logger: &engine.DefaultLogger,
 	}
 
 	envMap := engine.MapEnvs(envs)
@@ -123,134 +74,55 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 	// clientEngine := engine.New(elk, executer)
 
 	clientEngine := &engine.Engine{
-		Elk:      e,
-		Executer: executer,
-		Build: func(elk *elk.Elk) error {
-			if len(logFilePath) > 0 {
-				_, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-				if err != nil {
-					return err
-				}
-
-				absolutePath, err := filepath.Abs(logFilePath)
-				if err != nil {
-					return err
-				}
-
-				logFilePath = absolutePath
-			}
-
-			for name, task := range elk.Tasks {
-				if len(logFilePath) > 0 {
-					task.Log = logFilePath
-				}
-
-				if ignoreLog {
-					task.Log = ""
-				}
-
-				elk.Tasks[name] = task
-				/*err := elk.HasCircularDependency(task)
-				if err != nil {
-					return err
-				}*/
-			}
-
-			return nil
+		Elk: e,
+		Executer: engine.DefaultExecuter{
+			Logger: &engine.DefaultLogger,
+		},
+		Build: func() error {
+			return build(cmd, e)
 		},
 	}
 
+	err = clientEngine.Build()
+	if err != nil {
+		return err
+	}
+
+	if isDetached {
+		return runDetached()
+	}
+
 	var wg sync.WaitGroup
-
 	ctx := context.Background()
-
 	for _, task := range args {
 		wg.Add(1)
-		go func(task string, wg *sync.WaitGroup) {
-			defer wg.Done()
-
-			taskCtx, cancel := context.WithCancel(ctx)
-
-			t, err := e.GetTask(task)
-			if err != nil {
-				utils.PrintError(err)
-				return
-			}
-
-			err = e.HasCircularDependency(task)
-			if err != nil {
-				utils.PrintError(err)
-				return
-			}
-
-			if len(t.Watch) > 0 && isWatch {
-				go func() {
-					err = clientEngine.Run(taskCtx, task)
-					if err != nil {
-						utils.PrintError(err)
-						return
-					}
-				}()
-
-				files, err := t.GetWatcherFiles(t.Watch)
-				if err != nil {
-					utils.PrintError(err)
-					return
-				}
-
-				watcher, err := fsnotify.NewWatcher()
-				if err != nil {
-					utils.PrintError(err)
-					return
-				}
-				defer watcher.Close()
-
-				for _, file := range files {
-					err = watcher.Add(file)
-					if err != nil {
-						utils.PrintError(err)
-						return
-					}
-				}
-
-				for {
-					select {
-					case event := <-watcher.Events:
-						switch {
-						case event.Op&fsnotify.Write == fsnotify.Write:
-							fallthrough
-						case event.Op&fsnotify.Create == fsnotify.Create:
-							fallthrough
-						case event.Op&fsnotify.Remove == fsnotify.Remove:
-							fallthrough
-						case event.Op&fsnotify.Rename == fsnotify.Rename:
-							go func() {
-								cancel()
-								taskCtx, cancel = context.WithCancel(ctx)
-
-								err = clientEngine.Run(taskCtx, task)
-								if err != nil && err != context.Canceled {
-									utils.PrintError(err)
-									return
-								}
-							}()
-						}
-					case err := <-watcher.Errors:
-						utils.PrintError(err)
-						return
-					}
-				}
-			} else {
-				err = clientEngine.Run(taskCtx, task)
-				if err != nil {
-					utils.PrintError(err)
-					return
-				}
-			}
-		}(task, &wg)
+		go runTask(clientEngine, task, &wg, ctx, isWatch)
 	}
 
 	wg.Wait()
 
 	return nil
+}
+
+func runTask(cliEngine *engine.Engine, task string, wg *sync.WaitGroup, ctx context.Context, isWatch bool) {
+	defer wg.Done()
+
+	taskCtx, cancel := context.WithCancel(ctx)
+
+	t, err := cliEngine.Elk.GetTask(task)
+	if err != nil {
+		utils.PrintError(err)
+		return
+	}
+
+	if len(t.Watch) > 0 && isWatch {
+		runWatch(cliEngine, taskCtx, task, t, cancel, ctx)
+		return
+	}
+
+	err = cliEngine.Run(taskCtx, task)
+	if err != nil {
+		utils.PrintError(err)
+		return
+	}
 }

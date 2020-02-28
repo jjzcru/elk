@@ -34,19 +34,21 @@ func validate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	/**/
+
 	elkFilePath, err := cmd.Flags().GetString("file")
 	if err != nil {
 		return err
 	}
 
 	// Check if the file path is set
-	elk, err := config.GetElk(elkFilePath, isGlobal)
+	e, err := config.GetElk(elkFilePath, isGlobal)
 	if err != nil {
 		return err
 	}
 
 	for _, name := range args {
-		task, err := elk.GetTask(name)
+		task, err := e.GetTask(name)
 		if err != nil {
 			return err
 		}
@@ -56,9 +58,12 @@ func validate(cmd *cobra.Command, args []string) error {
 				return fmt.Errorf("task '%s' do now have a watch property", name)
 			}
 		}
-
-		elk.Tasks[name] = *task
 	}
+
+	// err = build(logFilePath, ignoreLog, e)
+	/*if err != nil {
+		return err
+	}*/
 
 	return nil
 }

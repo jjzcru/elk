@@ -21,11 +21,6 @@ type Elk struct {
 
 // GetTask Get a task object by its name
 func (e *Elk) GetTask(name string) (*Task, error) {
-	if !e.HasTask(name) {
-		// return nil, fmt.Errorf("task '%s' not found", name)
-		return nil, ErrTaskNotFound
-	}
-
 	err := e.HasCircularDependency(name)
 	if err != nil {
 		return nil, err
@@ -37,10 +32,8 @@ func (e *Elk) GetTask(name string) (*Task, error) {
 
 // HasTask return a boolean if the incoming event exist
 func (e *Elk) HasTask(name string) bool {
-	for task := range e.Tasks {
-		if task == name {
-			return true
-		}
+	if _, ok := e.Tasks[name]; ok {
+		return true
 	}
 	return false
 }
@@ -149,16 +142,17 @@ func (e *Elk) OverwriteEnvs(envs map[string]string) {
 
 // HasCircularDependency checks if a task has a circular dependency
 func (e *Elk) HasCircularDependency(name string, visitedNodes ...string) error {
-	task, err := e.GetTask(name)
-	if err != nil {
-		return err
+	if !e.HasTask(name) {
+		return ErrTaskNotFound
 	}
+
+	task := e.Tasks[name]
 
 	if len(append(task.Deps, task.DetachedDeps...)) == 0 {
 		return nil
 	}
 
-	dependencyGraph, err := e.getDependencyGraph(task)
+	dependencyGraph, err := e.getDependencyGraph(&task)
 	if err != nil {
 		return err
 	}
