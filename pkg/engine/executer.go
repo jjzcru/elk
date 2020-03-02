@@ -55,11 +55,6 @@ func (e DefaultExecuter) Execute(ctx context.Context, elk *elk.Elk, name string)
 		}
 	}
 
-	err = task.LoadEnvFile()
-	if err != nil {
-		return 0, err
-	}
-
 	stdinReader := e.Logger.StdinReader
 	stdoutWriter := e.Logger.StdoutWriter
 	stderrWriter := e.Logger.StderrWriter
@@ -80,14 +75,7 @@ func (e DefaultExecuter) Execute(ctx context.Context, elk *elk.Elk, name string)
 			return pid, err
 		}
 
-		for env, value := range task.GetOverwriteEnv() {
-			if task.Env == nil {
-				task.Env = make(map[string]string)
-			}
-			task.Env[env] = value
-		}
-
-		envs := uniqueEnvs(append(os.Environ(), getEnvs(task.Env)...))
+		envs := getEnvs(task.Env)
 
 		r, err := interp.New(
 			interp.Dir(task.Dir),

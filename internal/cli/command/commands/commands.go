@@ -1,8 +1,8 @@
+// +build !windows
+
 package commands
 
 import (
-	"os"
-
 	"github.com/jjzcru/elk/internal/cli/command/config"
 	initialize "github.com/jjzcru/elk/internal/cli/command/initialize"
 	"github.com/jjzcru/elk/internal/cli/command/install"
@@ -11,6 +11,7 @@ import (
 	"github.com/jjzcru/elk/internal/cli/command/run"
 	"github.com/jjzcru/elk/internal/cli/command/static"
 	"github.com/jjzcru/elk/internal/cli/command/version"
+	"os"
 
 	"github.com/jjzcru/elk/internal/cli/utils"
 
@@ -27,9 +28,9 @@ func Execute() {
 		config.NewConfigCommand(),
 		version.NewVersionCommand(),
 		install.NewInstallCommand(),
-		initialize.NewInitializeCommand(),
 		kill.NewKillCommand(),
 		static.NewStaticCommand(),
+		initialize.NewInitializeCommand(),
 		ls.NewListCommand(),
 		run.NewRunCommand(),
 	)

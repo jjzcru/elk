@@ -36,15 +36,7 @@ func (e *Engine) Run(ctx context.Context, task string) error {
 		return fmt.Errorf("task '%s' not found", task)
 	}
 
-	err := e.Elk.LoadEnvFile()
-
-	if err != nil {
-		return err
-	}
-
-	e.Elk.LoadEnvsInTasks()
-
-	_, err = e.Executer.Execute(ctx, e.Elk, task)
+	_, err := e.Executer.Execute(ctx, e.Elk, task)
 	if err != nil {
 		return err
 	}
