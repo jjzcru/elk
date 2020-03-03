@@ -2,9 +2,10 @@ package run
 
 import (
 	"context"
+	"sync"
+
 	"github.com/jjzcru/elk/internal/cli/command/config"
 	"github.com/jjzcru/elk/internal/cli/utils"
-	"sync"
 
 	"github.com/jjzcru/elk/pkg/engine"
 
@@ -96,7 +97,7 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 	ctx := context.Background()
 	for _, task := range args {
 		wg.Add(1)
-		go runTask(clientEngine, task, &wg, ctx, isWatch)
+		go runTask(ctx, clientEngine, task, &wg, isWatch)
 	}
 
 	wg.Wait()
@@ -104,7 +105,7 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 	return nil
 }
 
-func runTask(cliEngine *engine.Engine, task string, wg *sync.WaitGroup, ctx context.Context, isWatch bool) {
+func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, isWatch bool) {
 	defer wg.Done()
 
 	taskCtx, cancel := context.WithCancel(ctx)
@@ -112,17 +113,20 @@ func runTask(cliEngine *engine.Engine, task string, wg *sync.WaitGroup, ctx cont
 	t, err := cliEngine.Elk.GetTask(task)
 	if err != nil {
 		utils.PrintError(err)
+		cancel()
 		return
 	}
 
 	if len(t.Watch) > 0 && isWatch {
 		runWatch(cliEngine, taskCtx, task, t, cancel, ctx)
+		cancel()
 		return
 	}
 
 	err = cliEngine.Run(taskCtx, task)
 	if err != nil {
 		utils.PrintError(err)
+		cancel()
 		return
 	}
 }

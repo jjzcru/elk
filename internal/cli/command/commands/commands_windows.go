@@ -28,6 +28,7 @@ func Execute() {
 		initialize.NewInitializeCommand(),
 		ls.NewListCommand(),
 		run.NewRunCommand(),
+		logs.NewLogsCommand(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {

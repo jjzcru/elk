@@ -7,6 +7,7 @@ import (
 	initialize "github.com/jjzcru/elk/internal/cli/command/initialize"
 	"github.com/jjzcru/elk/internal/cli/command/install"
 	"github.com/jjzcru/elk/internal/cli/command/kill"
+	"github.com/jjzcru/elk/internal/cli/command/logs"
 	"github.com/jjzcru/elk/internal/cli/command/ls"
 	"github.com/jjzcru/elk/internal/cli/command/run"
 	"github.com/jjzcru/elk/internal/cli/command/static"
@@ -33,6 +34,7 @@ func Execute() {
 		initialize.NewInitializeCommand(),
 		ls.NewListCommand(),
 		run.NewRunCommand(),
+		logs.NewLogsCommand(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {
