@@ -10,7 +10,6 @@ import (
 	"github.com/jjzcru/elk/internal/cli/command/logs"
 	"github.com/jjzcru/elk/internal/cli/command/ls"
 	"github.com/jjzcru/elk/internal/cli/command/run"
-	"github.com/jjzcru/elk/internal/cli/command/static"
 	"github.com/jjzcru/elk/internal/cli/command/version"
 	"os"
 
@@ -30,7 +29,6 @@ func Execute() {
 		version.NewVersionCommand(),
 		install.NewInstallCommand(),
 		kill.NewKillCommand(),
-		static.NewStaticCommand(),
 		initialize.NewInitializeCommand(),
 		ls.NewListCommand(),
 		run.NewRunCommand(),
