@@ -24,6 +24,7 @@ type DefaultExecuter struct {
 
 // Execute task and returns a PID
 func (e DefaultExecuter) Execute(ctx context.Context, elk *elk.Elk, name string) (int, error) {
+	ctx, _ = context.WithCancel(ctx)
 	pid := os.Getpid()
 
 	task, err := elk.GetTask(name)
@@ -31,20 +32,20 @@ func (e DefaultExecuter) Execute(ctx context.Context, elk *elk.Elk, name string)
 		return pid, err
 	}
 
-	if len(task.Deps) > 0 {
-		for _, dep := range task.Deps {
-			_, err := e.Execute(ctx, elk, dep)
-			if err != nil {
-				return pid, err
-			}
+	if len(task.BackgroundDeps) > 0 {
+		for _, dep := range task.BackgroundDeps {
+			depCtx, _ := context.WithCancel(ctx)
+			go e.Execute(depCtx, elk, dep)
 		}
 	}
 
-	if len(task.DetachedDeps) > 0 {
-		for _, dep := range task.DetachedDeps {
-			go func() {
-				_, _ = e.Execute(ctx, elk, dep)
-			}()
+	if len(task.Deps) > 0 {
+		for _, dep := range task.Deps {
+			depCtx, _ := context.WithCancel(ctx)
+			_, err := e.Execute(depCtx, elk, dep)
+			if err != nil {
+				return pid, err
+			}
 		}
 	}
 
@@ -91,8 +92,6 @@ func (e DefaultExecuter) Execute(ctx context.Context, elk *elk.Elk, name string)
 		if err != nil {
 			return pid, err
 		}
-
-		ctx, _ := context.WithCancel(ctx)
 		err = r.Run(ctx, p)
 		if err != nil && !task.IgnoreError {
 			return pid, err
@@ -106,15 +105,5 @@ func getEnvs(envMap map[string]string) []string {
 	for env, value := range envMap {
 		envs = append(envs, fmt.Sprintf("%s=%s", env, value))
 	}
-	return envs
-}
-
-func uniqueEnvs(envs []string) []string {
-	var response []string
-
-	for k, v := range MapEnvs(envs) {
-		response = append(response, fmt.Sprintf("%s=%s", k, v))
-	}
-
 	return envs
 }

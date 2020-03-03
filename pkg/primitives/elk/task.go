@@ -11,28 +11,17 @@ import (
 
 // Task is the data structure for the task to run
 type Task struct {
-	Cmds         []string
-	overwriteEnv map[string]string
-	Env          map[string]string
-	detached     bool
-	Description  string
-	Dir          string
-	Log          string `yaml:"log"`
-	Watch        string
-	Deps         []string
-	IgnoreError  bool     `yaml:"ignore_error"`
-	DetachedDeps []string `yaml:"detached_deps"`
-	EnvFile      string   `yaml:"env_file"`
-}
-
-// SetDetached make a task run in attached mode
-func (t *Task) SetDetached(detached bool) {
-	t.detached = detached
-}
-
-// IsDetached Check if the task is detached
-func (t *Task) IsDetached() bool {
-	return t.detached
+	Cmds           []string
+	overwriteEnv   map[string]string
+	Env            map[string]string
+	Description    string
+	Dir            string
+	Log            string `yaml:"log"`
+	Watch          string
+	Deps           []string
+	IgnoreError    bool     `yaml:"ignore_error"`
+	BackgroundDeps []string `yaml:"background_deps"`
+	EnvFile        string   `yaml:"env_file"`
 }
 
 func (t *Task) GetOverwriteEnv() map[string]string {

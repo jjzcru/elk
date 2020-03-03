@@ -24,7 +24,7 @@ func NewRunCommand() *cobra.Command {
 			// return validate(cmd, args, &e)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			err := run(cmd, args, envs)
+			err := run(cmd, args)
 			if err != nil {
 				utils.PrintError(err)
 			}
@@ -42,7 +42,7 @@ func NewRunCommand() *cobra.Command {
 	return cmd
 }
 
-func run(cmd *cobra.Command, args []string, envs []string) error {
+func run(cmd *cobra.Command, args []string) error {
 	isDetached, err := cmd.Flags().GetBool("detached")
 	if err != nil {
 		return err
@@ -68,11 +68,6 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 	if err != nil {
 		return err
 	}
-
-	envMap := engine.MapEnvs(envs)
-
-	e.OverwriteEnvs(envMap)
-	// clientEngine := engine.New(elk, executer)
 
 	clientEngine := &engine.Engine{
 		Elk: e,
