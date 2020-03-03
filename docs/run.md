@@ -1,6 +1,6 @@
 # `run`
 
-Fetch a logs of a task to terminal
+Run one or more task
 
 ```
 Usage: 

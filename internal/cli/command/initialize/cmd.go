@@ -1,12 +1,15 @@
 package init
 
 import (
+	"os"
+	"path"
+	"runtime"
+	"text/template"
+
 	"github.com/jjzcru/elk/internal/cli/templates"
 	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/primitives/elk"
-	"os"
-	"path"
-	"text/template"
+	"gopkg.in/yaml.v2"
 
 	"github.com/spf13/cobra"
 )
@@ -23,9 +26,12 @@ func NewInitializeCommand() *cobra.Command {
 				return
 			}
 
-			err = CreateElkFile(elkFilePath)
-			if err != nil {
-				utils.PrintError(err)
+			_, err = os.Stat(elkFilePath)
+			if os.IsNotExist(err) {
+				err = CreateElkFile(elkFilePath)
+				if err != nil {
+					utils.PrintError(err)
+				}
 			}
 		},
 	}
@@ -53,23 +59,75 @@ func CreateElkFile(elkFilePath string) error {
 		return err
 	}
 
-	err = response.Execute(elkFile, elk.Elk{
+	restart := "reboot"
+	shutdown := "shutdown"
+
+	if runtime.GOOS == "windows" {
+		restart = "shutdown /r"
+		shutdown = "shutdown /s"
+	}
+
+	e := elk.Elk{
 		Version: "1",
+		Env: map[string]string{
+			"HELLO": "World",
+		},
 		Tasks: map[string]elk.Task{
-			"shutdown": {
-				Cmds: []string{
-					"shutdown",
+			"hello": {
+				Description: "Print hello world",
+				Env: map[string]string{
+					"HELLO": "Hello",
 				},
+				Cmds: []string{
+					"echo $HELLO",
+				},
+			},
+			"test-log": {
+				Description: "Print World",
+				Log:         "./test.log",
+				Cmds: []string{
+					"echo $HELLO",
+				},
+			},
+			"ts-run": {
+				Description: "Run a typescript app",
+				Cmds: []string{
+					"npm start",
+				},
+				Deps: []string{
+					"ts-build",
+				},
+			},
+			"ts-build": {
+				Description: "Watch files and re-run to compile typescript",
+				Watch:       "[a-zA-Z]*.ts$",
+				Cmds: []string{
+					"npm run build",
+				},
+			},
+			"shutdown": {
 				Description: "Command to shutdown the machine",
+				Cmds: []string{
+					shutdown,
+				},
 			},
 			"restart": {
-				Cmds: []string{
-					"reboot",
-				},
 				Description: "Command that should restart the machine",
+				Cmds: []string{
+					restart,
+				},
 			},
 		},
-	})
+	}
+
+	b, err := yaml.Marshal(e)
+	if err != nil {
+		return err
+	}
+
+	_, err = elkFile.Write(b)
+
+	//err = response.Execute(elkFile, e)
 
 	if err != nil {
 		return err
