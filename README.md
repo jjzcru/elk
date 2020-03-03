@@ -178,7 +178,15 @@ the execution of the program if one of them fail
 
 `cmds`
 
-This is a list of all the commands that are going to run
+### Commands
+- [install](docs/install.md)
+- [config](docs/config.md)
+- [init](docs/init.md)
+- [kill](docs/kill.md)
+- [ls](docs/ls.md)
+- [run](docs/run.md)
+- [logs](docs/logs.md)
+
 
 [go]: https://golang.org/
 [yaml]: https://yaml.org/
