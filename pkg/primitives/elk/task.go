@@ -11,17 +11,17 @@ import (
 
 // Task is the data structure for the task to run
 type Task struct {
-	Cmds           []string
+	Cmds           []string `yaml:"cmds"`
 	overwriteEnv   map[string]string
-	Env            map[string]string
-	Description    string
-	Dir            string
-	Log            string `yaml:"log"`
-	Watch          string
-	Deps           []string
-	IgnoreError    bool     `yaml:"ignore_error"`
-	BackgroundDeps []string `yaml:"background_deps"`
-	EnvFile        string   `yaml:"env_file"`
+	Env            map[string]string `yaml:"env,omitempty"`
+	Description    string            `yaml:"description,omitempty"`
+	Dir            string            `yaml:"dir,omitempty"`
+	Log            string            `yaml:"log,omitempty"`
+	Watch          string            `yaml:"watch,omitempty"`
+	Deps           []string          `yaml:"deps,omitempty"`
+	IgnoreError    bool              `yaml:"ignore_error,omitempty"`
+	BackgroundDeps []string          `yaml:"background_deps,omitempty"`
+	EnvFile        string            `yaml:"env_file,omitempty"`
 }
 
 func (t *Task) GetOverwriteEnv() map[string]string {

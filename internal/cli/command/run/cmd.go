@@ -12,6 +12,29 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var usageTemplate = `Usage:
+  elk run [tasks] [flags]
+
+Examples:
+elk run foo
+elk run foo bar
+elk run foo -d
+elk run foo -d -w
+elk run foo -e FOO=BAR -e HELLO=WORLD
+elk run foo --ignore-log
+elk run foo -l ./foo.log -d
+
+Flags:
+  -d, --detached      Run the command in detached mode and returns the PGID
+  -e, --env strings   Overwrite env variable in task   
+  -f, --file string   Run elk in a specific file
+  -g, --global        Run from the path set in config
+  -h, --help          help for run
+      --ignore-log    Force task to output to stdout
+  -l, --log string    File that log output from a task
+  -w, --watch         Enable watch mode
+`
+
 // NewRunCommand returns a cobra command for `run` sub command
 func NewRunCommand() *cobra.Command {
 	var envs []string
@@ -38,6 +61,8 @@ func NewRunCommand() *cobra.Command {
 	cmd.Flags().BoolP("watch", "w", false, "Enable watch mode")
 	cmd.Flags().StringP("file", "f", "", "Run elk in a specific file")
 	cmd.Flags().StringP("log", "l", "", "File that log output from a task")
+
+	cmd.SetUsageTemplate(usageTemplate)
 
 	return cmd
 }
