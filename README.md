@@ -32,15 +32,11 @@ This will print `Hello world`
 ## Installation
 
 ### Download Binary
-- Grab the latest binary from the [Releases][releases]
+- Grab the latest binary of your platform from the [Releases][releases] page
 - Add the binary to PATH
 - Give executable permisions with `chmod`
 - Run `elk version` to make sure that the binary is installed
 - Run `elk install`
-
-### cURL
-- Run `curl -s https://github.com/jjzcru/elk/install.sh | bash`
-
 
 ## Usage
 
@@ -182,7 +178,6 @@ the execution of the program if one of them fail
 - [install](docs/install.md)
 - [config](docs/config.md)
 - [init](docs/init.md)
-- [kill](docs/kill.md)
 - [ls](docs/ls.md)
 - [run](docs/run.md)
 - [logs](docs/logs.md)

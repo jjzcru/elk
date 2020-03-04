@@ -18,7 +18,7 @@ import (
 func NewInitializeCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init",
-		Short: "Creates elk.yml in current directory",
+		Short: "Creates elk.yml file in current directory",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			elkFilePath, err := getElkfilePath()

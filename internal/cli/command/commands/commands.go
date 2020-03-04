@@ -22,7 +22,7 @@ import (
 func Execute() {
 	var rootCmd = &cobra.Command{
 		Use:   "elk",
-		Short: "Simple yml based task runner 🦌",
+		Short: "🦌 Minimalist yaml based task runner",
 	}
 	rootCmd.AddCommand(
 		config.NewConfigCommand(),
