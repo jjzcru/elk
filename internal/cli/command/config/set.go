@@ -13,6 +13,16 @@ import (
 	"path/filepath"
 )
 
+var setUsageTemplate = `Usage:
+  elk config set [path] [flags]
+
+Examples:
+elk config set ./elk.yml
+
+Flags:
+  -h, --help   help for set
+`
+
 // NewSetCommand returns a cobra command that set elk file
 func NewSetCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -70,6 +80,8 @@ func NewSetCommand() *cobra.Command {
 			fmt.Println(elkFilePath)
 		},
 	}
+
+	cmd.SetUsageTemplate(setUsageTemplate)
 
 	return cmd
 }

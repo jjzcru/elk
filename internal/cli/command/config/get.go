@@ -15,7 +15,7 @@ import (
 func NewGetCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get",
-		Short: "Get global elk file",
+		Short: "Get global elk file path",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			configPath, err := getConfigPath()

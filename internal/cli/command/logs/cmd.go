@@ -10,13 +10,24 @@ import (
 	"time"
 )
 
+var usageTemplate = `Usage:
+  elk logs [task] [flags]
+
+Flags:
+  -f, --file string   Specify the file to used
+      --follow        Run in follow mode
+  -g, --global        Search the task in the global path
+  -h, --help          help for logs
+`
+
 func NewLogsCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "logs",
 		Short: "Fetch logs of a task",
-		Args:  cobra.MinimumNArgs(1),
+		Args:  cobra.ExactArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return validate(cmd, args)
+
 			// return validate(cmd, args, &e)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
@@ -30,6 +41,9 @@ func NewLogsCommand() *cobra.Command {
 	cmd.Flags().BoolP("global", "g", false, "Search the task in the path set in config")
 	cmd.Flags().StringP("file", "f", "", "Path used to search for the tasks to log")
 	cmd.Flags().Bool("follow", false, "Read the file in follow mode")
+
+	cmd.SetUsageTemplate(usageTemplate)
+
 	return cmd
 }
 
@@ -74,7 +88,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 }
 
-func readLogFile(file *os.File, ch chan string, errCh chan error, isFollow bool){
+func readLogFile(file *os.File, ch chan string, errCh chan error, isFollow bool) {
 	defer file.Close()
 	reader := bufio.NewReader(file)
 	for {

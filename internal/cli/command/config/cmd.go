@@ -16,7 +16,7 @@ import (
 func NewConfigCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "config",
-		Short: "Config global file",
+		Short: "Manage config file",
 	}
 
 	cmd.AddCommand(

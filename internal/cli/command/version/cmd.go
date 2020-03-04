@@ -10,7 +10,8 @@ import (
 func NewVersionCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
-		Short: "Print version number",
+		Short: "Display version number",
+		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("Elk version " + version)
 		},

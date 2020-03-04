@@ -25,9 +25,9 @@ func NewListCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolP("all", "a", false, "Print tasks details")
-	cmd.Flags().StringP("file", "f", "", "Run elk in a specific file")
-	cmd.Flags().BoolP("global", "g", false, "Run from the path set in config")
+	cmd.Flags().BoolP("all", "a", false, "Display task details")
+	cmd.Flags().StringP("file", "f", "", "Specify elk file path")
+	cmd.Flags().BoolP("global", "g", false, "Use elk file path declared on global")
 
 	return cmd
 }
