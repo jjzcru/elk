@@ -38,106 +38,75 @@ func (e *Elk) HasTask(name string) bool {
 	return false
 }
 
+// Build compiles the elk structure and validates its integrity
+func (e *Elk) Build() error {
+	osEnvs := make(map[string]string)
+	for _, en := range os.Environ() {
+		parts := strings.SplitAfterN(en, "=", 2)
+		env := strings.ReplaceAll(parts[0], "=", "")
+		value := parts[1]
+		osEnvs[env] = value
+	}
+
+	err := e.LoadEnvFile()
+	if err != nil {
+		return err
+	}
+
+	for env, value := range e.Env {
+		osEnvs[env] = value
+	}
+
+	e.Env = osEnvs
+
+	for name, task := range e.Tasks {
+		err = e.HasCircularDependency(name)
+		if err != nil {
+			return err
+		}
+
+		err = task.LoadEnvFile()
+		if err != nil {
+			return err
+		}
+
+		envs := e.Env
+		for env, value := range task.Env {
+			envs[env] = value
+		}
+		task.Env = envs
+
+		e.Tasks[name] = task
+	}
+
+	return nil
+}
+
 // LoadEnvFile Log to the variable env the values
 func (e *Elk) LoadEnvFile() error {
 	if e.Env == nil {
 		e.Env = make(map[string]string)
 	}
 
-	envCopy := make(map[string]string)
-	for k, v := range e.Env {
-		envCopy[k] = v
-	}
-
 	if len(e.EnvFile) > 0 {
-		info, err := os.Stat(e.EnvFile)
-		if os.IsNotExist(err) {
-			return err
-		}
-
-		if info.IsDir() {
-			return fmt.Errorf("log path '%s' is a directory", e.EnvFile)
-		}
-
-		file, err := os.Open(e.EnvFile)
+		envFromFile, err := GetEnvFromFile(e.EnvFile)
 		if err != nil {
 			return err
 		}
-		defer file.Close()
 
-		scanner := bufio.NewScanner(file)
-
-		envs := e.Env
-		for scanner.Scan() {
-			parts := strings.SplitAfterN(scanner.Text(), "=", 2)
-			env := strings.ReplaceAll(parts[0], "=", "")
-			value := parts[1]
-			e.Env[env] = value
+		envs := make(map[string]string)
+		for env, value := range envFromFile {
+			envs[env] = value
 		}
 
-		for env, value := range envs {
-			e.Env[env] = value
+		for env, value := range e.Env {
+			envs[env] = value
 		}
 
-		for env, value := range envCopy {
-			e.Env[env] = value
-		}
-
-		for _, task := range e.Tasks {
-			if task.Env == nil {
-				task.Env = make(map[string]string)
-			}
-
-			taskEnvs := task.Env
-			for env, value := range e.Env {
-				task.Env[env] = value
-			}
-
-			for env, value := range taskEnvs {
-				task.Env[env] = value
-			}
-
-			err = task.LoadEnvFile()
-			if err != nil {
-				return err
-			}
-		}
+		e.Env = envs
 	}
 
 	return nil
-}
-
-// LoadEnvsInTasks Load env variable from elk to its tasks
-func (e *Elk) LoadEnvsInTasks() {
-	for _, task := range e.Tasks {
-		envs := make(map[string]string)
-		for k, v := range e.Env {
-			envs[k] = v
-		}
-
-		for k, v := range task.Env {
-			envs[k] = v
-		}
-
-		task.OverwriteEnvs(envs)
-	}
-
-}
-
-// OverwriteEnvs Overwrites the env variable in the elk file and all the tasks
-func (e *Elk) OverwriteEnvs(envs map[string]string) {
-	if e.Env == nil {
-		e.Env = make(map[string]string)
-	}
-
-	for env, value := range envs {
-		e.Env[env] = value
-	}
-
-	for name, task := range e.Tasks {
-		task.OverwriteEnvs(envs)
-		e.Tasks[name] = task
-	}
 }
 
 // HasCircularDependency checks if a task has a circular dependency
@@ -227,5 +196,39 @@ func FromFile(filePath string) (*Elk, error) {
 		elk.Tasks[name] = task
 	}
 
+	err = elk.Build()
+	if err != nil {
+		return nil, err
+	}
+
 	return &elk, nil
+}
+
+func GetEnvFromFile(filePath string) (map[string]string, error) {
+	env := make(map[string]string)
+	info, err := os.Stat(filePath)
+	if os.IsNotExist(err) {
+		return nil, err
+	}
+
+	if info.IsDir() {
+		return nil, fmt.Errorf("log path '%s' is a directory", filePath)
+	}
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		parts := strings.SplitAfterN(scanner.Text(), "=", 2)
+		key := strings.ReplaceAll(parts[0], "=", "")
+		value := parts[1]
+		env[key] = value
+	}
+
+	return env, nil
 }

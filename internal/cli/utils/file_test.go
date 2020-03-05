@@ -43,14 +43,14 @@ func TestIsPathADir(t *testing.T) {
 	randomNumber := rand.Intn(100)
 	path := fmt.Sprintf("./%d", randomNumber)
 
-	err := os.Mkdir(path,0777)
+	err := os.Mkdir(path, 0777)
 	if err != nil {
-		t.Error(err.Error())
+		t.Error(err)
 	}
 
 	isADir, err := IsPathADir(path)
 	if err != nil {
-		t.Error(err.Error())
+		t.Error(err)
 	}
 
 	if !isADir {
@@ -59,7 +59,7 @@ func TestIsPathADir(t *testing.T) {
 
 	err = os.Remove(path)
 	if err != nil {
-		t.Error(err.Error())
+		t.Error(err)
 	}
 }
 
@@ -78,12 +78,12 @@ func TestIsPathIsNotADir(t *testing.T) {
 	path := fmt.Sprintf("./%d", randomNumber)
 	err := ioutil.WriteFile(path, []byte(""), 0644)
 	if err != nil {
-		t.Error(err.Error())
+		t.Error(err)
 	}
 
 	isADir, err := IsPathADir(path)
 	if err != nil {
-		t.Error(err.Error())
+		t.Error(err)
 	}
 
 	if isADir {
@@ -92,7 +92,7 @@ func TestIsPathIsNotADir(t *testing.T) {
 
 	err = os.Remove(path)
 	if err != nil {
-		t.Error(err.Error())
+		t.Error(err)
 	}
 }
 
@@ -107,7 +107,7 @@ func TestIsPathAFile(t *testing.T) {
 
 	isAFile, err := IsPathAFile(path)
 	if err != nil {
-		t.Error(err.Error())
+		t.Error(err)
 	}
 
 	if !isAFile {
@@ -116,7 +116,7 @@ func TestIsPathAFile(t *testing.T) {
 
 	err = os.Remove(path)
 	if err != nil {
-		t.Error(err.Error())
+		t.Error(err)
 	}
 }
 
@@ -124,14 +124,14 @@ func TestIsPathNotAFile(t *testing.T) {
 	randomNumber := rand.Intn(100)
 	path := fmt.Sprintf("./%d", randomNumber)
 
-	err := os.Mkdir(path,0777)
+	err := os.Mkdir(path, 0777)
 	if err != nil {
-		t.Error(err.Error())
+		t.Error(err)
 	}
 
 	isAFile, err := IsPathAFile(path)
 	if err != nil {
-		t.Error(err.Error())
+		t.Error(err)
 	}
 
 	if isAFile {
@@ -140,7 +140,7 @@ func TestIsPathNotAFile(t *testing.T) {
 
 	err = os.Remove(path)
 	if err != nil {
-		t.Error(err.Error())
+		t.Error(err)
 	}
 }
 
