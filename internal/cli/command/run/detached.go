@@ -16,6 +16,9 @@ func runDetached() error {
 		return err
 	}
 
+	fmt.Println("ARGS")
+	fmt.Println(os.Args)
+
 	command := utils.RemoveDetachedFlag(os.Args)
 	cmd := exec.Command(command[0], command[1:]...)
 	pid := os.Getpid()
