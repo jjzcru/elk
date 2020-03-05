@@ -16,19 +16,20 @@ jobs:
 
       - name: Check out source code
         uses: actions/checkout@v1
-
-      - name: Build
-        env:
-          GOPROXY: "https://proxy.golang.org"
-        run: go build ./cmd/elk
-
+      
       - name: Test
         env:
           GOPROXY: "https://proxy.golang.org"
         run: go test ./...
+
+      - name: Build
+        shell: bash
+        env:
+          GOPROXY: "https://proxy.golang.org"
+        run: bash build.sh && zip -r elk.zip .
       
       - name: Upload Artifact
         uses: actions/upload-artifact@master
         with:
           name: elk
-          path: ./elk
+          path: ./elk.zip
