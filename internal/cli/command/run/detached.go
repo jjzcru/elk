@@ -4,10 +4,11 @@ package run
 
 import (
 	"fmt"
-	"github.com/jjzcru/elk/internal/cli/utils"
 	"os"
 	"os/exec"
 	"syscall"
+
+	"github.com/jjzcru/elk/internal/cli/utils"
 )
 
 func runDetached() error {
@@ -15,9 +16,6 @@ func runDetached() error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Println("ARGS")
-	fmt.Println(os.Args)
 
 	command := utils.RemoveDetachedFlag(os.Args)
 	cmd := exec.Command(command[0], command[1:]...)
