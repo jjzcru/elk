@@ -1,5 +1,7 @@
+![Build Status](https://github.com/jjzcru/elk/workflows/Build%20and%20test%20Go/badge.svg?branch=develop)
+
 Elk
-================
+==========
 
 Elk is a minimalist, [YAML][yaml] based task runner that aims to help developers 
 to focus on building cool stuff, instead of remembering to perform tedious 

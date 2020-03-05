@@ -1,4 +1,4 @@
-name: Build and test Go
+name: Build Status
 on:
   push:
     branches:
@@ -26,3 +26,9 @@ jobs:
         env:
           GOPROXY: "https://proxy.golang.org"
         run: go test ./...
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: elk
+          path: ./elk
