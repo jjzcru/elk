@@ -26,10 +26,10 @@ jobs:
         shell: bash
         env:
           GOPROXY: "https://proxy.golang.org"
-        run: bash build.sh && zip -r elk.zip .
+        run: bash build.sh && cd bin && zip -r elk.zip .
       
       - name: Upload Artifact
         uses: actions/upload-artifact@master
         with:
           name: elk
-          path: ./elk.zip
+          path: ./bin/elk.zip
