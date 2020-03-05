@@ -14,7 +14,7 @@ func getTestEngine() *Engine {
 			"hello": {
 				Description: "Empty Task",
 				Cmds: []string{
-					"clear",
+					"echo Hello",
 				},
 			},
 			"world": {
@@ -25,7 +25,7 @@ func getTestEngine() *Engine {
 					"FOO": "BAR",
 				},
 				Cmds: []string{
-					"clear",
+					"echo World",
 				},
 			},
 		},

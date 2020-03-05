@@ -1,0 +1,28 @@
+name: Build and test Go
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+
+      - name: Check out source code
+        uses: actions/checkout@v1
+
+      - name: Build
+        env:
+          GOPROXY: "https://proxy.golang.org"
+        run: go build ./cmd/elk
+
+      - name: Test
+        env:
+          GOPROXY: "https://proxy.golang.org"
+        run: go test ./...
