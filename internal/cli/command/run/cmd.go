@@ -173,13 +173,25 @@ func getDeadlineTime(deadline string) (time.Time, error) {
 	}
 
 	for _, layout := range validTimeFormats {
-		t, err := time.Parse(layout, deadline)
+		deadlineTime, err := time.Parse(layout, deadline)
 		if err == nil {
 			if layout == time.Kitchen {
 				now := time.Now()
-				t = time.Date(now.Year(), now.Month(), now.Day(), t.Hour(), t.Minute(), now.Second(), now.Nanosecond(), now.Location())
+				deadlineTime = time.Date(now.Year(),
+					now.Month(),
+					now.Day(),
+					deadlineTime.Hour(),
+					deadlineTime.Minute(),
+					0,
+					0,
+					now.Location())
+
+				// If time is before now i refer to that time but the next day
+				if deadlineTime.Before(now) {
+					deadlineTime = deadlineTime.Add(24 * time.Hour)
+				}
 			}
-			return t, nil
+			return deadlineTime, nil
 		}
 	}
 
