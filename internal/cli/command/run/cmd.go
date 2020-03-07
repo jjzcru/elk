@@ -2,7 +2,9 @@ package run
 
 import (
 	"context"
+	"errors"
 	"sync"
+	"time"
 
 	"github.com/jjzcru/elk/internal/cli/command/config"
 	"github.com/jjzcru/elk/internal/cli/utils"
@@ -20,9 +22,11 @@ elk run foo
 elk run foo bar
 elk run foo -d
 elk run foo -d -w
+elk run foo -t 10000
 elk run foo -e FOO=BAR -e HELLO=WORLD
-elk run foo --ignore-log
 elk run foo -l ./foo.log -d
+elk run foo --ignore-log
+elk run foo --deadline 10:00PM
 
 Flags:
   -d, --detached      Run the command in detached mode and returns the PGID
@@ -33,6 +37,8 @@ Flags:
       --ignore-log    Force task to output to stdout
   -l, --log string    File that log output from a task
   -w, --watch         Enable watch mode
+  -t, --timeout       Set a timeout for a task in miliseconds
+      --deadline      Set a deadline to a task
 `
 
 // NewRunCommand returns a cobra command for `run` sub command
@@ -61,6 +67,8 @@ func NewRunCommand() *cobra.Command {
 	cmd.Flags().BoolP("watch", "w", false, "Enable watch mode")
 	cmd.Flags().StringP("file", "f", "", "Run elk in a specific file")
 	cmd.Flags().StringP("log", "l", "", "File that log output from a task")
+	cmd.Flags().Int32P("timeout", "t", 0, "Set a timeout for a task")
+	cmd.Flags().String("deadline", "", "Set a deadline to a task")
 
 	cmd.SetUsageTemplate(usageTemplate)
 
@@ -115,6 +123,30 @@ func run(cmd *cobra.Command, args []string) error {
 
 	var wg sync.WaitGroup
 	ctx := context.Background()
+
+	timeout, err := cmd.Flags().GetInt32("timeout")
+	if err != nil {
+		return err
+	}
+
+	if timeout > 0 {
+		ctx, _ = context.WithTimeout(ctx, time.Duration(timeout)*time.Millisecond)
+	}
+
+	deadline, err := cmd.Flags().GetString("deadline")
+	if err != nil {
+		return err
+	}
+
+	if len(deadline) > 0 {
+		deadlineTime, err := getDeadlineTime(deadline)
+		if err != nil {
+			return err
+		}
+
+		ctx, _ = context.WithDeadline(ctx, deadlineTime)
+	}
+
 	for _, task := range args {
 		wg.Add(1)
 		go runTask(ctx, clientEngine, task, &wg, isWatch)
@@ -123,6 +155,35 @@ func run(cmd *cobra.Command, args []string) error {
 	wg.Wait()
 
 	return nil
+}
+
+func getDeadlineTime(deadline string) (time.Time, error) {
+	validTimeFormats := []string{
+		time.ANSIC,
+		time.UnixDate,
+		time.RubyDate,
+		time.RFC822,
+		time.RFC822Z,
+		time.RFC850,
+		time.RFC1123,
+		time.RFC1123Z,
+		time.RFC3339,
+		time.RFC3339Nano,
+		time.Kitchen,
+	}
+
+	for _, layout := range validTimeFormats {
+		t, err := time.Parse(layout, deadline)
+		if err == nil {
+			if layout == time.Kitchen {
+				now := time.Now()
+				t = time.Date(now.Year(), now.Month(), now.Day(), t.Hour(), t.Minute(), now.Second(), now.Nanosecond(), now.Location())
+			}
+			return t, nil
+		}
+	}
+
+	return time.Now(), errors.New("invalid deadline")
 }
 
 func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, isWatch bool) {
