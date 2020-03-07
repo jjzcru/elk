@@ -146,7 +146,7 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 	err = cliEngine.Run(taskCtx, task)
 	if err != nil {
 		utils.PrintError(err)
-		cancel()
 		return
 	}
+	cancel()
 }

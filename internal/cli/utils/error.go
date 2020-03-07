@@ -8,7 +8,9 @@ import (
 
 // PrintError display the error message in the cli
 func PrintError(err error) {
-	fmt.Print(aurora.Bold(aurora.Red("ERROR: ")))
-	_, _ = fmt.Fprintf(os.Stderr, err.Error())
-	fmt.Println()
+	if err.Error() != "context canceled" {
+		fmt.Print(aurora.Bold(aurora.Red("ERROR: ")))
+		_, _ = fmt.Fprintf(os.Stderr, err.Error())
+		fmt.Println()
+	}
 }

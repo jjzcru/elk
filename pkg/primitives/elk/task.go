@@ -2,9 +2,7 @@ package elk
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
-	"regexp"
+	"github.com/jjzcru/elk/pkg/file"
 )
 
 // Task is the data structure for the task to run
@@ -28,7 +26,7 @@ func (t *Task) LoadEnvFile() error {
 	}
 
 	if len(t.EnvFile) > 0 {
-		envFromFile, err := GetEnvFromFile(t.EnvFile)
+		envFromFile, err := file.GetEnvFromFile(t.EnvFile)
 		if err != nil {
 			return err
 		}
@@ -56,37 +54,4 @@ func (t *Task) GetEnvs() []string {
 	}
 
 	return envs
-}
-
-// GetWatcherFiles return a list of the files that are going to be watched
-func (t *Task) GetWatcherFiles(reg string) ([]string, error) {
-	dir := t.Dir
-	if len(dir) == 0 {
-		d, err := os.Getwd()
-		if err != nil {
-			return nil, err
-		}
-		dir = d
-	}
-
-	re := regexp.MustCompile(reg)
-	var files []string
-	walk := func(fn string, fi os.FileInfo, err error) error {
-		if re.MatchString(fn) == false {
-			return nil
-		}
-		if fi.IsDir() {
-			files = append(files, fn+string(os.PathSeparator))
-		} else {
-			files = append(files, fn)
-		}
-		return nil
-	}
-
-	err := filepath.Walk(dir, walk)
-	if err != nil {
-		return files, err
-	}
-
-	return files, nil
 }

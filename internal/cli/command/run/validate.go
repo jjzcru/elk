@@ -34,8 +34,6 @@ func validate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	/**/
-
 	elkFilePath, err := cmd.Flags().GetString("file")
 	if err != nil {
 		return err
@@ -59,11 +57,6 @@ func validate(cmd *cobra.Command, args []string) error {
 			}
 		}
 	}
-
-	// err = build(logFilePath, ignoreLog, e)
-	/*if err != nil {
-		return err
-	}*/
 
 	return nil
 }
