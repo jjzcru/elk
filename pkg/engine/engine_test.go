@@ -18,8 +18,10 @@ func getTestEngine() *Engine {
 				},
 			},
 			"world": {
-				Deps: []string{
-					"hello",
+				Deps: []elk2.Dep{
+					{
+						Name: "hello",
+					},
 				},
 				Env: map[string]string{
 					"FOO": "BAR",
