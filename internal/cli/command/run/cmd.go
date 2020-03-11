@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -23,10 +24,12 @@ elk run foo bar
 elk run foo -d
 elk run foo -d -w
 elk run foo -t 1s
+elk run foo --delay 1s
 elk run foo -e FOO=BAR -e HELLO=WORLD
 elk run foo -l ./foo.log -d
 elk run foo --ignore-log
-elk run foo --deadline 10:00PM
+elk run foo --deadline 09:41AM
+elk run foo --start 09:41PM
 
 Flags:
   -d, --detached      Run the command in detached mode and returns the PGID
@@ -40,6 +43,7 @@ Flags:
   -w, --watch         Enable watch mode
   -t, --timeout       Set a timeout for a task in milliseconds
       --deadline      Set a deadline to a task
+      --start      	  Set a date/datetime for a task to run
 `
 
 // NewRunCommand returns a cobra command for `run` sub command
@@ -71,6 +75,7 @@ func NewRunCommand() *cobra.Command {
 	cmd.Flags().DurationP("timeout", "t", 0, "Set a timeout for a task in milliseconds")
 	cmd.Flags().Duration("delay", 0, "Set a delay for a task in milliseconds")
 	cmd.Flags().String("deadline", "", "Set a deadline to a task")
+	cmd.Flags().String("start", "", "Set a date/datetime for a task to run")
 
 	cmd.SetUsageTemplate(usageTemplate)
 
@@ -145,6 +150,11 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	start, err := cmd.Flags().GetString("start")
+	if err != nil {
+		return err
+	}
+
 	if len(deadline) > 0 {
 		deadlineTime, err := getTimeFromString(deadline)
 		if err != nil {
@@ -154,9 +164,21 @@ func run(cmd *cobra.Command, args []string) error {
 		ctx, _ = context.WithDeadline(ctx, deadlineTime)
 	}
 
+	if len(start) > 0 {
+		startTime, err := getTimeFromString(start)
+		if err != nil {
+			return err
+		}
+
+		now := time.Now()
+		if startTime.Before(now) {
+			return fmt.Errorf("start can't be before of current time")
+		}
+	}
+
 	for _, task := range args {
 		wg.Add(1)
-		go runTask(ctx, clientEngine, task, &wg, isWatch, delay)
+		go runTask(ctx, clientEngine, task, &wg, isWatch, delay, start)
 	}
 
 	wg.Wait()
@@ -205,7 +227,7 @@ func getTimeFromString(input string) (time.Time, error) {
 	return time.Now(), errors.New("invalid input")
 }
 
-func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, isWatch bool, delay time.Duration) {
+func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, isWatch bool, delay time.Duration, start string) {
 	defer wg.Done()
 
 	taskCtx, cancel := context.WithCancel(ctx)
@@ -217,8 +239,15 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 		return
 	}
 
-	if delay > 0 {
-		time.Sleep(delay)
+	if len(start) > 0 {
+		startTime, _ := getTimeFromString(start)
+		now := time.Now()
+		diff := startTime.Sub(now)
+		time.Sleep(diff)
+	} else {
+		if delay > 0 {
+			time.Sleep(delay)
+		}
 	}
 
 	if len(t.Watch) > 0 && isWatch {
