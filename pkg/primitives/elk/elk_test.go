@@ -96,8 +96,10 @@ func TestHasCircularDependency(t *testing.T) {
 				},
 			},
 			"world": {
-				Deps: []string{
-					"hello",
+				Deps: []Dep{
+					{
+						Name: "hello",
+					},
 				},
 				Env: map[string]string{
 					"FOO": "BAR",
@@ -168,7 +170,11 @@ func TestElkBuild(t *testing.T) {
 	}
 
 	e.Tasks["world"] = Task{
-		Deps: []string{"world"},
+		Deps: []Dep{
+			{
+				Name: "world",
+			},
+		},
 	}
 
 	err = e.Build()
@@ -243,10 +249,18 @@ func TestGetTaskCircularDependency(t *testing.T) {
 	e := Elk{
 		Tasks: map[string]Task{
 			"hello": {
-				Deps: []string{"world"},
+				Deps: []Dep{
+					{
+						Name: "world",
+					},
+				},
 			},
 			"world": {
-				Deps: []string{"hello"},
+				Deps: []Dep{
+					{
+						Name: "hello",
+					},
+				},
 			},
 		},
 	}

@@ -154,7 +154,7 @@ func (e *Elk) getDependencyGraph(task *Task) (map[string][]string, error) {
 		// Validate that the dependency is a valid task
 		t, exists := e.Tasks[dep.Name]
 		if exists == false {
-			return dependencyGraph, fmt.Errorf("The dependency '%s' do not exist as a task", dep)
+			return dependencyGraph, fmt.Errorf("The dependency '%s' do not exist as a task", dep.Name)
 		}
 
 		var depsNames []string
