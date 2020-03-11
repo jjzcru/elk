@@ -46,8 +46,8 @@ This will print `Hello world`
 The main use case for `elk` is that you are able to run any command/s in a declarative way 
 in any path. 
 
-By default the global file that is going to be used is declared in the property
-`path` inside `~/.elk/config.yml`. You can change this path if you wish to use another file.
+By default the global file that is going to be used is `~/elk.yml`. You can change this 
+path if you wish to use another file by setting the env variable `ELK_FILE`.
 
 `elk` will first search if there is a `elk.yml` file in the current directory and use that 
 first, if the file is not found it will use the global file. This enables the user to have 

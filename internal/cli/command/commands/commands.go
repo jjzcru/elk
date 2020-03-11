@@ -3,9 +3,7 @@
 package commands
 
 import (
-	"github.com/jjzcru/elk/internal/cli/command/config"
 	initialize "github.com/jjzcru/elk/internal/cli/command/initialize"
-	"github.com/jjzcru/elk/internal/cli/command/install"
 	"github.com/jjzcru/elk/internal/cli/command/logs"
 	"github.com/jjzcru/elk/internal/cli/command/ls"
 	"github.com/jjzcru/elk/internal/cli/command/run"
@@ -21,9 +19,7 @@ func Execute() error {
 		Short: "Minimalist yaml based task runner 🦌",
 	}
 	rootCmd.AddCommand(
-		config.NewConfigCommand(),
 		version.NewVersionCommand(),
-		install.NewInstallCommand(),
 		initialize.NewInitializeCommand(),
 		ls.NewListCommand(),
 		run.NewRunCommand(),
