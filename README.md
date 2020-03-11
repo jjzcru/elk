@@ -177,8 +177,6 @@ the execution of the program if one of them fail
 `cmds`
 
 ### Commands
-- [install](docs/install.md)
-- [config](docs/config.md)
 - [init](docs/init.md)
 - [ls](docs/ls.md)
 - [run](docs/run.md)
