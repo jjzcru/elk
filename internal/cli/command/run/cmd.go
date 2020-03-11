@@ -22,7 +22,7 @@ elk run foo
 elk run foo bar
 elk run foo -d
 elk run foo -d -w
-elk run foo -t 10000
+elk run foo -t 1s
 elk run foo -e FOO=BAR -e HELLO=WORLD
 elk run foo -l ./foo.log -d
 elk run foo --ignore-log
