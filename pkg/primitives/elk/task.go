@@ -7,16 +7,20 @@ import (
 
 // Task is the data structure for the task to run
 type Task struct {
-	Cmds           []string          `yaml:"cmds"`
-	Env            map[string]string `yaml:"env,omitempty"`
-	EnvFile        string            `yaml:"env_file,omitempty"`
-	Description    string            `yaml:"description,omitempty"`
-	Dir            string            `yaml:"dir,omitempty"`
-	Log            string            `yaml:"log,omitempty"`
-	Watch          string            `yaml:"watch,omitempty"`
-	Deps           []string          `yaml:"deps,omitempty"`
-	IgnoreError    bool              `yaml:"ignore_error,omitempty"`
-	BackgroundDeps []string          `yaml:"background_deps,omitempty"`
+	Cmds        []string          `yaml:"cmds"`
+	Env         map[string]string `yaml:"env,omitempty"`
+	EnvFile     string            `yaml:"env_file,omitempty"`
+	Description string            `yaml:"description,omitempty"`
+	Dir         string            `yaml:"dir,omitempty"`
+	Log         string            `yaml:"log,omitempty"`
+	Watch       string            `yaml:"watch,omitempty"`
+	Deps        []Dep             `yaml:"deps,omitempty"`
+	IgnoreError bool              `yaml:"ignore_error,omitempty"`
+}
+
+type Dep struct {
+	Name     string `yaml:"name"`
+	Detached bool   `yaml:"detached"`
 }
 
 // LoadEnvFile Log to the variable env the values

@@ -117,7 +117,7 @@ func (e *Elk) HasCircularDependency(name string, visitedNodes ...string) error {
 
 	task := e.Tasks[name]
 
-	if len(append(task.Deps, task.BackgroundDeps...)) == 0 {
+	if len(task.Deps) == 0 {
 		return nil
 	}
 
@@ -149,15 +149,19 @@ func (e *Elk) HasCircularDependency(name string, visitedNodes ...string) error {
 
 func (e *Elk) getDependencyGraph(task *Task) (map[string][]string, error) {
 	dependencyGraph := make(map[string][]string)
-	deps := append(task.Deps, task.BackgroundDeps...)
+	deps := task.Deps
 	for _, dep := range deps {
 		// Validate that the dependency is a valid task
-		t, exists := e.Tasks[dep]
+		t, exists := e.Tasks[dep.Name]
 		if exists == false {
 			return dependencyGraph, fmt.Errorf("The dependency '%s' do not exist as a task", dep)
 		}
 
-		dependencyGraph[dep] = append(t.Deps, t.BackgroundDeps...)
+		var depsNames []string
+		for _, d := range t.Deps {
+			depsNames = append(depsNames, d.Name)
+		}
+		dependencyGraph[dep.Name] = depsNames
 	}
 	return dependencyGraph, nil
 }
