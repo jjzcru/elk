@@ -25,25 +25,25 @@ elk run foo -d
 elk run foo -d -w
 elk run foo -t 1s
 elk run foo --delay 1s
-elk run foo -e FOO=BAR -e HELLO=WORLD
+elk run foo -e FOO=BAR --env HELLO=WORLD
 elk run foo -l ./foo.log -d
 elk run foo --ignore-log
 elk run foo --deadline 09:41AM
 elk run foo --start 09:41PM
 
 Flags:
-  -d, --detached      Run the command in detached mode and returns the PGID
+  -d, --detached      Run the task in detached mode and returns the PGID
   -e, --env strings   Overwrite env variable in task   
   -f, --file string   Run elk in a specific file
   -g, --global        Run from the path set in config
   -h, --help          help for run
       --ignore-log    Force task to output to stdout
-      --delay         Set a delay for a task in milliseconds
+      --delay         Set a delay to a task
   -l, --log string    File that log output from a task
   -w, --watch         Enable watch mode
-  -t, --timeout       Set a timeout for a task in milliseconds
+  -t, --timeout       Set a timeout to a task
       --deadline      Set a deadline to a task
-      --start      	  Set a date/datetime for a task to run
+      --start      	  Set a date/datetime to a task to run
 `
 
 // NewRunCommand returns a cobra command for `run` sub command
@@ -259,7 +259,9 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 	err = cliEngine.Run(taskCtx, task)
 	if err != nil {
 		utils.PrintError(err)
+		cancel()
 		return
 	}
+
 	cancel()
 }

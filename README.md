@@ -93,10 +93,8 @@ tasks:
     dir: /tmp/create-react-app-example
     watch: "[a-zA-Z]*.jsx$" # All .jsx files
     dir: /tmp/create-react-app-example
-    dep:
-      - build
-    background_deps:
-      - hello
+    deps:
+      - name: build
     cmds:
       - lite-server --baseDir="build"
 
@@ -162,19 +160,41 @@ Saves the output of the command to a file
 
 This is a regex for the files that are going to activate the re-run of the tasks
 
-`dep`
+`deps`
 
-This is a list of all the dependencies that the task requires to run, this list are 
-the name of the other task declared at the `global` level.
+This is a list of all the dependencies that the task requires to run. The `dep` declaration
+takes 2 properties:
+- `name`: It takes a `string` which is the name of the task that you which to 
+run as a dependency
+- `detached`: It takes a `boolean` which tells if the dependency should run in `detached` 
+mode, is `false` as default.
 
-This dependencies runs synchronously if at least one of them fails the command will fail
+```yml
+test:
+    deps:
+      - name: build
+      - name: hello
+        detached: true
 
-`background_deps`
+```
 
-This work like the `dep` property but run independently of the command, and won't stop 
-the execution of the program if one of them fail
+If a `dep` is run as `detached` it will run without waiting the result of the previous command.
+If you are going to run a long running task is recommended to run in detached mode because
+the main won't run until all the task that are not detached finish running.
 
 `cmds`
+
+This is a list of all the command that are required to run to perform the `task`. If at least one 
+of them fail the entire task fails.
+
+```yml
+hello:
+    description: "Print hello world"
+    env:
+      HELLO: HELLO
+    cmds:
+      - echo $HELLO WORLD 
+```
 
 ### Commands
 - [init](docs/init.md)
