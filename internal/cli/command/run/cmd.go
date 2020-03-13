@@ -150,7 +150,6 @@ func run(cmd *cobra.Command, args []string) error {
 
 	var wg sync.WaitGroup
 	ctx := context.Background()
-	var cancel context.CancelFunc
 
 	if len(start) > 0 {
 		startTime, err := getTimeFromString(start)
@@ -165,7 +164,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	if timeout > 0 {
-		ctx, cancel = context.WithTimeout(ctx, timeout)
+		ctx, _ = context.WithTimeout(ctx, timeout)
 	}
 
 	if len(deadline) > 0 {
@@ -174,7 +173,7 @@ func run(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		ctx, cancel = context.WithDeadline(ctx, deadlineTime)
+		ctx, _ = context.WithDeadline(ctx, deadlineTime)
 	}
 
 	for _, task := range args {
@@ -183,8 +182,6 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	wg.Wait()
-
-	cancel()
 	return nil
 }
 
@@ -237,7 +234,6 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 	t, err := cliEngine.Elk.GetTask(task)
 	if err != nil {
 		utils.PrintError(err)
-		cancel()
 		return
 	}
 
@@ -254,16 +250,12 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 
 	if len(t.Watch) > 0 && isWatch {
 		runWatch(ctx, taskCtx, cancel, cliEngine, task, t)
-		cancel()
 		return
 	}
 
 	err = cliEngine.Run(taskCtx, task)
 	if err != nil {
 		utils.PrintError(err)
-		cancel()
 		return
 	}
-
-	cancel()
 }
