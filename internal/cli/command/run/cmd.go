@@ -249,7 +249,7 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 	}
 
 	if len(t.Watch) > 0 && isWatch {
-		runWatch(ctx, taskCtx, cancel, cliEngine, task, t)
+		runWatch(ctx, taskCtx, cancel, cliEngine, task, *t)
 		return
 	}
 

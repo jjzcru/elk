@@ -13,7 +13,6 @@
 
 **Commands:**
 - **[config]** Remove command
-- **[init]** Remove command
 - **[install]** Remove command
 
 **Flags:**

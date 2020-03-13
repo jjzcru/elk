@@ -11,7 +11,7 @@ import (
 	"regexp"
 )
 
-func runWatch(ctx context.Context, taskCtx context.Context, cancel context.CancelFunc, cliEngine *engine.Engine,  task string, t *elk.Task) {
+func runWatch(ctx context.Context, taskCtx context.Context, cancel context.CancelFunc, cliEngine *engine.Engine, task string, t elk.Task) {
 	go func() {
 		err := cliEngine.Run(taskCtx, task)
 		if err != nil {

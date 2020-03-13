@@ -1,4 +1,4 @@
-![Build Status](https://github.com/jjzcru/elk/workflows/Build%20Status/badge.svg?branch=master)
+![Build Status](https://github.com/jjzcru/elk/workflows/Build%20Status/badge.svg?branch=develop)
 
 Elk
 ==========
