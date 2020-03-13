@@ -25,25 +25,25 @@ elk run foo -d
 elk run foo -d -w
 elk run foo -t 1s
 elk run foo --delay 1s
-elk run foo -e FOO=BAR -e HELLO=WORLD
+elk run foo -e FOO=BAR --env HELLO=WORLD
 elk run foo -l ./foo.log -d
 elk run foo --ignore-log
 elk run foo --deadline 09:41AM
 elk run foo --start 09:41PM
 
 Flags:
-  -d, --detached      Run the command in detached mode and returns the PGID
+  -d, --detached      Run the task in detached mode and returns the PGID
   -e, --env strings   Overwrite env variable in task   
   -f, --file string   Run elk in a specific file
   -g, --global        Run from the path set in config
   -h, --help          help for run
       --ignore-log    Force task to output to stdout
-      --delay         Set a delay for a task in milliseconds
+      --delay         Set a delay to a task
   -l, --log string    File that log output from a task
   -w, --watch         Enable watch mode
-  -t, --timeout       Set a timeout for a task in milliseconds
+  -t, --timeout       Set a timeout to a task
       --deadline      Set a deadline to a task
-      --start      	  Set a date/datetime for a task to run
+      --start      	  Set a date/datetime to a task to run
 `
 
 // NewRunCommand returns a cobra command for `run` sub command
@@ -108,6 +108,21 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	timeout, err := cmd.Flags().GetDuration("timeout")
+	if err != nil {
+		return err
+	}
+
+	deadline, err := cmd.Flags().GetString("deadline")
+	if err != nil {
+		return err
+	}
+
+	start, err := cmd.Flags().GetString("start")
+	if err != nil {
+		return err
+	}
+
 	// Check if the file path is set
 	e, err := config.GetElk(elkFilePath, isGlobal)
 	if err != nil {
@@ -135,34 +150,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	var wg sync.WaitGroup
 	ctx := context.Background()
-
-	timeout, err := cmd.Flags().GetDuration("timeout")
-	if err != nil {
-		return err
-	}
-
-	if timeout > 0 {
-		ctx, _ = context.WithTimeout(ctx, timeout)
-	}
-
-	deadline, err := cmd.Flags().GetString("deadline")
-	if err != nil {
-		return err
-	}
-
-	start, err := cmd.Flags().GetString("start")
-	if err != nil {
-		return err
-	}
-
-	if len(deadline) > 0 {
-		deadlineTime, err := getTimeFromString(deadline)
-		if err != nil {
-			return err
-		}
-
-		ctx, _ = context.WithDeadline(ctx, deadlineTime)
-	}
+	var cancel context.CancelFunc
 
 	if len(start) > 0 {
 		startTime, err := getTimeFromString(start)
@@ -176,6 +164,19 @@ func run(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	if timeout > 0 {
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+	}
+
+	if len(deadline) > 0 {
+		deadlineTime, err := getTimeFromString(deadline)
+		if err != nil {
+			return err
+		}
+
+		ctx, cancel = context.WithDeadline(ctx, deadlineTime)
+	}
+
 	for _, task := range args {
 		wg.Add(1)
 		go runTask(ctx, clientEngine, task, &wg, isWatch, delay, start)
@@ -183,6 +184,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	wg.Wait()
 
+	cancel()
 	return nil
 }
 
@@ -251,7 +253,7 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 	}
 
 	if len(t.Watch) > 0 && isWatch {
-		runWatch(cliEngine, taskCtx, task, t, cancel, ctx)
+		runWatch(ctx, taskCtx, cancel, cliEngine, task, t)
 		cancel()
 		return
 	}
@@ -259,7 +261,9 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 	err = cliEngine.Run(taskCtx, task)
 	if err != nil {
 		utils.PrintError(err)
+		cancel()
 		return
 	}
+
 	cancel()
 }
