@@ -1,15 +1,14 @@
-// +build !windows
-
 package commands
 
 import (
+	"os"
+
 	initialize "github.com/jjzcru/elk/internal/cli/command/initialize"
 	"github.com/jjzcru/elk/internal/cli/command/logs"
 	"github.com/jjzcru/elk/internal/cli/command/ls"
 	"github.com/jjzcru/elk/internal/cli/command/run"
 	"github.com/jjzcru/elk/internal/cli/command/version"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 // Execute starts the CLI application

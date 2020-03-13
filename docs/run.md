@@ -104,11 +104,20 @@ elk run test --watch
 
 This flag with kill the task after some duration since the program was started.
 
+This commands supports the following duration units:
+- `ns`: Nanoseconds
+- `ms`: Milliseconds
+- `s`: Seconds
+- `m`: Minutes
+- `h`: Hours
+
 Example:
 
 ```
 elk run test -t 1s
 elk run test --timeout 500ms
+elk run test --timeout 2h
+elk run test --timeout 2h45m
 ```
 
 `deadline`
@@ -143,11 +152,20 @@ elk run test --deadline 2020-12-12T09:41:00Z00:00
 
 This flag will run the task after some duration.
 
+This commands supports the following duration units:
+- `ns`: Nanoseconds
+- `ms`: Milliseconds
+- `s`: Seconds
+- `m`: Minutes
+- `h`: Hours
+
 Example:
 
 ```
 elk run test --delay 1s
 elk run test --delay 500ms
+elk run test --delay 2h
+elk run test --delay 2h45m
 ```
 
 `start`

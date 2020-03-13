@@ -23,5 +23,5 @@ for key in "${!platforms[@]}"; do
 
     compress-archive ${NAME}.exe $ZIP_PATH
     # zip $ZIP_PATH ${NAME}.exe
-    rm ${NAME}.exe
+    # rm ${NAME}.exe
 done
