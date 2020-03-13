@@ -2,30 +2,13 @@ package config
 
 import (
 	"errors"
-	"github.com/jjzcru/elk/pkg/primitives"
+	"fmt"
+	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/primitives/elk"
-	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"os"
 	"os/user"
 	"path"
 )
-
-// NewConfigCommand returns a cobra command for `config` sub command
-func NewConfigCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "config",
-		Short: "Manage config file",
-	}
-
-	cmd.AddCommand(
-		NewGetCommand(),
-		NewSetCommand(),
-	)
-
-	return cmd
-}
 
 // GetElk get an elk pointer from a file path
 func GetElk(filePath string, isGlobal bool) (*elk.Elk, error) {
@@ -81,27 +64,29 @@ func isLocalElkFile(localDirectory string) bool {
 }
 
 func getGlobalElkFile() (string, error) {
+	globalElkFilePath := os.Getenv("ELK_FILE")
+	if len(globalElkFilePath) > 0 {
+		isAFile, err := utils.IsPathAFile(globalElkFilePath)
+		if err != nil {
+			return "", err
+		}
+
+		if !isAFile {
+			return "", errors.New("ELK_FILE path must be a file")
+		}
+
+		return globalElkFilePath, nil
+	}
+
 	usr, err := user.Current()
 	if err != nil {
 		return "", err
 	}
 
-	configPath := path.Join(usr.HomeDir, ".elk", "config.yml")
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return "", errors.New("Elk is not installed, \nPlease run \"elk install\"")
+	globalElkFilePath = path.Join(usr.HomeDir, "elk.yml")
+	if _, err := os.Stat(globalElkFilePath); os.IsNotExist(err) {
+		return "", fmt.Errorf("default global path %s do not exist, please create it or set the env variable ELK_FILE", globalElkFilePath)
 	}
 
-	config := primitives.Config{}
-
-	configData, err := ioutil.ReadFile(configPath)
-	if err != nil {
-		return "", err
-	}
-
-	err = yaml.Unmarshal(configData, &config)
-	if err != nil {
-		return "", err
-	}
-
-	return config.Path, nil
+	return globalElkFilePath, nil
 }

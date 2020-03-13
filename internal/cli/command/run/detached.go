@@ -4,10 +4,11 @@ package run
 
 import (
 	"fmt"
-	"github.com/jjzcru/elk/internal/cli/utils"
 	"os"
 	"os/exec"
 	"syscall"
+
+	"github.com/jjzcru/elk/internal/cli/utils"
 )
 
 func runDetached() error {
@@ -27,8 +28,6 @@ func runDetached() error {
 		return err
 	}
 
-	// _ = cmd.Process.Release()
-
-	fmt.Printf("%d", pid)
+	fmt.Println(pid)
 	return nil
 }

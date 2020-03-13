@@ -25,8 +25,6 @@ func runDetached() error {
 		return err
 	}
 
-	// _ = cmd.Process.Release()
-
-	fmt.Printf("%d", pid)
+	fmt.Println(pid)
 	return nil
 }

@@ -1,5 +1,7 @@
+![Build Status](https://github.com/jjzcru/elk/workflows/Build%20Status/badge.svg?branch=develop)
+
 Elk
-================
+==========
 
 Elk is a minimalist, [YAML][yaml] based task runner that aims to help developers 
 to focus on building cool stuff, instead of remembering to perform tedious 
@@ -44,8 +46,8 @@ This will print `Hello world`
 The main use case for `elk` is that you are able to run any command/s in a declarative way 
 in any path. 
 
-By default the global file that is going to be used is declared in the property
-`path` inside `~/.elk/config.yml`. You can change this path if you wish to use another file.
+By default the global file that is going to be used is `~/elk.yml`. You can change this 
+path if you wish to use another file by setting the env variable `ELK_FILE`.
 
 `elk` will first search if there is a `elk.yml` file in the current directory and use that 
 first, if the file is not found it will use the global file. This enables the user to have 
@@ -91,10 +93,8 @@ tasks:
     dir: /tmp/create-react-app-example
     watch: "[a-zA-Z]*.jsx$" # All .jsx files
     dir: /tmp/create-react-app-example
-    dep:
-      - build
-    background_deps:
-      - hello
+    deps:
+      - name: build
     cmds:
       - lite-server --baseDir="build"
 
@@ -160,23 +160,43 @@ Saves the output of the command to a file
 
 This is a regex for the files that are going to activate the re-run of the tasks
 
-`dep`
+`deps`
 
-This is a list of all the dependencies that the task requires to run, this list are 
-the name of the other task declared at the `global` level.
+This is a list of all the dependencies that the task requires to run. The `dep` declaration
+takes 2 properties:
+- `name`: It takes a `string` which is the name of the task that you which to 
+run as a dependency
+- `detached`: It takes a `boolean` which tells if the dependency should run in `detached` 
+mode, is `false` as default.
 
-This dependencies runs synchronously if at least one of them fails the command will fail
+```yml
+test:
+    deps:
+      - name: build
+      - name: hello
+        detached: true
 
-`background_deps`
+```
 
-This work like the `dep` property but run independently of the command, and won't stop 
-the execution of the program if one of them fail
+If a `dep` is run as `detached` it will run without waiting the result of the previous command.
+If you are going to run a long running task is recommended to run in detached mode because
+the main won't run until all the task that are not detached finish running.
 
 `cmds`
 
+This is a list of all the command that are required to run to perform the `task`. If at least one 
+of them fail the entire task fails.
+
+```yml
+hello:
+    description: "Print hello world"
+    env:
+      HELLO: HELLO
+    cmds:
+      - echo $HELLO WORLD 
+```
+
 ### Commands
-- [install](docs/install.md)
-- [config](docs/config.md)
 - [init](docs/init.md)
 - [ls](docs/ls.md)
 - [run](docs/run.md)

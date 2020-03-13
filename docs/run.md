@@ -6,17 +6,36 @@ Run one or more task
 Usage: 
   elk run [task] [flags]
 
+Examples:
+elk run foo
+elk run foo bar
+elk run foo -d
+elk run foo -d -w
+elk run foo -t 1s
+elk run foo --delay 1s
+elk run foo -e FOO=BAR --eenv HELLO=WORLD
+elk run foo -l ./foo.log -d
+elk run foo --ignore-log
+elk run foo --deadline 09:41AM
+elk run foo --start 09:41PM
+
 Flags:
-    -d, --detached          Run the task in detached mode and return the PGID
-    -e, --env               Overwrites declared env variables
-    -f, --file              Specify which file to use 
-    -g, --global            Force to use the global file
-    -l, --log               File path that log the output from the task
-    -w, --watch             Enable watch mode
-        --ignore-log        Force the output of the task to be on the terminal
+  -d, --detached      Run the task in detached mode and returns the PGID
+  -e, --env strings   Overwrite env variable in task   
+  -f, --file string   Run elk in a specific file
+  -g, --global        Run from the path set in config
+  -h, --help          help for run
+      --ignore-log    Force task to output to stdout
+      --delay         Set a delay to a task
+  -l, --log string    File that log output from a task
+  -w, --watch         Enable watch mode
+  -t, --timeout       Set a timeout to a task
+      --deadline      Set a deadline to a task
+      --start      	  Set a date/datetime to a task to run
 ```
 
 ## Flags
+
 `detached`
 
 This will group all the tasks under the same `PGID` and then it will detach from the process, and returns the `PGID` so the user can kill the process later.
@@ -25,6 +44,7 @@ Example:
 
 ```
 elk run test -d
+elk run test --detached
 ```
 
 `env`
@@ -33,8 +53,30 @@ This flag will overwrite whatever env variable already declared in the file. You
 
 Example:
 ```
-elk run test -e HELLO=WORLD -e FOO=BAR
+elk run test -e HELLO=WORLD --env FOO=BAR
 ```
+
+`file`
+
+This flag force `elk` to use a particular file path to run the commands.
+
+Example:
+```
+elk run test -f ./elk.yml
+elk run test --file ./elk.yml
+```
+
+`global`
+
+This force the task to run from the global file either declared at `ELK_FILE` or the default global path `~/elk.yml`.
+
+Example:
+
+```
+elk run test -g
+elk run test --global
+```
+
 
 `log`
 
@@ -44,6 +86,7 @@ Example:
 
 ```
 elk run test -l ./test.log
+elk run test --log ./test.log
 ```
 
 `watch`
@@ -54,4 +97,83 @@ Example:
 
 ```
 elk run test -w
+elk run test --watch
+```
+
+`timeout`
+
+This flag with kill the task after some duration since the program was started.
+
+Example:
+
+```
+elk run test -t 1s
+elk run test --timeout 500ms
+```
+
+`deadline`
+
+This flag with kill the task at a particular datetime.
+
+It supports the following datetime standards:
+- `ANSIC`: `Mon Jan _2 15:04:05 2006`
+- `UnixDate`: `Mon Jan _2 15:04:05 MST 2006`
+- `RubyDate`: `Mon Jan 02 15:04:05 -0700 2006`
+- `RFC822`: `02 Jan 06 15:04 MST`
+- `RFC822Z`: `02 Jan 06 15:04 -0700`
+- `RFC850`: `Monday, 02-Jan-06 15:04:05 MST`
+- `RFC1123`: `Mon, 02 Jan 2006 15:04:05 MST`
+- `RFC1123Z`: `Mon, 02 Jan 2006 15:04:05 -0700`
+- `RFC3339`: `2006-01-02T15:04:05Z07:00`
+- `RFC3339Nano`: `2006-01-02T15:04:05.999999999Z07:00`
+- `Kitchen`: `3:04PM`
+
+If the `Kitchen` format is used and the time is before the current time it will run
+at the same time in the following day.
+
+
+Example:
+
+```
+elk run test --deadline 11:00PM
+elk run test --deadline 2020-12-12T09:41:00Z00:00
+```
+
+`delay`
+
+This flag will run the task after some duration.
+
+Example:
+
+```
+elk run test --delay 1s
+elk run test --delay 500ms
+```
+
+`start`
+
+This flag with run the task at a particular datetime.
+
+It supports the following datetime standards:
+- `ANSIC`: `Mon Jan _2 15:04:05 2006`
+- `UnixDate`: `Mon Jan _2 15:04:05 MST 2006`
+- `RubyDate`: `Mon Jan 02 15:04:05 -0700 2006`
+- `RFC822`: `02 Jan 06 15:04 MST`
+- `RFC822Z`: `02 Jan 06 15:04 -0700`
+- `RFC850`: `Monday, 02-Jan-06 15:04:05 MST`
+- `RFC1123`: `Mon, 02 Jan 2006 15:04:05 MST`
+- `RFC1123Z`: `Mon, 02 Jan 2006 15:04:05 -0700`
+- `RFC3339`: `2006-01-02T15:04:05Z07:00`
+- `RFC3339Nano`: `2006-01-02T15:04:05.999999999Z07:00`
+- `Kitchen`: `3:04PM`
+
+If the `Kitchen` format is used and the time is before the current time it will run
+at the same time in the following day.
+
+
+Example:
+
+```
+elk run test --deadline 11:00PM
+elk run test --deadline 2020-12-12T09:41:00Z00:00
 ```

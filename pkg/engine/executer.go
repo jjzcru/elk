@@ -32,15 +32,26 @@ func (e DefaultExecuter) Execute(ctx context.Context, elk *elk.Elk, name string)
 		return pid, err
 	}
 
-	if len(task.BackgroundDeps) > 0 {
-		for _, dep := range task.BackgroundDeps {
+	var detachedDeps []string
+	var deps []string
+
+	for _, dep := range task.Deps {
+		if dep.Detached {
+			detachedDeps = append(detachedDeps, dep.Name)
+		} else {
+			deps = append(deps, dep.Name)
+		}
+	}
+
+	if len(detachedDeps) > 0 {
+		for _, dep := range detachedDeps {
 			depCtx, _ := context.WithCancel(ctx)
 			go e.Execute(depCtx, elk, dep)
 		}
 	}
 
-	if len(task.Deps) > 0 {
-		for _, dep := range task.Deps {
+	if len(deps) > 0 {
+		for _, dep := range deps {
 			depCtx, _ := context.WithCancel(ctx)
 			_, err := e.Execute(depCtx, elk, dep)
 			if err != nil {

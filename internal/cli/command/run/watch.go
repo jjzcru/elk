@@ -6,9 +6,12 @@ import (
 	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/engine"
 	"github.com/jjzcru/elk/pkg/primitives/elk"
+	"os"
+	"path/filepath"
+	"regexp"
 )
 
-func runWatch(cliEngine *engine.Engine, taskCtx context.Context, task string, t *elk.Task, cancel context.CancelFunc, ctx context.Context) {
+func runWatch(ctx context.Context, taskCtx context.Context, cancel context.CancelFunc, cliEngine *engine.Engine,  task string, t *elk.Task) {
 	go func() {
 		err := cliEngine.Run(taskCtx, task)
 		if err != nil {
@@ -17,7 +20,7 @@ func runWatch(cliEngine *engine.Engine, taskCtx context.Context, task string, t 
 		}
 	}()
 
-	files, err := t.GetWatcherFiles(t.Watch)
+	files, err := getWatcherFiles(t.Watch, t.Dir)
 	if err != nil {
 		utils.PrintError(err)
 		return
@@ -65,4 +68,35 @@ func runWatch(cliEngine *engine.Engine, taskCtx context.Context, task string, t 
 			return
 		}
 	}
+}
+
+func getWatcherFiles(reg string, dir string) ([]string, error) {
+	if len(dir) == 0 {
+		d, err := os.Getwd()
+		if err != nil {
+			return nil, err
+		}
+		dir = d
+	}
+
+	re := regexp.MustCompile(reg)
+	var files []string
+	walk := func(fn string, fi os.FileInfo, err error) error {
+		if re.MatchString(fn) == false {
+			return nil
+		}
+		if fi.IsDir() {
+			files = append(files, fn+string(os.PathSeparator))
+		} else {
+			files = append(files, fn)
+		}
+		return nil
+	}
+
+	err := filepath.Walk(dir, walk)
+	if err != nil {
+		return files, err
+	}
+
+	return files, nil
 }

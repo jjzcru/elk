@@ -77,7 +77,13 @@ func printAll(w *tabwriter.Writer, e *elk.Elk) error {
 	}
 
 	for taskName, task := range e.Tasks {
-		_, err = fmt.Fprintf(w, "%s\t%s\t%s\t\n", taskName, task.Description, strings.Join(append(task.Deps, task.BackgroundDeps...), ", "))
+		var deps []string
+
+		for _, dep := range task.Deps {
+			deps = append(deps, dep.Name)
+		}
+
+		_, err = fmt.Fprintf(w, "%s\t%s\t%s\t\n", taskName, task.Description, strings.Join(deps, ", "))
 		if err != nil {
 			return err
 		}

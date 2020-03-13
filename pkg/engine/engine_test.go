@@ -14,18 +14,20 @@ func getTestEngine() *Engine {
 			"hello": {
 				Description: "Empty Task",
 				Cmds: []string{
-					"clear",
+					"echo Hello",
 				},
 			},
 			"world": {
-				Deps: []string{
-					"hello",
+				Deps: []elk2.Dep{
+					{
+						Name: "hello",
+					},
 				},
 				Env: map[string]string{
 					"FOO": "BAR",
 				},
 				Cmds: []string{
-					"clear",
+					"echo World",
 				},
 			},
 		},

@@ -29,14 +29,4 @@ for key in "${!platforms[@]}"; do
     else
         go build -o $BIN_PATH
     fi
-    
-    cd $BUILD_PATH
-    if [ $GOOS == "windows" ]
-    then
-        zip $BIN_PATH.zip ${NAME}.exe
-        rm ${NAME}.exe
-    else
-        zip $BIN_PATH.zip $NAME
-        rm $NAME
-    fi
 done

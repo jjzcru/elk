@@ -2,7 +2,10 @@ package run
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"sync"
+	"time"
 
 	"github.com/jjzcru/elk/internal/cli/command/config"
 	"github.com/jjzcru/elk/internal/cli/utils"
@@ -20,19 +23,27 @@ elk run foo
 elk run foo bar
 elk run foo -d
 elk run foo -d -w
-elk run foo -e FOO=BAR -e HELLO=WORLD
-elk run foo --ignore-log
+elk run foo -t 1s
+elk run foo --delay 1s
+elk run foo -e FOO=BAR --env HELLO=WORLD
 elk run foo -l ./foo.log -d
+elk run foo --ignore-log
+elk run foo --deadline 09:41AM
+elk run foo --start 09:41PM
 
 Flags:
-  -d, --detached      Run the command in detached mode and returns the PGID
+  -d, --detached      Run the task in detached mode and returns the PGID
   -e, --env strings   Overwrite env variable in task   
   -f, --file string   Run elk in a specific file
   -g, --global        Run from the path set in config
   -h, --help          help for run
       --ignore-log    Force task to output to stdout
+      --delay         Set a delay to a task
   -l, --log string    File that log output from a task
   -w, --watch         Enable watch mode
+  -t, --timeout       Set a timeout to a task
+      --deadline      Set a deadline to a task
+      --start      	  Set a date/datetime to a task to run
 `
 
 // NewRunCommand returns a cobra command for `run` sub command
@@ -61,6 +72,10 @@ func NewRunCommand() *cobra.Command {
 	cmd.Flags().BoolP("watch", "w", false, "Enable watch mode")
 	cmd.Flags().StringP("file", "f", "", "Run elk in a specific file")
 	cmd.Flags().StringP("log", "l", "", "File that log output from a task")
+	cmd.Flags().DurationP("timeout", "t", 0, "Set a timeout for a task in milliseconds")
+	cmd.Flags().Duration("delay", 0, "Set a delay for a task in milliseconds")
+	cmd.Flags().String("deadline", "", "Set a deadline to a task")
+	cmd.Flags().String("start", "", "Set a date/datetime for a task to run")
 
 	cmd.SetUsageTemplate(usageTemplate)
 
@@ -84,6 +99,26 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	isGlobal, err := cmd.Flags().GetBool("global")
+	if err != nil {
+		return err
+	}
+
+	delay, err := cmd.Flags().GetDuration("delay")
+	if err != nil {
+		return err
+	}
+
+	timeout, err := cmd.Flags().GetDuration("timeout")
+	if err != nil {
+		return err
+	}
+
+	deadline, err := cmd.Flags().GetString("deadline")
+	if err != nil {
+		return err
+	}
+
+	start, err := cmd.Flags().GetString("start")
 	if err != nil {
 		return err
 	}
@@ -115,17 +150,86 @@ func run(cmd *cobra.Command, args []string) error {
 
 	var wg sync.WaitGroup
 	ctx := context.Background()
+	var cancel context.CancelFunc
+
+	if len(start) > 0 {
+		startTime, err := getTimeFromString(start)
+		if err != nil {
+			return err
+		}
+
+		now := time.Now()
+		if startTime.Before(now) {
+			return fmt.Errorf("start can't be before of current time")
+		}
+	}
+
+	if timeout > 0 {
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+	}
+
+	if len(deadline) > 0 {
+		deadlineTime, err := getTimeFromString(deadline)
+		if err != nil {
+			return err
+		}
+
+		ctx, cancel = context.WithDeadline(ctx, deadlineTime)
+	}
+
 	for _, task := range args {
 		wg.Add(1)
-		go runTask(ctx, clientEngine, task, &wg, isWatch)
+		go runTask(ctx, clientEngine, task, &wg, isWatch, delay, start)
 	}
 
 	wg.Wait()
 
+	cancel()
 	return nil
 }
 
-func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, isWatch bool) {
+func getTimeFromString(input string) (time.Time, error) {
+	validTimeFormats := []string{
+		time.ANSIC,
+		time.UnixDate,
+		time.RubyDate,
+		time.RFC822,
+		time.RFC822Z,
+		time.RFC850,
+		time.RFC1123,
+		time.RFC1123Z,
+		time.RFC3339,
+		time.RFC3339Nano,
+		time.Kitchen,
+	}
+
+	for _, layout := range validTimeFormats {
+		deadlineTime, err := time.Parse(layout, input)
+		if err == nil {
+			if layout == time.Kitchen {
+				now := time.Now()
+				deadlineTime = time.Date(now.Year(),
+					now.Month(),
+					now.Day(),
+					deadlineTime.Hour(),
+					deadlineTime.Minute(),
+					0,
+					0,
+					now.Location())
+
+				// If time is before now i refer to that time but the next day
+				if deadlineTime.Before(now) {
+					deadlineTime = deadlineTime.Add(24 * time.Hour)
+				}
+			}
+			return deadlineTime, nil
+		}
+	}
+
+	return time.Now(), errors.New("invalid input")
+}
+
+func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, isWatch bool, delay time.Duration, start string) {
 	defer wg.Done()
 
 	taskCtx, cancel := context.WithCancel(ctx)
@@ -137,8 +241,19 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 		return
 	}
 
+	if len(start) > 0 {
+		startTime, _ := getTimeFromString(start)
+		now := time.Now()
+		diff := startTime.Sub(now)
+		time.Sleep(diff)
+	} else {
+		if delay > 0 {
+			time.Sleep(delay)
+		}
+	}
+
 	if len(t.Watch) > 0 && isWatch {
-		runWatch(cliEngine, taskCtx, task, t, cancel, ctx)
+		runWatch(ctx, taskCtx, cancel, cliEngine, task, t)
 		cancel()
 		return
 	}
@@ -149,4 +264,6 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 		cancel()
 		return
 	}
+
+	cancel()
 }

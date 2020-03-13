@@ -1,0 +1,36 @@
+name: Build Status
+on:
+  push:
+    branches:
+      - develop
+      - master
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+
+      - name: Check out source code
+        uses: actions/checkout@v1
+      
+      - name: Test
+        env:
+          GOPROXY: "https://proxy.golang.org"
+        run: go test ./...
+
+      - name: Build
+        shell: bash
+        env:
+          GOPROXY: "https://proxy.golang.org"
+        run: bash ci-build.sh && rm ./bin/.gitkeep
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: elk
+          path: ./bin/

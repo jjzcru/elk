@@ -95,8 +95,11 @@ func CreateElkFile(elkFilePath string) error {
 				Cmds: []string{
 					"npm start",
 				},
-				Deps: []string{
-					"ts-build",
+				Deps: []elk.Dep{
+					{
+						Name:     "ts-build",
+						Detached: false,
+					},
 				},
 			},
 			"ts-build": {
