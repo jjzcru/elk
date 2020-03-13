@@ -6,8 +6,8 @@ on:
       - master
 
 jobs:
-  build:
-    name: Build
+  test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go 1.13
@@ -23,6 +23,19 @@ jobs:
           GOPROXY: "https://proxy.golang.org"
         run: go test ./...
 
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+
+      - name: Check out source code
+        uses: actions/checkout@v1
+
       - name: Build
         shell: bash
         env:
@@ -33,4 +46,29 @@ jobs:
         uses: actions/upload-artifact@master
         with:
           name: elk
+          path: ./bin/
+  
+  build-mac:
+    name: Build Mac
+    runs-on: macos-latest
+    needs: test
+    steps:
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+
+      - name: Check out source code
+        uses: actions/checkout@v1
+
+      - name: Build
+        shell: bash
+        env:
+          GOPROXY: "https://proxy.golang.org"
+        run: bash ci-mac-build.sh && rm ./bin/.gitkeep
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: elk-mac
           path: ./bin/
