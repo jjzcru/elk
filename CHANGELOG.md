@@ -1,3 +1,9 @@
+## [v0.2.1](https://github.com/jjzcru/elk/tree/v0.2.1) (2020-03-12)
+[Release](https://github.com/jjzcru/elk/releases/tag/v0.2.1)
+
+**Bug Fix:**
+- Fix issue when context was call before the program finish
+
 ## [v0.2.0](https://github.com/jjzcru/elk/tree/v0.2.0) (2020-03-12)
 [Release](https://github.com/jjzcru/elk/releases/tag/v0.2.0)
 
