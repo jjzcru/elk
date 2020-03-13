@@ -108,6 +108,21 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	timeout, err := cmd.Flags().GetDuration("timeout")
+	if err != nil {
+		return err
+	}
+
+	deadline, err := cmd.Flags().GetString("deadline")
+	if err != nil {
+		return err
+	}
+
+	start, err := cmd.Flags().GetString("start")
+	if err != nil {
+		return err
+	}
+
 	// Check if the file path is set
 	e, err := config.GetElk(elkFilePath, isGlobal)
 	if err != nil {
@@ -135,34 +150,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	var wg sync.WaitGroup
 	ctx := context.Background()
-
-	timeout, err := cmd.Flags().GetDuration("timeout")
-	if err != nil {
-		return err
-	}
-
-	if timeout > 0 {
-		ctx, _ = context.WithTimeout(ctx, timeout)
-	}
-
-	deadline, err := cmd.Flags().GetString("deadline")
-	if err != nil {
-		return err
-	}
-
-	start, err := cmd.Flags().GetString("start")
-	if err != nil {
-		return err
-	}
-
-	if len(deadline) > 0 {
-		deadlineTime, err := getTimeFromString(deadline)
-		if err != nil {
-			return err
-		}
-
-		ctx, _ = context.WithDeadline(ctx, deadlineTime)
-	}
+	var cancel context.CancelFunc
 
 	if len(start) > 0 {
 		startTime, err := getTimeFromString(start)
@@ -176,6 +164,19 @@ func run(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	if timeout > 0 {
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+	}
+
+	if len(deadline) > 0 {
+		deadlineTime, err := getTimeFromString(deadline)
+		if err != nil {
+			return err
+		}
+
+		ctx, cancel = context.WithDeadline(ctx, deadlineTime)
+	}
+
 	for _, task := range args {
 		wg.Add(1)
 		go runTask(ctx, clientEngine, task, &wg, isWatch, delay, start)
@@ -183,6 +184,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	wg.Wait()
 
+	cancel()
 	return nil
 }
 
@@ -251,7 +253,7 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 	}
 
 	if len(t.Watch) > 0 && isWatch {
-		runWatch(cliEngine, taskCtx, task, t, cancel, ctx)
+		runWatch(ctx, taskCtx, cancel, cliEngine, task, t)
 		cancel()
 		return
 	}
