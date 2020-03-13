@@ -8,7 +8,7 @@ import (
 	"github.com/jjzcru/elk/internal/cli/utils"
 )
 
-var v = "0.2.0"
+var v = "0.2.1"
 
 func main() {
 	version.SetVersion(v)
