@@ -21,7 +21,7 @@ for key in "${!platforms[@]}"; do
     cd $BUILD_PATH
     ZIP_PATH=${BIN_PATH}_v${VERSION}_${GOOS}_${GOARCH}.zip
 
-    compress-archive ${NAME}.exe $ZIP_PATH
+    # compress-archive ${NAME}.exe $ZIP_PATH
     # zip $ZIP_PATH ${NAME}.exe
     # rm ${NAME}.exe
 done
