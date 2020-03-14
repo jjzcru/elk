@@ -18,7 +18,7 @@ echo $BIN_PATH
 go build -o "$BIN_PATH.exe"
 
 cd "$BUILD_PATH"
-$ZIP_PATH = "$BIN_PATH_v$VERSION_$GOOS_$GOARCH.zip"
+$ZIP_PATH = "$($BIN_PATH)_v$($VERSION)_$($GOOS)_$($GOARCH).zip"
 compress-archive "$NAME.exe" $ZIP_PATH
 # rm ${NAME}.exe
 
