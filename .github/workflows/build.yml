@@ -87,10 +87,10 @@ jobs:
         uses: actions/checkout@v1
 
       - name: Build Binaries
-        shell: bash
+        shell: powershell
         env:
           GOPROXY: "https://proxy.golang.org"
-        run: bash ./ci/build-windows.sh && rm ./bin/.gitkeep
+        run: .\ci\build-windows && rm ./bin/.gitkeep
       
       - name: Upload Artifact
         uses: actions/upload-artifact@master
