@@ -90,7 +90,7 @@ jobs:
         shell: powershell
         env:
           GOPROXY: "https://proxy.golang.org"
-        run: .\ci\build-windows; rm ./bin/.gitkeep
+        run: .\ci\build-windows
       
       - name: Upload Artifact
         uses: actions/upload-artifact@master
