@@ -17,10 +17,10 @@ $BIN_PATH = "$BUILD_PATH\$NAME"
 echo $BIN_PATH
 go build -o "$BIN_PATH.exe"
 
-#cd $BUILD_PATH
-#$ZIP_PATH = "$BIN_PATH_v$VERSION_$GOOS_$GOARCH.zip"
-#compress-archive "$NAME.exe" $ZIP_PATH
-#rm ${NAME}.exe
+cd $BUILD_PATH
+$ZIP_PATH = "$BIN_PATH_v$VERSION_$GOOS_$GOARCH.zip"
+compress-archive "$NAME.exe" $ZIP_PATH
+rm ${NAME}.exe
 
 # amd64
 #$env:GOARCH = "amd64"
