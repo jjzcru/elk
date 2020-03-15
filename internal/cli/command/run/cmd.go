@@ -229,8 +229,6 @@ func getTimeFromString(input string) (time.Time, error) {
 func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, isWatch bool, delay time.Duration, start string) {
 	defer wg.Done()
 
-	taskCtx, cancel := context.WithCancel(ctx)
-
 	t, err := cliEngine.Elk.GetTask(task)
 	if err != nil {
 		utils.PrintError(err)
@@ -249,9 +247,11 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 	}
 
 	if len(t.Watch) > 0 && isWatch {
-		runWatch(ctx, taskCtx, cancel, cliEngine, task, *t)
+		runWatch(ctx, cliEngine, task, *t)
 		return
 	}
+
+	taskCtx, _ := context.WithCancel(ctx)
 
 	err = cliEngine.Run(taskCtx, task)
 	if err != nil {

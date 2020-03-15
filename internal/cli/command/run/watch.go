@@ -2,6 +2,7 @@ package run
 
 import (
 	"context"
+	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/engine"
@@ -11,7 +12,9 @@ import (
 	"regexp"
 )
 
-func runWatch(ctx context.Context, taskCtx context.Context, cancel context.CancelFunc, cliEngine *engine.Engine, task string, t elk.Task) {
+func runWatch(ctx context.Context, cliEngine *engine.Engine, task string, t elk.Task) {
+	taskCtx, cancel := context.WithCancel(ctx)
+
 	go func() {
 		err := cliEngine.Run(taskCtx, task)
 		if err != nil {
@@ -35,7 +38,10 @@ func runWatch(ctx context.Context, taskCtx context.Context, cancel context.Cance
 
 	for _, file := range files {
 		err = watcher.Add(file)
+		fmt.Println(file)
 		if err != nil {
+
+			fmt.Println(err.Error())
 			utils.PrintError(err)
 			return
 		}
@@ -52,17 +58,16 @@ func runWatch(ctx context.Context, taskCtx context.Context, cancel context.Cance
 			case event.Op&fsnotify.Remove == fsnotify.Remove:
 				fallthrough
 			case event.Op&fsnotify.Rename == fsnotify.Rename:
-				go func() {
-					cancel()
-					taskCtx, cancel = context.WithCancel(ctx)
-
-					err = cliEngine.Run(taskCtx, task)
-					if err != nil && err != context.Canceled {
-						utils.PrintError(err)
-						return
-					}
-				}()
+				cancel()
 			}
+		case <-taskCtx.Done():
+			taskCtx, cancel = context.WithCancel(ctx)
+			go func() {
+				err = cliEngine.Run(taskCtx, task)
+				if err != nil {
+					utils.PrintError(err)
+				}
+			}()
 		case err := <-watcher.Errors:
 			utils.PrintError(err)
 			return
@@ -85,9 +90,7 @@ func getWatcherFiles(reg string, dir string) ([]string, error) {
 		if re.MatchString(fn) == false {
 			return nil
 		}
-		if fi.IsDir() {
-			files = append(files, fn+string(os.PathSeparator))
-		} else {
+		if !fi.IsDir() {
 			files = append(files, fn)
 		}
 		return nil
