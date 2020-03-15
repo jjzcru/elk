@@ -38,7 +38,8 @@ Flags:
 
 `detached`
 
-This will group all the tasks under the same `PGID` and then it will detach from the process, and returns the `PGID` so the user can kill the process later.
+This will group all the tasks under the same `PGID` and then it will detach from the process, and returns the `PGID` so 
+the user can kill the process later.
 
 Example:
 
@@ -91,7 +92,11 @@ elk run test --log ./test.log
 
 `watch`
 
-This requires that the task has a property `watch` already setup, otherwise it will throw an error. When this flag is enable it will kill the existing process and create a new one everytime that a file that match the regex is changed.
+This requires that the task has a property `watch` already setup, otherwise it will throw an error. When this flag is 
+enable it will kill the existing process and create a new one every time a file that match the regex is changed.
+
+The property `watch` uses a `go` regex to search for all the paths, inside the `dir` property, that matches 
+the criteria and adds a `watcher` to all the files.
 
 Example:
 
