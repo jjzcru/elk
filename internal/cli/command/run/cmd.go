@@ -235,15 +235,36 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 		return
 	}
 
+	var startDuration time.Duration
+	var delayDuration time.Duration
+	var sleepDuration time.Duration
+
 	if len(start) > 0 {
 		startTime, _ := getTimeFromString(start)
 		now := time.Now()
 		diff := startTime.Sub(now)
-		time.Sleep(diff)
-	} else {
-		if delay > 0 {
-			time.Sleep(delay)
+
+		startDuration = diff
+	}
+
+	if delay > 0 {
+		delayDuration = delay
+	}
+
+	if startDuration > 0 && delayDuration > 0 {
+		if startDuration > delayDuration {
+			sleepDuration = startDuration
+		} else {
+			sleepDuration = delayDuration
 		}
+	} else if startDuration > 0 {
+		sleepDuration = startDuration
+	} else if delayDuration > 0 {
+		sleepDuration = delayDuration
+	}
+
+	if sleepDuration > 0 {
+		time.Sleep(sleepDuration)
 	}
 
 	if len(t.Watch) > 0 && isWatch {
