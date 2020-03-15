@@ -25,13 +25,6 @@ func New(elk *elk.Elk, executer Executer, build func() error) *Engine {
 
 // Run task declared in elk.yml file
 func (e *Engine) Run(ctx context.Context, task string) error {
-	if e.Build != nil {
-		err := e.Build()
-		if err != nil {
-			return err
-		}
-	}
-
 	if !e.Elk.HasTask(task) {
 		return fmt.Errorf("task '%s' not found", task)
 	}

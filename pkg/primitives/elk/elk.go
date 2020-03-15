@@ -3,11 +3,10 @@ package elk
 import (
 	"fmt"
 	"github.com/jjzcru/elk/pkg/file"
-	"io/ioutil"
 	"os"
 	"strings"
 
-	"gopkg.in/yaml.v2"
+	"github.com/spf13/viper"
 )
 
 // Elk is the structure of the application
@@ -172,22 +171,19 @@ func FromFile(filePath string) (*Elk, error) {
 		return nil, fmt.Errorf("path do not exist: '%s'", filePath)
 	}
 
-	data, err := ioutil.ReadFile(filePath)
+	viper.SetConfigFile(filePath)
+	viper.SetConfigType("yml")
+	viper.SetDefault("tasks", make(map[string]Task))
+	viper.SetDefault("env", make(map[string]string))
+
+	err := viper.ReadInConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	err = yaml.Unmarshal(data, &elk)
+	err = viper.Unmarshal(&elk)
 	if err != nil {
 		return nil, err
-	}
-
-	if elk.Tasks == nil {
-		elk.Tasks = make(map[string]Task)
-	}
-
-	if elk.Env == nil {
-		elk.Env = make(map[string]string)
 	}
 
 	for name := range elk.Tasks {

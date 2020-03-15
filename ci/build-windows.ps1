@@ -21,7 +21,7 @@ cd "$BUILD_PATH"
 $ZIP_PATH = "$($BIN_PATH)_v$($VERSION)_$($GOOS)_$($GOARCH).zip"
 echo $ZIP_PATH
 echo "-------------"
-compress-archive "elk.exe" "$ZIP_PATH"
+compress-archive "$BIN_PATH.exe" "$ZIP_PATH"
 # rm ${NAME}.exe
 
 # amd64
