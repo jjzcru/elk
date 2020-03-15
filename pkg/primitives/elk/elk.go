@@ -11,11 +11,10 @@ import (
 
 // Elk is the structure of the application
 type Elk struct {
-	Version     string
-	Env         map[string]string
-	EnvFile     string `yaml:"env_file"`
-	IgnoreError bool   `yaml:"ignore_error"`
-	Tasks       map[string]Task
+	Version string
+	Env     map[string]string
+	EnvFile string `yaml:"env_file"`
+	Tasks   map[string]Task
 }
 
 // GetTask Get a task object by its name

@@ -4,7 +4,7 @@ Run one or more task
 
 ```
 Usage: 
-  elk run [task] [flags]
+  elk run [tasks] [flags]
 
 Examples:
 elk run foo
@@ -13,9 +13,10 @@ elk run foo -d
 elk run foo -d -w
 elk run foo -t 1s
 elk run foo --delay 1s
-elk run foo -e FOO=BAR --eenv HELLO=WORLD
+elk run foo -e FOO=BAR --env HELLO=WORLD
 elk run foo -l ./foo.log -d
 elk run foo --ignore-log
+elk run foo --ignore-error
 elk run foo --deadline 09:41AM
 elk run foo --start 09:41PM
 
@@ -26,6 +27,7 @@ Flags:
   -g, --global        Run from the path set in config
   -h, --help          help for run
       --ignore-log    Force task to output to stdout
+      --ignore-error  Ignore errors that happened during a task
       --delay         Set a delay to a task
   -l, --log string    File that log output from a task
   -w, --watch         Enable watch mode
@@ -78,6 +80,45 @@ elk run test -g
 elk run test --global
 ```
 
+`ignore-log`
+
+Force task to output to stdout.
+
+Example:
+
+```
+elk run test --ignore-log
+```
+
+`ignore-error`
+
+Ignore errors that happened during a `task`.
+
+Example:
+
+```
+elk run test --ignore-error
+```
+
+`delay`
+
+This flag will run the task after some duration.
+
+This commands supports the following duration units:
+- `ns`: Nanoseconds
+- `ms`: Milliseconds
+- `s`: Seconds
+- `m`: Minutes
+- `h`: Hours
+
+Example:
+
+```
+elk run test --delay 1s
+elk run test --delay 500ms
+elk run test --delay 2h
+elk run test --delay 2h45m
+```
 
 `log`
 
@@ -151,26 +192,6 @@ Example:
 ```
 elk run test --deadline 11:00PM
 elk run test --deadline 2020-12-12T09:41:00Z00:00
-```
-
-`delay`
-
-This flag will run the task after some duration.
-
-This commands supports the following duration units:
-- `ns`: Nanoseconds
-- `ms`: Milliseconds
-- `s`: Seconds
-- `m`: Minutes
-- `h`: Hours
-
-Example:
-
-```
-elk run test --delay 1s
-elk run test --delay 500ms
-elk run test --delay 2h
-elk run test --delay 2h45m
 ```
 
 `start`

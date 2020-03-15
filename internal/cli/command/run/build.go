@@ -15,6 +15,11 @@ func build(cmd *cobra.Command, e *elk.Elk) error {
 		return err
 	}
 
+	ignoreError, err := cmd.Flags().GetBool("ignore-error")
+	if err != nil {
+		return err
+	}
+
 	logFilePath, err := cmd.Flags().GetString("log")
 	if err != nil {
 		return err
@@ -56,6 +61,10 @@ func build(cmd *cobra.Command, e *elk.Elk) error {
 
 		if ignoreLog {
 			task.Log = ""
+		}
+
+		if ignoreError {
+			task.IgnoreError = true
 		}
 
 		e.Tasks[name] = task

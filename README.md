@@ -67,7 +67,9 @@ tasks:
     description: "Print hello world"
     env:
       HELLO: HELLO
+    ignore_error: true
     cmds:
+      - exit 1
       - echo $HELLO WORLD 
 
   # This puts WORLD in the file ./test.log
@@ -154,7 +156,11 @@ set is going to use the current directory.
 
 `log`
 
-Saves the output of the command to a file
+Saves the output of the command to a file.
+
+`ignore_error`
+
+Ignore errors that happened during a `task`.
 
 `watch` 
 
