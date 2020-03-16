@@ -17,7 +17,17 @@ var usageTemplate = `Usage:
   elk cron [crontab] [tasks] [flags]
 
 Examples:
-elk cron "* * * * *" foo
+elk cron "*/1 * * * *" foo
+elk cron "*/1 * * * *" foo bar
+elk cron "*/1 * * * *" foo -d
+elk cron "*/2 * * * *" foo -t 1s
+elk cron "*/2 * * * *" foo --delay 1s
+elk cron "*/2 * * * *" foo -e FOO=BAR --env HELLO=WORLD
+elk cron "*/6 * * * *" foo -l ./foo.log -d
+elk cron "*/1 * * * *" foo --ignore-log
+elk cron "*/2 * * * *" foo --ignore-error
+elk cron "*/5 * * * *" foo --deadline 09:41AM
+elk cron "*/1 * * * *" foo --start 09:41PM
 
 Flags:
   -d, --detached      Run the task in detached mode and returns the PGID
@@ -40,11 +50,10 @@ func NewCronCommand() *cobra.Command {
 	var envs []string
 	var cmd = &cobra.Command{
 		Use:   "cron",
-		Short: "Run one or more task in a terminal",
+		Short: "Run one or more task as a cron job",
 		Args:  cobra.MinimumNArgs(2),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return validate(cmd)
-			// return validate(cmd, args, &e)
+			return validate(cmd, args)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			err := run(cmd, args, envs)
@@ -175,19 +184,18 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 
 	c := cron.New()
 
-	for _, task := range tasks {
-		_, err := c.AddFunc(cronTab, func() {
-			runTask(ctx, clientEngine, task, delay, start)
-		})
-		if err != nil {
-			return err
+	_, err = c.AddFunc(cronTab, func() {
+		for _, task := range tasks {
+			go runTask(ctx, clientEngine, task, delay, start)
 		}
+	})
+	if err != nil {
+		return err
 	}
 
 	c.Start()
 	select {
 	case <-ctx.Done():
-		fmt.Println("The context was cancelled")
 		c.Stop()
 		return nil
 	}

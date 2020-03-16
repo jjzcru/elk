@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"github.com/jjzcru/elk/internal/cli/command/config"
 	"github.com/jjzcru/elk/internal/cli/utils"
+	"github.com/jjzcru/elk/pkg/primitives/elk"
 	"github.com/spf13/cobra"
 )
 
-func validate(cmd *cobra.Command) error {
+func validate(cmd *cobra.Command, args []string) error {
 	logFilePath, err := cmd.Flags().GetString("log")
 	if err != nil {
 		return err
@@ -35,9 +36,21 @@ func validate(cmd *cobra.Command) error {
 	}
 
 	// Check if the file path is set
-	_, err = config.GetElk(elkFilePath, isGlobal)
+	e, err := config.GetElk(elkFilePath, isGlobal)
 	if err != nil {
 		return err
+	}
+
+	tasks := args[1:]
+
+	for _, name := range tasks {
+		_, err := e.GetTask(name)
+		if err != nil {
+			if err == elk.ErrTaskNotFound {
+				return fmt.Errorf("task \"%s\" not found", name)
+			}
+			return err
+		}
 	}
 
 	return nil
