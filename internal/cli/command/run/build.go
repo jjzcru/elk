@@ -70,5 +70,10 @@ func build(cmd *cobra.Command, e *elk.Elk) error {
 		e.Tasks[name] = task
 	}
 
+	err = e.Build()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

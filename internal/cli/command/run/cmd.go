@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -60,7 +61,7 @@ func NewRunCommand() *cobra.Command {
 			// return validate(cmd, args, &e)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			err := run(cmd, args)
+			err := run(cmd, args, envs)
 			if err != nil {
 				utils.PrintError(err)
 			}
@@ -85,7 +86,7 @@ func NewRunCommand() *cobra.Command {
 	return cmd
 }
 
-func run(cmd *cobra.Command, args []string) error {
+func run(cmd *cobra.Command, args []string, envs []string) error {
 	isDetached, err := cmd.Flags().GetBool("detached")
 	if err != nil {
 		return err
@@ -145,6 +146,17 @@ func run(cmd *cobra.Command, args []string) error {
 	err = clientEngine.Build()
 	if err != nil {
 		return err
+	}
+
+	for name, task := range e.Tasks {
+		for _, en := range envs {
+			parts := strings.SplitAfterN(en, "=", 2)
+			env := strings.ReplaceAll(parts[0], "=", "")
+			value := parts[1]
+			task.Env[env] = value
+		}
+
+		clientEngine.Elk.Tasks[name] = task
 	}
 
 	if isDetached {

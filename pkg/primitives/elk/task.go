@@ -15,7 +15,7 @@ type Task struct {
 	Log         string            `yaml:"log,omitempty"`
 	Watch       string            `yaml:"watch,omitempty"`
 	Deps        []Dep             `yaml:"deps,omitempty"`
-	IgnoreError bool              `mapstructure:"ignore_error,omitempty"`
+	IgnoreError bool              `yaml:"ignore_error,omitempty"`
 }
 
 type Dep struct {
