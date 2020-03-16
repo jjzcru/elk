@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/jjzcru/elk/internal/cli/command/cron"
 	"os"
 
 	initialize "github.com/jjzcru/elk/internal/cli/command/initialize"
@@ -28,6 +29,7 @@ func Execute() error {
 		initialize.NewInitializeCommand(),
 		ls.NewListCommand(),
 		run.NewRunCommand(),
+		cron.NewCronCommand(),
 		logs.NewLogsCommand(),
 	)
 

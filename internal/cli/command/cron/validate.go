@@ -1,4 +1,4 @@
-package run
+package cron
 
 import (
 	"fmt"
@@ -25,11 +25,6 @@ func validate(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	isWatch, err := cmd.Flags().GetBool("watch")
-	if err != nil {
-		return err
-	}
-
 	isGlobal, err := cmd.Flags().GetBool("global")
 	if err != nil {
 		return err
@@ -46,19 +41,15 @@ func validate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	for _, name := range args {
-		task, err := e.GetTask(name)
+	tasks := args[1:]
+
+	for _, name := range tasks {
+		_, err := e.GetTask(name)
 		if err != nil {
 			if err == elk.ErrTaskNotFound {
 				return fmt.Errorf("task \"%s\" not found", name)
 			}
 			return err
-		}
-
-		if isWatch {
-			if len(task.Watch) == 0 {
-				return fmt.Errorf("task '%s' do now have a watch property", name)
-			}
 		}
 	}
 

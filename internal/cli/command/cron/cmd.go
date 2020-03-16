@@ -1,37 +1,33 @@
-package run
+package cron
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
-	"sync"
-	"time"
-
 	"github.com/jjzcru/elk/internal/cli/command/config"
 	"github.com/jjzcru/elk/internal/cli/utils"
-
 	"github.com/jjzcru/elk/pkg/engine"
-
+	cron "github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
+	"strings"
+	"time"
 )
 
 var usageTemplate = `Usage:
-  elk run [tasks] [flags]
+  elk cron [crontab] [tasks] [flags]
 
 Examples:
-elk run foo
-elk run foo bar
-elk run foo -d
-elk run foo -d -w
-elk run foo -t 1s
-elk run foo --delay 1s
-elk run foo -e FOO=BAR --env HELLO=WORLD
-elk run foo -l ./foo.log -d
-elk run foo --ignore-log
-elk run foo --ignore-error
-elk run foo --deadline 09:41AM
-elk run foo --start 09:41PM
+elk cron "*/1 * * * *" foo
+elk cron "*/1 * * * *" foo bar
+elk cron "*/1 * * * *" foo -d
+elk cron "*/2 * * * *" foo -t 1s
+elk cron "*/2 * * * *" foo --delay 1s
+elk cron "*/2 * * * *" foo -e FOO=BAR --env HELLO=WORLD
+elk cron "*/6 * * * *" foo -l ./foo.log -d
+elk cron "*/1 * * * *" foo --ignore-log
+elk cron "*/2 * * * *" foo --ignore-error
+elk cron "*/5 * * * *" foo --deadline 09:41AM
+elk cron "*/1 * * * *" foo --start 09:41PM
 
 Flags:
   -d, --detached      Run the task in detached mode and returns the PGID
@@ -50,15 +46,14 @@ Flags:
 `
 
 // NewRunCommand returns a cobra command for `run` sub command
-func NewRunCommand() *cobra.Command {
+func NewCronCommand() *cobra.Command {
 	var envs []string
 	var cmd = &cobra.Command{
-		Use:   "run",
-		Short: "Run one or more task in a terminal",
-		Args:  cobra.MinimumNArgs(1),
+		Use:   "cron",
+		Short: "Run one or more task as a cron job",
+		Args:  cobra.MinimumNArgs(2),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return validate(cmd, args)
-			// return validate(cmd, args, &e)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			err := run(cmd, args, envs)
@@ -73,7 +68,6 @@ func NewRunCommand() *cobra.Command {
 	cmd.Flags().Bool("ignore-log", false, "Force task to output to stdout")
 	cmd.Flags().Bool("ignore-error", false, "Ignore errors that happened during a task")
 	cmd.Flags().BoolP("detached", "d", false, "Run the command in detached mode and returns the PGID")
-	cmd.Flags().BoolP("watch", "w", false, "Enable watch mode")
 	cmd.Flags().StringP("file", "f", "", "Run elk in a specific file")
 	cmd.Flags().StringP("log", "l", "", "File that log output from a task")
 	cmd.Flags().DurationP("timeout", "t", 0, "Set a timeout for a task in milliseconds")
@@ -88,11 +82,6 @@ func NewRunCommand() *cobra.Command {
 
 func run(cmd *cobra.Command, args []string, envs []string) error {
 	isDetached, err := cmd.Flags().GetBool("detached")
-	if err != nil {
-		return err
-	}
-
-	isWatch, err := cmd.Flags().GetBool("watch")
 	if err != nil {
 		return err
 	}
@@ -163,7 +152,6 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 		return runDetached()
 	}
 
-	var wg sync.WaitGroup
 	ctx := context.Background()
 
 	if len(start) > 0 {
@@ -191,13 +179,26 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 		ctx, _ = context.WithDeadline(ctx, deadlineTime)
 	}
 
-	for _, task := range args {
-		wg.Add(1)
-		go runTask(ctx, clientEngine, task, &wg, isWatch, delay, start)
+	cronTab := args[0]
+	tasks := args[1:]
+
+	c := cron.New()
+
+	_, err = c.AddFunc(cronTab, func() {
+		for _, task := range tasks {
+			go runTask(ctx, clientEngine, task, delay, start)
+		}
+	})
+	if err != nil {
+		return err
 	}
 
-	wg.Wait()
-	return nil
+	c.Start()
+	select {
+	case <-ctx.Done():
+		c.Stop()
+		return nil
+	}
 }
 
 func getTimeFromString(input string) (time.Time, error) {
@@ -241,15 +242,7 @@ func getTimeFromString(input string) (time.Time, error) {
 	return time.Now(), errors.New("invalid input")
 }
 
-func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, isWatch bool, delay time.Duration, start string) {
-	defer wg.Done()
-
-	t, err := cliEngine.Elk.GetTask(task)
-	if err != nil {
-		utils.PrintError(err)
-		return
-	}
-
+func runTask(ctx context.Context, cliEngine *engine.Engine, task string, delay time.Duration, start string) {
 	var startDuration time.Duration
 	var delayDuration time.Duration
 	var sleepDuration time.Duration
@@ -282,14 +275,9 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 		time.Sleep(sleepDuration)
 	}
 
-	if len(t.Watch) > 0 && isWatch {
-		runWatch(ctx, cliEngine, task, *t)
-		return
-	}
-
 	taskCtx, _ := context.WithCancel(ctx)
 
-	err = cliEngine.Run(taskCtx, task)
+	err := cliEngine.Run(taskCtx, task)
 	if err != nil {
 		utils.PrintError(err)
 		return
