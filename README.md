@@ -33,7 +33,7 @@ This will print `Hello world`.
 ### Download Binary
 - Grab the latest binary of your platform from the [Releases][releases] page
 - Add the binary to PATH
-- Give executable permisions with `chmod`
+- Give executable permissions with `chmod`
 - Run `elk version` to make sure that the binary is installed
 - Run `elk install`
 

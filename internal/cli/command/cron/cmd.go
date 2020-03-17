@@ -6,7 +6,7 @@ import (
 	"github.com/jjzcru/elk/internal/cli/command/run"
 	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/engine"
-	cron "github.com/robfig/cron/v3"
+	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
 	"strings"
 	"time"

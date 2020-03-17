@@ -126,7 +126,6 @@ func (e *Elk) HasCircularDependency(name string, visitedNodes ...string) error {
 
 	for _, node := range visitedNodes {
 		if node == name {
-			// return fmt.Errorf("the task '%s' has a circular dependency", name)
 			return ErrCircularDependency
 		}
 	}
@@ -152,7 +151,7 @@ func (e *Elk) getDependencyGraph(task *Task) (map[string][]string, error) {
 		// Validate that the dependency is a valid task
 		t, exists := e.Tasks[dep.Name]
 		if exists == false {
-			return dependencyGraph, fmt.Errorf("The dependency '%s' do not exist as a task", dep.Name)
+			return dependencyGraph, fmt.Errorf("the dependency '%s' do not exist as a task", dep.Name)
 		}
 
 		var depsNames []string
