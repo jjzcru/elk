@@ -11,4 +11,4 @@ Flags:
     -g, --global            Force to use the global file
 ```
 
-If the task do not have a `log` file property specify it will throw an error
+If the task do not have a `log` file property specify it will throw an error.
