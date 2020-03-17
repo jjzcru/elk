@@ -2,9 +2,9 @@ package logs
 
 import (
 	"fmt"
+	"github.com/jjzcru/elk/internal/cli/utils"
 	"os"
 
-	"github.com/jjzcru/elk/internal/cli/config"
 	"github.com/jjzcru/elk/pkg/primitives/elk"
 	"github.com/spf13/cobra"
 )
@@ -50,7 +50,7 @@ func getElk(cmd *cobra.Command) (*elk.Elk, error) {
 	}
 
 	// Check if the file path is set
-	e, err := config.GetElk(elkFilePath, isGlobal)
+	e, err := utils.GetElk(elkFilePath, isGlobal)
 	if err != nil {
 		return nil, err
 	}

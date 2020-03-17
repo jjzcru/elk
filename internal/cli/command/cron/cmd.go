@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/jjzcru/elk/internal/cli/command/run"
-	"github.com/jjzcru/elk/internal/cli/config"
 	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/engine"
 	cron "github.com/robfig/cron/v3"
@@ -117,7 +116,7 @@ func Run(cmd *cobra.Command, args []string, envs []string) error {
 	}
 
 	// Check if the file path is set
-	e, err := config.GetElk(elkFilePath, isGlobal)
+	e, err := utils.GetElk(elkFilePath, isGlobal)
 	if err != nil {
 		return err
 	}

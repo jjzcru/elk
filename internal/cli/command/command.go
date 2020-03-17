@@ -1,4 +1,4 @@
-package commands
+package command
 
 import (
 	"github.com/jjzcru/elk/internal/cli/command/cron"

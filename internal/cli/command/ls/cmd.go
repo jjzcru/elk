@@ -8,7 +8,6 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/jjzcru/elk/internal/cli/config"
 	"github.com/spf13/cobra"
 )
 
@@ -48,7 +47,7 @@ func run(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	e, err := config.GetElk(elkFilePath, isGlobal)
+	e, err := utils.GetElk(elkFilePath, isGlobal)
 
 	if err != nil {
 		return err
@@ -66,12 +65,7 @@ func run(cmd *cobra.Command, _ []string) error {
 }
 
 func printAll(w *tabwriter.Writer, e *elk.Elk) error {
-	_, err := fmt.Fprintf(w, "\n%s\t%s\t%s\t\n", "TASK", "DESCRIPTION", "DEPENDENCIES")
-	if err != nil {
-		return err
-	}
-
-	_, err = fmt.Fprintf(w, "%s\t%s\t%s\t\n", "----", "-----------", "------------")
+	_, err := fmt.Fprintf(w, "\n%s\t%s\t%s\t\n", "TASK NAME", "DESCRIPTION", "DEPENDENCIES")
 	if err != nil {
 		return err
 	}
@@ -93,12 +87,7 @@ func printAll(w *tabwriter.Writer, e *elk.Elk) error {
 }
 
 func printPlain(w *tabwriter.Writer, elk *elk.Elk) error {
-	_, err := fmt.Fprintf(w, "\n%s\t%s\t\n", "TASK", "DESCRIPTION")
-	if err != nil {
-		return err
-	}
-
-	_, err = fmt.Fprintf(w, "%s\t%s\t\n", "----", "-----------")
+	_, err := fmt.Fprintf(w, "\n%s\t%s\t\n", "TASK NAME", "DESCRIPTION")
 	if err != nil {
 		return err
 	}

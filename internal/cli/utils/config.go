@@ -1,9 +1,8 @@
-package config
+package utils
 
 import (
 	"errors"
 	"fmt"
-	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/primitives/elk"
 	"os"
 	"os/user"
@@ -66,7 +65,7 @@ func isLocalElkFile(localDirectory string) bool {
 func getGlobalElkFile() (string, error) {
 	globalElkFilePath := os.Getenv("ELK_FILE")
 	if len(globalElkFilePath) > 0 {
-		isAFile, err := utils.IsPathAFile(globalElkFilePath)
+		isAFile, err := IsPathAFile(globalElkFilePath)
 		if err != nil {
 			return "", err
 		}

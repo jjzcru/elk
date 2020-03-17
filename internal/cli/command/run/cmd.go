@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jjzcru/elk/internal/cli/config"
 	"github.com/jjzcru/elk/internal/cli/utils"
 
 	"github.com/jjzcru/elk/pkg/engine"
@@ -128,7 +127,7 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 	}
 
 	// Check if the file path is set
-	e, err := config.GetElk(elkFilePath, isGlobal)
+	e, err := utils.GetElk(elkFilePath, isGlobal)
 	if err != nil {
 		return err
 	}
