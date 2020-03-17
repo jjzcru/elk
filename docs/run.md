@@ -19,6 +19,8 @@ elk run foo --ignore-log
 elk run foo --ignore-error
 elk run foo --deadline 09:41AM
 elk run foo --start 09:41PM
+elk run foo -i 2s
+elk run foo --interval 2s
 
 Flags:
   -d, --detached      Run the task in detached mode and returns the PGID
@@ -34,6 +36,7 @@ Flags:
   -t, --timeout       Set a timeout to a task
       --deadline      Set a deadline to a task
       --start      	  Set a date/datetime to a task to run
+  -i, --interval      Set a duration for an interval
 ```
 
 ## Flags
@@ -214,10 +217,29 @@ It supports the following datetime standards:
 If the `Kitchen` format is used and the time is before the current time it will run at the same time in the following 
 day.
 
+Example:
+
+```
+elk run test --start 11:00PM
+elk run test --start 2020-12-12T09:41:00Z00:00
+```
+
+`interval`
+
+This flag will run a task in a new process every time the interval ticks. Enabling `interval` disables the `watch` mode.
+
+This commands supports the following duration units:
+- `ns`: Nanoseconds
+- `ms`: Milliseconds
+- `s`: Seconds
+- `m`: Minutes
+- `h`: Hours
 
 Example:
 
 ```
-elk run test --deadline 11:00PM
-elk run test --deadline 2020-12-12T09:41:00Z00:00
+elk run test -i 1s
+elk run test --interval 500ms
+elk run test --interval 2h
+elk run test --interval 2h45m
 ```

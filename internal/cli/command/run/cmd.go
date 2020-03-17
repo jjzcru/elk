@@ -31,6 +31,8 @@ elk run foo --ignore-log
 elk run foo --ignore-error
 elk run foo --deadline 09:41AM
 elk run foo --start 09:41PM
+elk run foo -i 2s
+elk run foo --interval 2s
 
 Flags:
   -d, --detached      Run the task in detached mode and returns the PGID
@@ -46,6 +48,7 @@ Flags:
   -t, --timeout       Set a timeout to a task
       --deadline      Set a deadline to a task
       --start      	  Set a date/datetime to a task to run
+  -i, --interval      Set a duration for an interval
 `
 
 // NewRunCommand returns a cobra command for `run` sub command
@@ -79,6 +82,7 @@ func NewRunCommand() *cobra.Command {
 	cmd.Flags().Duration("delay", 0, "Set a delay for a task in milliseconds")
 	cmd.Flags().String("deadline", "", "Set a deadline to a task")
 	cmd.Flags().String("start", "", "Set a date/datetime for a task to run")
+	cmd.Flags().DurationP("interval", "i", 0, "Set a duration for an interval")
 
 	cmd.SetUsageTemplate(usageTemplate)
 
@@ -126,6 +130,11 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 		return err
 	}
 
+	interval, err := cmd.Flags().GetDuration("interval")
+	if err != nil {
+		return err
+	}
+
 	// Check if the file path is set
 	e, err := utils.GetElk(elkFilePath, isGlobal)
 	if err != nil {
@@ -162,8 +171,7 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 		return Detached()
 	}
 
-	var wg sync.WaitGroup
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
 
 	if len(start) > 0 {
 		startTime, err := GetTimeFromString(start)
@@ -192,6 +200,32 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 
 	DelayStart(delay, start)
 
+	if interval > 0 {
+		executeTasks := func() {
+			for _, task := range args {
+				go runTask(ctx, clientEngine, task, nil, false)
+			}
+		}
+
+		go executeTasks()
+		ticker := time.NewTicker(interval)
+		quit := make(chan struct{})
+		for {
+			select {
+			case <-ticker.C:
+				go executeTasks()
+			case <-ctx.Done():
+				ticker.Stop()
+				return nil
+			case <-quit:
+				ticker.Stop()
+				cancel()
+				return nil
+			}
+		}
+	}
+
+	var wg sync.WaitGroup
 	for _, task := range args {
 		wg.Add(1)
 		go runTask(ctx, clientEngine, task, &wg, isWatch)
@@ -277,7 +311,9 @@ func GetTimeFromString(input string) (time.Time, error) {
 }
 
 func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, isWatch bool) {
-	defer wg.Done()
+	if wg != nil {
+		defer wg.Done()
+	}
 
 	t, err := cliEngine.Elk.GetTask(task)
 	if err != nil {
