@@ -2,13 +2,13 @@ package run
 
 import (
 	"fmt"
-	"github.com/jjzcru/elk/internal/cli/command/config"
+	"github.com/jjzcru/elk/internal/cli/config"
 	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/primitives/elk"
 	"github.com/spf13/cobra"
 )
 
-func validate(cmd *cobra.Command, args []string) error {
+func Validate(cmd *cobra.Command, tasks []string) error {
 	logFilePath, err := cmd.Flags().GetString("log")
 	if err != nil {
 		return err
@@ -27,7 +27,7 @@ func validate(cmd *cobra.Command, args []string) error {
 
 	isWatch, err := cmd.Flags().GetBool("watch")
 	if err != nil {
-		return err
+		isWatch = false
 	}
 
 	isGlobal, err := cmd.Flags().GetBool("global")
@@ -46,7 +46,7 @@ func validate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	for _, name := range args {
+	for _, name := range tasks {
 		task, err := e.GetTask(name)
 		if err != nil {
 			if err == elk.ErrTaskNotFound {

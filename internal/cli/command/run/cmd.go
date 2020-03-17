@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jjzcru/elk/internal/cli/command/config"
+	"github.com/jjzcru/elk/internal/cli/config"
 	"github.com/jjzcru/elk/internal/cli/utils"
 
 	"github.com/jjzcru/elk/pkg/engine"
@@ -57,7 +57,7 @@ func NewRunCommand() *cobra.Command {
 		Short: "Run one or more task in a terminal",
 		Args:  cobra.MinimumNArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return validate(cmd, args)
+			return Validate(cmd, args)
 			// return validate(cmd, args, &e)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
@@ -139,7 +139,7 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 			Logger: &engine.DefaultLogger,
 		},
 		Build: func() error {
-			return build(cmd, e)
+			return Build(cmd, e)
 		},
 	}
 
@@ -160,14 +160,14 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 	}
 
 	if isDetached {
-		return runDetached()
+		return Detached()
 	}
 
 	var wg sync.WaitGroup
 	ctx := context.Background()
 
 	if len(start) > 0 {
-		startTime, err := getTimeFromString(start)
+		startTime, err := GetTimeFromString(start)
 		if err != nil {
 			return err
 		}
@@ -183,7 +183,7 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 	}
 
 	if len(deadline) > 0 {
-		deadlineTime, err := getTimeFromString(deadline)
+		deadlineTime, err := GetTimeFromString(deadline)
 		if err != nil {
 			return err
 		}
@@ -191,16 +191,52 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 		ctx, _ = context.WithDeadline(ctx, deadlineTime)
 	}
 
+	DelayStart(delay, start)
+
 	for _, task := range args {
 		wg.Add(1)
-		go runTask(ctx, clientEngine, task, &wg, isWatch, delay, start)
+		go runTask(ctx, clientEngine, task, &wg, isWatch)
 	}
 
 	wg.Wait()
 	return nil
 }
 
-func getTimeFromString(input string) (time.Time, error) {
+func DelayStart(delay time.Duration, start string) {
+	var startDuration time.Duration
+	var delayDuration time.Duration
+	var sleepDuration time.Duration
+
+	if len(start) > 0 {
+		startTime, _ := GetTimeFromString(start)
+		now := time.Now()
+		diff := startTime.Sub(now)
+
+		startDuration = diff
+	}
+
+	if delay > 0 {
+		delayDuration = delay
+	}
+
+	if startDuration > 0 && delayDuration > 0 {
+		if startDuration > delayDuration {
+			sleepDuration = startDuration
+		} else {
+			sleepDuration = delayDuration
+		}
+	} else if startDuration > 0 {
+		sleepDuration = startDuration
+	} else if delayDuration > 0 {
+		sleepDuration = delayDuration
+	}
+
+	if sleepDuration > 0 {
+		time.Sleep(sleepDuration)
+	}
+}
+
+func GetTimeFromString(input string) (time.Time, error) {
 	validTimeFormats := []string{
 		time.ANSIC,
 		time.UnixDate,
@@ -241,7 +277,7 @@ func getTimeFromString(input string) (time.Time, error) {
 	return time.Now(), errors.New("invalid input")
 }
 
-func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, isWatch bool, delay time.Duration, start string) {
+func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, isWatch bool) {
 	defer wg.Done()
 
 	t, err := cliEngine.Elk.GetTask(task)
@@ -250,46 +286,18 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 		return
 	}
 
-	var startDuration time.Duration
-	var delayDuration time.Duration
-	var sleepDuration time.Duration
-
-	if len(start) > 0 {
-		startTime, _ := getTimeFromString(start)
-		now := time.Now()
-		diff := startTime.Sub(now)
-
-		startDuration = diff
-	}
-
-	if delay > 0 {
-		delayDuration = delay
-	}
-
-	if startDuration > 0 && delayDuration > 0 {
-		if startDuration > delayDuration {
-			sleepDuration = startDuration
-		} else {
-			sleepDuration = delayDuration
-		}
-	} else if startDuration > 0 {
-		sleepDuration = startDuration
-	} else if delayDuration > 0 {
-		sleepDuration = delayDuration
-	}
-
-	if sleepDuration > 0 {
-		time.Sleep(sleepDuration)
-	}
-
 	if len(t.Watch) > 0 && isWatch {
-		runWatch(ctx, cliEngine, task, *t)
+		Watch(ctx, cliEngine, task, *t)
 		return
 	}
 
-	taskCtx, _ := context.WithCancel(ctx)
+	Task(ctx, cliEngine, task)
+}
 
-	err = cliEngine.Run(taskCtx, task)
+func Task(ctx context.Context, cliEngine *engine.Engine, task string) {
+	ctx, _ = context.WithCancel(ctx)
+
+	err := cliEngine.Run(ctx, task)
 	if err != nil {
 		utils.PrintError(err)
 		return

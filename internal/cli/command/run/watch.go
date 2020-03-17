@@ -11,7 +11,7 @@ import (
 	"regexp"
 )
 
-func runWatch(ctx context.Context, cliEngine *engine.Engine, task string, t elk.Task) {
+func Watch(ctx context.Context, cliEngine *engine.Engine, task string, t elk.Task) {
 	taskCtx, cancel := context.WithCancel(ctx)
 
 	files, err := getWatcherFiles(t.Watch, t.Dir)

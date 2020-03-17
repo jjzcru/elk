@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jjzcru/elk/internal/cli/command/config"
+	"github.com/jjzcru/elk/internal/cli/config"
 	"github.com/jjzcru/elk/pkg/primitives/elk"
 	"github.com/spf13/cobra"
 )

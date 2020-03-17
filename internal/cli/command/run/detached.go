@@ -11,7 +11,7 @@ import (
 	"github.com/jjzcru/elk/internal/cli/utils"
 )
 
-func runDetached() error {
+func Detached() error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err

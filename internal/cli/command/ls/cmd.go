@@ -8,7 +8,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/jjzcru/elk/internal/cli/command/config"
+	"github.com/jjzcru/elk/internal/cli/config"
 	"github.com/spf13/cobra"
 )
 

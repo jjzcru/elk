@@ -198,10 +198,5 @@ func FromFile(filePath string) (*Elk, error) {
 		elk.Tasks[name] = task
 	}
 
-	err = elk.Build()
-	if err != nil {
-		return nil, err
-	}
-
 	return &elk, nil
 }

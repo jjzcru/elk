@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 )
 
-func build(cmd *cobra.Command, e *elk.Elk) error {
+func Build(cmd *cobra.Command, e *elk.Elk) error {
 	ignoreLog, err := cmd.Flags().GetBool("ignore-log")
 	if err != nil {
 		return err

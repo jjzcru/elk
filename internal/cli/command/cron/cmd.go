@@ -2,9 +2,9 @@ package cron
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/jjzcru/elk/internal/cli/command/config"
+	"github.com/jjzcru/elk/internal/cli/command/run"
+	"github.com/jjzcru/elk/internal/cli/config"
 	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/engine"
 	cron "github.com/robfig/cron/v3"
@@ -53,10 +53,10 @@ func NewCronCommand() *cobra.Command {
 		Short: "Run one or more task as a cron job",
 		Args:  cobra.MinimumNArgs(2),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return validate(cmd, args)
+			return run.Validate(cmd, args[1:])
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			err := run(cmd, args, envs)
+			err := Run(cmd, args, envs)
 			if err != nil {
 				utils.PrintError(err)
 			}
@@ -80,7 +80,7 @@ func NewCronCommand() *cobra.Command {
 	return cmd
 }
 
-func run(cmd *cobra.Command, args []string, envs []string) error {
+func Run(cmd *cobra.Command, args []string, envs []string) error {
 	isDetached, err := cmd.Flags().GetBool("detached")
 	if err != nil {
 		return err
@@ -128,7 +128,7 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 			Logger: &engine.DefaultLogger,
 		},
 		Build: func() error {
-			return build(cmd, e)
+			return run.Build(cmd, e)
 		},
 	}
 
@@ -149,13 +149,13 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 	}
 
 	if isDetached {
-		return runDetached()
+		return run.Detached()
 	}
 
 	ctx := context.Background()
 
 	if len(start) > 0 {
-		startTime, err := getTimeFromString(start)
+		startTime, err := run.GetTimeFromString(start)
 		if err != nil {
 			return err
 		}
@@ -171,7 +171,7 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 	}
 
 	if len(deadline) > 0 {
-		deadlineTime, err := getTimeFromString(deadline)
+		deadlineTime, err := run.GetTimeFromString(deadline)
 		if err != nil {
 			return err
 		}
@@ -184,9 +184,15 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 
 	c := cron.New()
 
+	run.DelayStart(delay, start)
+
+	for _, task := range tasks {
+		go run.Task(ctx, clientEngine, task)
+	}
+
 	_, err = c.AddFunc(cronTab, func() {
 		for _, task := range tasks {
-			go runTask(ctx, clientEngine, task, delay, start)
+			go run.Task(ctx, clientEngine, task)
 		}
 	})
 	if err != nil {
@@ -198,88 +204,5 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 	case <-ctx.Done():
 		c.Stop()
 		return nil
-	}
-}
-
-func getTimeFromString(input string) (time.Time, error) {
-	validTimeFormats := []string{
-		time.ANSIC,
-		time.UnixDate,
-		time.RubyDate,
-		time.RFC822,
-		time.RFC822Z,
-		time.RFC850,
-		time.RFC1123,
-		time.RFC1123Z,
-		time.RFC3339,
-		time.RFC3339Nano,
-		time.Kitchen,
-	}
-
-	for _, layout := range validTimeFormats {
-		deadlineTime, err := time.Parse(layout, input)
-		if err == nil {
-			if layout == time.Kitchen {
-				now := time.Now()
-				deadlineTime = time.Date(now.Year(),
-					now.Month(),
-					now.Day(),
-					deadlineTime.Hour(),
-					deadlineTime.Minute(),
-					0,
-					0,
-					now.Location())
-
-				// If time is before now i refer to that time but the next day
-				if deadlineTime.Before(now) {
-					deadlineTime = deadlineTime.Add(24 * time.Hour)
-				}
-			}
-			return deadlineTime, nil
-		}
-	}
-
-	return time.Now(), errors.New("invalid input")
-}
-
-func runTask(ctx context.Context, cliEngine *engine.Engine, task string, delay time.Duration, start string) {
-	var startDuration time.Duration
-	var delayDuration time.Duration
-	var sleepDuration time.Duration
-
-	if len(start) > 0 {
-		startTime, _ := getTimeFromString(start)
-		now := time.Now()
-		diff := startTime.Sub(now)
-
-		startDuration = diff
-	}
-
-	if delay > 0 {
-		delayDuration = delay
-	}
-
-	if startDuration > 0 && delayDuration > 0 {
-		if startDuration > delayDuration {
-			sleepDuration = startDuration
-		} else {
-			sleepDuration = delayDuration
-		}
-	} else if startDuration > 0 {
-		sleepDuration = startDuration
-	} else if delayDuration > 0 {
-		sleepDuration = delayDuration
-	}
-
-	if sleepDuration > 0 {
-		time.Sleep(sleepDuration)
-	}
-
-	taskCtx, _ := context.WithCancel(ctx)
-
-	err := cliEngine.Run(taskCtx, task)
-	if err != nil {
-		utils.PrintError(err)
-		return
 	}
 }
