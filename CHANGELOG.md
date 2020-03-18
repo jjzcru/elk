@@ -23,6 +23,7 @@
 
 **Misc:**
 - Increase test code coverage
+- Use the same `os`, via CI, to compile binaries instead of using `go` cross compile feature
 
 ## [v0.2.1](https://github.com/jjzcru/elk/tree/v0.2.1) (2020-03-12)
 [Release](https://github.com/jjzcru/elk/releases/tag/v0.2.1)
