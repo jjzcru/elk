@@ -14,15 +14,15 @@ Once installed, you will have an example file under `~/elk.yml`. To run a task r
 ```yml
 version: '1'
 tasks:
-  example:
+  foo:
     cmds:
       - echo "Hello world"
 ```
 
-To run the `example` task will be:
+To run the `foo` task will be:
 
 ```
-elk run example
+elk run foo
 ```
 
 This will print `Hello world`.
@@ -46,8 +46,9 @@ By default the global file that is going to be used is `~/elk.yml`. You can chan
 file by setting the env variable `ELK_FILE`.
 
 `elk` will first search if there is a `elk.yml` file in the current directory and use that first, if the file is not 
-found it will use the global file. This enables the user to have multiples `elk.yml` one per project while also having 
-one for the system itself.
+found it will use the global file. 
+
+This enables the user to have multiples `elk.yml` one per project while also having one for the system itself.
 
 ### Syntax
 
@@ -190,11 +191,11 @@ hello:
 ```
 
 ### Commands
+- [cron](docs/cron.md)
 - [init](docs/init.md)
+- [logs](docs/logs.md)
 - [ls](docs/ls.md)
 - [run](docs/run.md)
-- [logs](docs/logs.md)
-
 
 [go]: https://golang.org/
 [yaml]: https://yaml.org/

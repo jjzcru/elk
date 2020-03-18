@@ -56,6 +56,17 @@ func TestRun(t *testing.T) {
 	}
 }
 
+func TestRunDoNotExist(t *testing.T) {
+	engine := getTestEngine()
+
+	ctx := context.Background()
+
+	err := engine.Run(ctx, "foo")
+	if err == nil {
+		t.Error("Should throw an error because the task do not exist")
+	}
+}
+
 func TestMapEnvs(t *testing.T) {
 	key := "FOO"
 	value := "http://localhost:7777?id=20"

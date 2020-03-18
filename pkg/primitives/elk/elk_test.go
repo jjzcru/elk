@@ -2,9 +2,11 @@ package elk
 
 import (
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"reflect"
 	"testing"
 )
 
@@ -193,6 +195,84 @@ func TestElkBuild(t *testing.T) {
 	}
 }
 
+func TestElkBuildEnvFileDoNotExist(t *testing.T) {
+	err := os.Setenv("BAR", "1")
+	if err != nil {
+		t.Error(err)
+	}
+
+	randomNumber := rand.Intn(100)
+
+	elkEnvPath := fmt.Sprintf("./elk_%d.env", randomNumber)
+
+	taskEnvPath := fmt.Sprintf("./task_%d.env", randomNumber)
+	err = ioutil.WriteFile(taskEnvPath, []byte("FOO=BAR"), 0644)
+	if err != nil {
+		t.Error(err)
+	}
+
+	e := Elk{
+		EnvFile: elkEnvPath,
+		Env: map[string]string{
+			"HELLO": "World",
+		},
+		Tasks: map[string]Task{
+			"hello": {
+				EnvFile: taskEnvPath,
+			},
+		},
+	}
+
+	err = e.Build()
+	if err == nil {
+		t.Error("It should throw an error because the env file do not exist")
+	}
+
+	err = os.Remove(taskEnvPath)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestElkBuildEnvFileDoNotExistInTask(t *testing.T) {
+	err := os.Setenv("BAR", "1")
+	if err != nil {
+		t.Error(err)
+	}
+
+	randomNumber := rand.Intn(100)
+
+	elkEnvPath := fmt.Sprintf("./elk_%d.env", randomNumber)
+	err = ioutil.WriteFile(elkEnvPath, []byte("FOO=BAR"), 0644)
+	if err != nil {
+		t.Error(err)
+	}
+
+	taskEnvPath := fmt.Sprintf("./task_%d.env", randomNumber)
+
+	e := Elk{
+		EnvFile: elkEnvPath,
+		Env: map[string]string{
+			"HELLO": "World",
+		},
+		Tasks: map[string]Task{
+			"hello": {
+				EnvFile: taskEnvPath,
+			},
+		},
+	}
+
+	err = e.Build()
+	if err == nil {
+		t.Error("It should throw an error because the env file do not exist")
+	}
+
+	err = os.Remove(elkEnvPath)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestHasTask(t *testing.T) {
 	e := Elk{
 		Tasks: map[string]Task{
@@ -268,5 +348,122 @@ func TestGetTaskCircularDependency(t *testing.T) {
 	_, err := e.GetTask("hello")
 	if err == nil {
 		t.Error("Should throw an error because the task has a circular dependency")
+	}
+}
+
+func TestFromFile(t *testing.T) {
+	e := Elk{
+		Env: make(map[string]string),
+		Tasks: map[string]Task{
+			"hello": {
+				Env: make(map[string]string),
+				Deps: []Dep{
+					{
+						Name: "world",
+					},
+				},
+				Cmds: []string{
+					"echo Hello",
+				},
+			},
+			"world": {
+				Env: make(map[string]string),
+				Cmds: []string{
+					"echo Hello",
+				},
+				Deps: []Dep{
+					{
+						Name: "hello",
+					},
+				},
+			},
+		},
+	}
+
+	content, err := yaml.Marshal(&e)
+	if err != nil {
+		t.Error(err)
+	}
+
+	path := fmt.Sprint("./elk.yml")
+	err = ioutil.WriteFile(path, content, 0644)
+	if err != nil {
+		t.Error(err)
+	}
+
+	elk, err := FromFile(path)
+	if err != nil {
+		t.Error(err)
+	}
+
+	for task := range elk.Tasks {
+		if !reflect.DeepEqual(e.Tasks[task], elk.Tasks[task]) {
+			t.Errorf("The data is different for the task '%s'", task)
+		}
+	}
+
+	err = os.Remove(path)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestFromFileWithoutTasks(t *testing.T) {
+	e := Elk{}
+
+	content, err := yaml.Marshal(&e)
+	if err != nil {
+		t.Error(err)
+	}
+
+	path := fmt.Sprint("./elk.yml")
+	err = ioutil.WriteFile(path, content, 0644)
+	if err != nil {
+		t.Error(err)
+	}
+
+	elk, err := FromFile(path)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !reflect.DeepEqual(elk.Env, make(map[string]string)) {
+		t.Error("The env should be an empty map")
+	}
+
+	if !reflect.DeepEqual(elk.Tasks, make(map[string]Task)) {
+		t.Error("The tasks should be an empty map")
+	}
+
+	err = os.Remove(path)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestFromFileNotExist(t *testing.T) {
+	path := fmt.Sprint("./elk.yml")
+
+	_, err := FromFile(path)
+	if err == nil {
+		t.Error("it should throw an error because the file do not exist")
+	}
+}
+
+func TestFromFileInvalidFileContent(t *testing.T) {
+	path := fmt.Sprint("./elk.yml")
+	err := ioutil.WriteFile(path, []byte("FOO=BAR"), 0644)
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = FromFile(path)
+	if err == nil {
+		t.Error("it should throw an error because the file do not exist")
+	}
+
+	err = os.Remove(path)
+	if err != nil {
+		t.Error(err)
 	}
 }

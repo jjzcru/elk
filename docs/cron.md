@@ -1,6 +1,6 @@
 # `cron`
 
-Run one or more task as a cron job
+Run one or more task as a cron job.
 
 This command takes at least 2 arguments. The first one is going to be `crontab` which is the syntax used to describe a 
 `cron job`, the rest of the arguments are the names of the task that are going to be executed.
