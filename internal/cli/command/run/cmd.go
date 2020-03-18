@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
-	"github.com/jjzcru/elk/internal/cli/command/config"
 	"github.com/jjzcru/elk/internal/cli/utils"
 
 	"github.com/jjzcru/elk/pkg/engine"
@@ -28,8 +28,11 @@ elk run foo --delay 1s
 elk run foo -e FOO=BAR --env HELLO=WORLD
 elk run foo -l ./foo.log -d
 elk run foo --ignore-log
+elk run foo --ignore-error
 elk run foo --deadline 09:41AM
 elk run foo --start 09:41PM
+elk run foo -i 2s
+elk run foo --interval 2s
 
 Flags:
   -d, --detached      Run the task in detached mode and returns the PGID
@@ -38,12 +41,14 @@ Flags:
   -g, --global        Run from the path set in config
   -h, --help          help for run
       --ignore-log    Force task to output to stdout
+      --ignore-error  Ignore errors that happened during a task
       --delay         Set a delay to a task
   -l, --log string    File that log output from a task
   -w, --watch         Enable watch mode
   -t, --timeout       Set a timeout to a task
       --deadline      Set a deadline to a task
       --start      	  Set a date/datetime to a task to run
+  -i, --interval      Set a duration for an interval
 `
 
 // NewRunCommand returns a cobra command for `run` sub command
@@ -54,11 +59,11 @@ func NewRunCommand() *cobra.Command {
 		Short: "Run one or more task in a terminal",
 		Args:  cobra.MinimumNArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return validate(cmd, args)
+			return Validate(cmd, args)
 			// return validate(cmd, args, &e)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			err := run(cmd, args)
+			err := run(cmd, args, envs)
 			if err != nil {
 				utils.PrintError(err)
 			}
@@ -68,6 +73,7 @@ func NewRunCommand() *cobra.Command {
 	cmd.Flags().BoolP("global", "g", false, "Run from the path set in config")
 	cmd.Flags().StringSliceVarP(&envs, "env", "e", []string{}, "")
 	cmd.Flags().Bool("ignore-log", false, "Force task to output to stdout")
+	cmd.Flags().Bool("ignore-error", false, "Ignore errors that happened during a task")
 	cmd.Flags().BoolP("detached", "d", false, "Run the command in detached mode and returns the PGID")
 	cmd.Flags().BoolP("watch", "w", false, "Enable watch mode")
 	cmd.Flags().StringP("file", "f", "", "Run elk in a specific file")
@@ -76,13 +82,14 @@ func NewRunCommand() *cobra.Command {
 	cmd.Flags().Duration("delay", 0, "Set a delay for a task in milliseconds")
 	cmd.Flags().String("deadline", "", "Set a deadline to a task")
 	cmd.Flags().String("start", "", "Set a date/datetime for a task to run")
+	cmd.Flags().DurationP("interval", "i", 0, "Set a duration for an interval")
 
 	cmd.SetUsageTemplate(usageTemplate)
 
 	return cmd
 }
 
-func run(cmd *cobra.Command, args []string) error {
+func run(cmd *cobra.Command, args []string, envs []string) error {
 	isDetached, err := cmd.Flags().GetBool("detached")
 	if err != nil {
 		return err
@@ -123,8 +130,13 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	interval, err := cmd.Flags().GetDuration("interval")
+	if err != nil {
+		return err
+	}
+
 	// Check if the file path is set
-	e, err := config.GetElk(elkFilePath, isGlobal)
+	e, err := utils.GetElk(elkFilePath, isGlobal)
 	if err != nil {
 		return err
 	}
@@ -135,7 +147,7 @@ func run(cmd *cobra.Command, args []string) error {
 			Logger: &engine.DefaultLogger,
 		},
 		Build: func() error {
-			return build(cmd, e)
+			return Build(cmd, e)
 		},
 	}
 
@@ -144,15 +156,25 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if isDetached {
-		return runDetached()
+	for name, task := range e.Tasks {
+		for _, en := range envs {
+			parts := strings.SplitAfterN(en, "=", 2)
+			env := strings.ReplaceAll(parts[0], "=", "")
+			value := parts[1]
+			task.Env[env] = value
+		}
+
+		clientEngine.Elk.Tasks[name] = task
 	}
 
-	var wg sync.WaitGroup
-	ctx := context.Background()
+	if isDetached {
+		return Detached()
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
 
 	if len(start) > 0 {
-		startTime, err := getTimeFromString(start)
+		startTime, err := GetTimeFromString(start)
 		if err != nil {
 			return err
 		}
@@ -168,7 +190,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(deadline) > 0 {
-		deadlineTime, err := getTimeFromString(deadline)
+		deadlineTime, err := GetTimeFromString(deadline)
 		if err != nil {
 			return err
 		}
@@ -176,16 +198,78 @@ func run(cmd *cobra.Command, args []string) error {
 		ctx, _ = context.WithDeadline(ctx, deadlineTime)
 	}
 
+	DelayStart(delay, start)
+
+	if interval > 0 {
+		executeTasks := func() {
+			for _, task := range args {
+				go runTask(ctx, clientEngine, task, nil, false)
+			}
+		}
+
+		go executeTasks()
+		ticker := time.NewTicker(interval)
+		quit := make(chan struct{})
+		for {
+			select {
+			case <-ticker.C:
+				go executeTasks()
+			case <-ctx.Done():
+				ticker.Stop()
+				return nil
+			case <-quit:
+				ticker.Stop()
+				cancel()
+				return nil
+			}
+		}
+	}
+
+	var wg sync.WaitGroup
 	for _, task := range args {
 		wg.Add(1)
-		go runTask(ctx, clientEngine, task, &wg, isWatch, delay, start)
+		go runTask(ctx, clientEngine, task, &wg, isWatch)
 	}
 
 	wg.Wait()
 	return nil
 }
 
-func getTimeFromString(input string) (time.Time, error) {
+func DelayStart(delay time.Duration, start string) {
+	var startDuration time.Duration
+	var delayDuration time.Duration
+	var sleepDuration time.Duration
+
+	if len(start) > 0 {
+		startTime, _ := GetTimeFromString(start)
+		now := time.Now()
+		diff := startTime.Sub(now)
+
+		startDuration = diff
+	}
+
+	if delay > 0 {
+		delayDuration = delay
+	}
+
+	if startDuration > 0 && delayDuration > 0 {
+		if startDuration > delayDuration {
+			sleepDuration = startDuration
+		} else {
+			sleepDuration = delayDuration
+		}
+	} else if startDuration > 0 {
+		sleepDuration = startDuration
+	} else if delayDuration > 0 {
+		sleepDuration = delayDuration
+	}
+
+	if sleepDuration > 0 {
+		time.Sleep(sleepDuration)
+	}
+}
+
+func GetTimeFromString(input string) (time.Time, error) {
 	validTimeFormats := []string{
 		time.ANSIC,
 		time.UnixDate,
@@ -226,10 +310,10 @@ func getTimeFromString(input string) (time.Time, error) {
 	return time.Now(), errors.New("invalid input")
 }
 
-func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, isWatch bool, delay time.Duration, start string) {
-	defer wg.Done()
-
-	taskCtx, cancel := context.WithCancel(ctx)
+func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, isWatch bool) {
+	if wg != nil {
+		defer wg.Done()
+	}
 
 	t, err := cliEngine.Elk.GetTask(task)
 	if err != nil {
@@ -237,23 +321,18 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 		return
 	}
 
-	if len(start) > 0 {
-		startTime, _ := getTimeFromString(start)
-		now := time.Now()
-		diff := startTime.Sub(now)
-		time.Sleep(diff)
-	} else {
-		if delay > 0 {
-			time.Sleep(delay)
-		}
-	}
-
 	if len(t.Watch) > 0 && isWatch {
-		runWatch(ctx, taskCtx, cancel, cliEngine, task, t)
+		Watch(ctx, cliEngine, task, *t)
 		return
 	}
 
-	err = cliEngine.Run(taskCtx, task)
+	Task(ctx, cliEngine, task)
+}
+
+func Task(ctx context.Context, cliEngine *engine.Engine, task string) {
+	ctx, _ = context.WithCancel(ctx)
+
+	err := cliEngine.Run(ctx, task)
 	if err != nil {
 		utils.PrintError(err)
 		return

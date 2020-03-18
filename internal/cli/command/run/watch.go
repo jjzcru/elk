@@ -11,14 +11,8 @@ import (
 	"regexp"
 )
 
-func runWatch(ctx context.Context, taskCtx context.Context, cancel context.CancelFunc, cliEngine *engine.Engine,  task string, t *elk.Task) {
-	go func() {
-		err := cliEngine.Run(taskCtx, task)
-		if err != nil {
-			utils.PrintError(err)
-			return
-		}
-	}()
+func Watch(ctx context.Context, cliEngine *engine.Engine, task string, t elk.Task) {
+	taskCtx, cancel := context.WithCancel(ctx)
 
 	files, err := getWatcherFiles(t.Watch, t.Dir)
 	if err != nil {
@@ -41,6 +35,15 @@ func runWatch(ctx context.Context, taskCtx context.Context, cancel context.Cance
 		}
 	}
 
+	runOnWatch := func() {
+		err := cliEngine.Run(taskCtx, task)
+		if err != nil {
+			utils.PrintError(err)
+		}
+	}
+
+	go runOnWatch()
+
 	for {
 		select {
 		case event := <-watcher.Events:
@@ -52,17 +55,13 @@ func runWatch(ctx context.Context, taskCtx context.Context, cancel context.Cance
 			case event.Op&fsnotify.Remove == fsnotify.Remove:
 				fallthrough
 			case event.Op&fsnotify.Rename == fsnotify.Rename:
-				go func() {
-					cancel()
-					taskCtx, cancel = context.WithCancel(ctx)
-
-					err = cliEngine.Run(taskCtx, task)
-					if err != nil && err != context.Canceled {
-						utils.PrintError(err)
-						return
-					}
-				}()
+				cancel()
+				taskCtx, cancel = context.WithCancel(ctx)
+				go runOnWatch()
 			}
+		case <-ctx.Done():
+			cancel()
+			return
 		case err := <-watcher.Errors:
 			utils.PrintError(err)
 			return
@@ -85,9 +84,7 @@ func getWatcherFiles(reg string, dir string) ([]string, error) {
 		if re.MatchString(fn) == false {
 			return nil
 		}
-		if fi.IsDir() {
-			files = append(files, fn+string(os.PathSeparator))
-		} else {
+		if !fi.IsDir() {
 			files = append(files, fn)
 		}
 		return nil

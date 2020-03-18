@@ -1,26 +1,26 @@
-# `run`
+# `cron`
 
-Run one or more task
+Run one or more task as a cron job.
+
+This command takes at least 2 arguments. The first one is going to be `crontab` which is the syntax used to describe a 
+`cron job`, the rest of the arguments are the names of the task that are going to be executed.
 
 ```
 Usage: 
-  elk run [tasks] [flags]
+ elk cron [crontab] [tasks] [flags]
 
 Examples:
-elk run foo
-elk run foo bar
-elk run foo -d
-elk run foo -d -w
-elk run foo -t 1s
-elk run foo --delay 1s
-elk run foo -e FOO=BAR --env HELLO=WORLD
-elk run foo -l ./foo.log -d
-elk run foo --ignore-log
-elk run foo --ignore-error
-elk run foo --deadline 09:41AM
-elk run foo --start 09:41PM
-elk run foo -i 2s
-elk run foo --interval 2s
+elk cron "*/1 * * * *" foo
+elk cron "*/1 * * * *" foo bar
+elk cron "*/1 * * * *" foo -d
+elk cron "*/2 * * * *" foo -t 1s
+elk cron "*/2 * * * *" foo --delay 1s
+elk cron "*/2 * * * *" foo -e FOO=BAR --env HELLO=WORLD
+elk cron "*/6 * * * *" foo -l ./foo.log -d
+elk cron "*/1 * * * *" foo --ignore-log
+elk cron "*/2 * * * *" foo --ignore-error
+elk cron "*/5 * * * *" foo --deadline 09:41AM
+elk cron "*/1 * * * *" foo --start 09:41PM
 
 Flags:
   -d, --detached      Run the task in detached mode and returns the PGID
@@ -36,7 +36,6 @@ Flags:
   -t, --timeout       Set a timeout to a task
       --deadline      Set a deadline to a task
       --start      	  Set a date/datetime to a task to run
-  -i, --interval      Set a duration for an interval
 ```
 
 ## Flags
@@ -49,8 +48,8 @@ the user can kill the process later.
 Example:
 
 ```
-elk run test -d
-elk run test --detached
+elk cron "* * * * *" test -d
+elk cron "* * * * *" test --detached
 ```
 
 `env`
@@ -59,7 +58,7 @@ This flag will overwrite whatever env variable already declared in the file. You
 
 Example:
 ```
-elk run test -e HELLO=WORLD --env FOO=BAR
+elk cron "* * * * *" test -e HELLO=WORLD --env FOO=BAR
 ```
 
 `file`
@@ -68,8 +67,8 @@ This flag force `elk` to use a particular file path to run the commands.
 
 Example:
 ```
-elk run test -f ./elk.yml
-elk run test --file ./elk.yml
+elk cron "* * * * *" test -f ./elk.yml
+elk cron "* * * * *" test --file ./elk.yml
 ```
 
 `global`
@@ -79,8 +78,8 @@ This force the task to run from the global file either declared at `ELK_FILE` or
 Example:
 
 ```
-elk run test -g
-elk run test --global
+elk cron "* * * * *" test -g
+elk cron "* * * * *" test --global
 ```
 
 `ignore-log`
@@ -90,7 +89,7 @@ Force task to output to stdout.
 Example:
 
 ```
-elk run test --ignore-log
+elk cron "* * * * *" test --ignore-log
 ```
 
 `ignore-error`
@@ -100,7 +99,7 @@ Ignore errors that happened during a `task`.
 Example:
 
 ```
-elk run test --ignore-error
+elk cron "* * * * *" test --ignore-error
 ```
 
 `delay`
@@ -117,10 +116,10 @@ This commands supports the following duration units:
 Example:
 
 ```
-elk run test --delay 1s
-elk run test --delay 500ms
-elk run test --delay 2h
-elk run test --delay 2h45m
+elk cron "* * * * *" test --delay 1s
+elk cron "* * * * *" test --delay 500ms
+elk cron "* * * * *" test --delay 2h
+elk cron "* * * * *" test --delay 2h45m
 ```
 
 `log`
@@ -130,8 +129,8 @@ This saves the output to a specific file.
 Example:
 
 ```
-elk run test -l ./test.log
-elk run test --log ./test.log
+elk cron "* * * * *" test -l ./test.log
+elk cron "* * * * *" test --log ./test.log
 ```
 
 `watch`
@@ -145,8 +144,8 @@ criteria and adds a `watcher` to all the files.
 Example:
 
 ```
-elk run test -w
-elk run test --watch
+elk cron "* * * * *" test -w
+elk cron "* * * * *" test --watch
 ```
 
 `timeout`
@@ -163,10 +162,10 @@ This commands supports the following duration units:
 Example:
 
 ```
-elk run test -t 1s
-elk run test --timeout 500ms
-elk run test --timeout 2h
-elk run test --timeout 2h45m
+elk cron "* * * * *" test -t 1s
+elk cron "* * * * *" test --timeout 500ms
+elk cron "* * * * *" test --timeout 2h
+elk cron "* * * * *" test --timeout 2h45m
 ```
 
 `deadline`
@@ -193,8 +192,8 @@ day.
 Example:
 
 ```
-elk run test --deadline 11:00PM
-elk run test --deadline 2020-12-12T09:41:00Z00:00
+elk cron "* * * * *" test --deadline 11:00PM
+elk cron "* * * * *" test --deadline 2020-12-12T09:41:00Z00:00
 ```
 
 `start`
@@ -217,29 +216,10 @@ It supports the following datetime standards:
 If the `Kitchen` format is used and the time is before the current time it will run at the same time in the following 
 day.
 
-Example:
-
-```
-elk run test --start 11:00PM
-elk run test --start 2020-12-12T09:41:00Z00:00
-```
-
-`interval`
-
-This flag will run a task in a new process every time the interval ticks. Enabling `interval` disables the `watch` mode.
-
-This commands supports the following duration units:
-- `ns`: Nanoseconds
-- `ms`: Milliseconds
-- `s`: Seconds
-- `m`: Minutes
-- `h`: Hours
 
 Example:
 
 ```
-elk run test -i 1s
-elk run test --interval 500ms
-elk run test --interval 2h
-elk run test --interval 2h45m
+elk cron "* * * * *" test --deadline 11:00PM
+elk cron "* * * * *" test --deadline 2020-12-12T09:41:00Z00:00
 ```

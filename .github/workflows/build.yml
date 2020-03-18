@@ -2,12 +2,12 @@ name: Build Status
 on:
   push:
     branches:
-      - develop
       - master
+      - release/*
 
 jobs:
-  build:
-    name: Build
+  test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go 1.13
@@ -23,14 +23,77 @@ jobs:
           GOPROXY: "https://proxy.golang.org"
         run: go test ./...
 
-      - name: Build
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+
+      - name: Check out source code
+        uses: actions/checkout@v1
+
+      - name: Build Binaries
         shell: bash
         env:
           GOPROXY: "https://proxy.golang.org"
-        run: bash ci-build.sh && rm ./bin/.gitkeep
+        run: bash ./ci/build-linux.sh && rm ./bin/.gitkeep
       
       - name: Upload Artifact
         uses: actions/upload-artifact@master
         with:
-          name: elk
+          name: elk-linux
+          path: ./bin/
+  
+  build-mac:
+    name: Build Mac
+    runs-on: macos-latest
+    needs: test
+    steps:
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+
+      - name: Check out source code
+        uses: actions/checkout@v1
+
+      - name: Build Binaries
+        shell: bash
+        env:
+          GOPROXY: "https://proxy.golang.org"
+        run: bash ./ci/build-mac.sh && rm ./bin/.gitkeep
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: elk-mac
+          path: ./bin/
+  
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    needs: test
+    steps:
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+
+      - name: Check out source code
+        uses: actions/checkout@v1
+
+      - name: Build Binaries
+        shell: powershell
+        env:
+          GOPROXY: "https://proxy.golang.org"
+        run: .\ci\build-windows
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: elk-windows
           path: ./bin/

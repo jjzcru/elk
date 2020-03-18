@@ -3,20 +3,18 @@ package elk
 import (
 	"fmt"
 	"github.com/jjzcru/elk/pkg/file"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"strings"
-
-	"gopkg.in/yaml.v2"
 )
 
 // Elk is the structure of the application
 type Elk struct {
-	Version     string
-	Env         map[string]string
-	EnvFile     string `yaml:"env_file"`
-	IgnoreError bool   `yaml:"ignore_error"`
-	Tasks       map[string]Task
+	Version string
+	Env     map[string]string
+	EnvFile string `yaml:"env_file"`
+	Tasks   map[string]Task
 }
 
 // GetTask Get a task object by its name
@@ -128,7 +126,6 @@ func (e *Elk) HasCircularDependency(name string, visitedNodes ...string) error {
 
 	for _, node := range visitedNodes {
 		if node == name {
-			// return fmt.Errorf("the task '%s' has a circular dependency", name)
 			return ErrCircularDependency
 		}
 	}
@@ -154,7 +151,7 @@ func (e *Elk) getDependencyGraph(task *Task) (map[string][]string, error) {
 		// Validate that the dependency is a valid task
 		t, exists := e.Tasks[dep.Name]
 		if exists == false {
-			return dependencyGraph, fmt.Errorf("The dependency '%s' do not exist as a task", dep.Name)
+			return dependencyGraph, ErrTaskNotFound
 		}
 
 		var depsNames []string
@@ -198,11 +195,6 @@ func FromFile(filePath string) (*Elk, error) {
 		}
 
 		elk.Tasks[name] = task
-	}
-
-	err = elk.Build()
-	if err != nil {
-		return nil, err
 	}
 
 	return &elk, nil

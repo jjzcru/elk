@@ -9,8 +9,13 @@ import (
 	"path/filepath"
 )
 
-func build(cmd *cobra.Command, e *elk.Elk) error {
+func Build(cmd *cobra.Command, e *elk.Elk) error {
 	ignoreLog, err := cmd.Flags().GetBool("ignore-log")
+	if err != nil {
+		return err
+	}
+
+	ignoreError, err := cmd.Flags().GetBool("ignore-error")
 	if err != nil {
 		return err
 	}
@@ -58,7 +63,16 @@ func build(cmd *cobra.Command, e *elk.Elk) error {
 			task.Log = ""
 		}
 
+		if ignoreError {
+			task.IgnoreError = true
+		}
+
 		e.Tasks[name] = task
+	}
+
+	err = e.Build()
+	if err != nil {
+		return err
 	}
 
 	return nil

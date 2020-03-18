@@ -9,7 +9,7 @@ import (
 	"os/exec"
 )
 
-func runDetached() error {
+func Detached() error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
