@@ -1,3 +1,29 @@
+## [v0.3.0](https://github.com/jjzcru/elk/tree/v0.3.0) (2020-03-18)
+[Release](https://github.com/jjzcru/elk/releases/tag/v0.3.0)
+
+**Commands:**
+- **[cron]** Create command
+
+**Documentation:**
+- **[cron]** Create documentation
+- Specify `units` for `--delay` and `--timeout` flags
+
+**Flags:**
+- **--interval** Add flag to **[run]** command
+- **--ignore-error** Add flag to **[run]** command
+
+
+**Syntax:**
+- **ignore_error** Add property at `task` level
+
+**Bug Fix:**
+- Fix build binary for `windows` in CI
+- Fix build binary for `macOS` in CI
+- Fix `context` error when running task in `watch` mode
+
+**Misc:**
+- Increase test code coverage
+
 ## [v0.2.1](https://github.com/jjzcru/elk/tree/v0.2.1) (2020-03-12)
 [Release](https://github.com/jjzcru/elk/releases/tag/v0.2.1)
 
