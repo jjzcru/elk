@@ -25,13 +25,14 @@ func NewLogsCommand() *cobra.Command {
 		Use:   "logs",
 		Short: "Attach logs from a task to the terminal 📝",
 		Args:  cobra.ExactArgs(1),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return validate(cmd, args)
-
-			// return validate(cmd, args, &e)
-		},
 		Run: func(cmd *cobra.Command, args []string) {
-			err := run(cmd, args)
+			err := validate(cmd, args)
+			if err != nil {
+				utils.PrintError(err)
+				return
+			}
+
+			err = run(cmd, args)
 			if err != nil {
 				utils.PrintError(err)
 			}
