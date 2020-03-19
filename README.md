@@ -11,7 +11,7 @@ Since it's written in [Go][go], most of the commands runs across multiple operat
 
 ## Table of contents
   * [Getting Started](#getting-started)
-    + [Installing](#installing)
+    + [Installation](#installation)
   * [Syntax](#syntax)
   * [Commands](#commands)
   * [Changelog][changelog]
@@ -28,7 +28,7 @@ found it will use the `global` file.
 
 This enables the user to have multiples `ox.yml` one per project while also having one for the system itself.
 
-### Installing
+### Installation
 1. Grab the latest binary of your platform from the [Releases](https://github.com/jjzcru/elk/releases) page.
 2. If you are running on `macOS` or `Linux`, run `chmod +x elk` to give `executable` permissions to the binary. If you
 are on `windows` you can ignore this step.
