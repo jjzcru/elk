@@ -9,10 +9,13 @@ instead of remembering to perform tedious tasks.
 Since it's written in [Go][go], most of the commands runs across multiple operating systems (`Linux`, `macOS`, 
 `Windows`) and use the same syntax between them thanks to this [library][sh].
 
+*Why should i use this?* You can watch some [Use Cases]
+
 ## Table of contents
   * [Getting Started](#getting-started)
     + [Installation](#installation)
   * [Syntax](#syntax)
+  * [Use Cases](#use-cases)
   * [Commands](#commands)
   * [Changelog][changelog]
   * [Releases][releases]
@@ -58,6 +61,13 @@ tasks:
       - echo $FOO $BAR
 ```
 
+## Use Cases
+The goal of `elk` is to run `tasks` in a declarative way, anything that you could run on your terminal, you can run 
+behind `elk`. If you handle multiple projects, languages, task or you want to automate your workflow you can use `elk`
+to achieve that, just declare you workflow and `elk` will take care of the rest.
+
+To learn about some use cases for `elk` go to [Use Cases][use-cases] to figure out 😉.
+
 ## Commands
 
 | Command           | Description                                            | Syntax                               |
@@ -77,6 +87,7 @@ tasks:
 [changelog]: https://github.com/jjzcru/elk/blob/master/CHANGELOG.md
 
 [syntax]: docs/syntax/syntax.md
+[use-cases]: docs/syntax/use-cases.md
 
 [cron]: docs/commands/cron.md
 [init]: docs/commands/init.md

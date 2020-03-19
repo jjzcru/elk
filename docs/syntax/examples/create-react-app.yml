@@ -16,6 +16,5 @@ tasks:
   build:
     description: Build application 
     dir: /home/example/cra
-    sources: (.)*.(js|jsx)$ # We are watching all .js or .jsx files
     cmds:
       - npm run build # Runs jest tests
