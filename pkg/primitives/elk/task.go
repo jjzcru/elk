@@ -13,7 +13,7 @@ type Task struct {
 	Description string            `yaml:"description,omitempty"`
 	Dir         string            `yaml:"dir,omitempty"`
 	Log         string            `yaml:"log,omitempty"`
-	Watch       string            `yaml:"watch,omitempty"`
+	Sources     string            `yaml:"sources,omitempty"`
 	Deps        []Dep             `yaml:"deps,omitempty"`
 	IgnoreError bool              `yaml:"ignore_error,omitempty"`
 }

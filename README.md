@@ -90,7 +90,7 @@ tasks:
   cra-example:
     description: "Compile and runs a CRA app"
     dir: /tmp/create-react-app-example
-    watch: "[a-zA-Z]*.jsx$" # All .jsx files
+    sources: "[a-zA-Z]*.jsx$" # All .jsx files
     dir: /tmp/create-react-app-example
     deps:
       - name: build

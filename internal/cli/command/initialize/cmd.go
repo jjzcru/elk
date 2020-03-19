@@ -104,7 +104,7 @@ func CreateElkFile(elkFilePath string) error {
 			},
 			"ts-build": {
 				Description: "Watch files and re-run to compile typescript",
-				Watch:       "[a-zA-Z]*.ts$",
+				Sources:     "[a-zA-Z]*.ts$",
 				Cmds: []string{
 					"npm run build",
 				},

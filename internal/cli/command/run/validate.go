@@ -2,11 +2,13 @@ package run
 
 import (
 	"fmt"
+
 	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/primitives/elk"
 	"github.com/spf13/cobra"
 )
 
+// Validate if the arguments are valid
 func Validate(cmd *cobra.Command, tasks []string) error {
 	logFilePath, err := cmd.Flags().GetString("log")
 	if err != nil {
@@ -55,7 +57,7 @@ func Validate(cmd *cobra.Command, tasks []string) error {
 		}
 
 		if isWatch {
-			if len(task.Watch) == 0 {
+			if len(task.Sources) == 0 {
 				return fmt.Errorf("task '%s' do now have a watch property", name)
 			}
 		}
