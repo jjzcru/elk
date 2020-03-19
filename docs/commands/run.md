@@ -1,4 +1,4 @@
-`run`
+run
 ==========
 
 Run one or more task
