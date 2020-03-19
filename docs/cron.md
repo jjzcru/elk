@@ -1,15 +1,19 @@
 # `cron`
 
-Run one or more task as a cron job.
+Run one or more task as a `cron job`.
 
-This command takes at least 2 arguments. The first one is going to be `crontab` which is the syntax used to describe a 
-`cron job`, the rest of the arguments are the names of the task that are going to be executed.
+This command takes at least two arguments. The first one is going to be `crontab` which is the syntax used to describe a `cron job`.
+
+The rest of the arguments are the names of the `task` that are going to be executed follow by the flags.
+
+## Syntax
+```
+elk cron [crontab] [tasks] [flags]
+```
+
+## Examples
 
 ```
-Usage: 
- elk cron [crontab] [tasks] [flags]
-
-Examples:
 elk cron "*/1 * * * *" foo
 elk cron "*/1 * * * *" foo bar
 elk cron "*/1 * * * *" foo -d
@@ -17,30 +21,32 @@ elk cron "*/2 * * * *" foo -t 1s
 elk cron "*/2 * * * *" foo --delay 1s
 elk cron "*/2 * * * *" foo -e FOO=BAR --env HELLO=WORLD
 elk cron "*/6 * * * *" foo -l ./foo.log -d
-elk cron "*/1 * * * *" foo --ignore-log
+elk cron "*/1 * * * *" foo --ignore-logfile
 elk cron "*/2 * * * *" foo --ignore-error
 elk cron "*/5 * * * *" foo --deadline 09:41AM
 elk cron "*/1 * * * *" foo --start 09:41PM
-
-Flags:
-  -d, --detached      Run the task in detached mode and returns the PGID
-  -e, --env strings   Overwrite env variable in task   
-  -f, --file string   Run elk in a specific file
-  -g, --global        Run from the path set in config
-  -h, --help          help for run
-      --ignore-log    Force task to output to stdout
-      --ignore-error  Ignore errors that happened during a task
-      --delay         Set a delay to a task
-  -l, --log string    File that log output from a task
-  -w, --watch         Enable watch mode
-  -t, --timeout       Set a timeout to a task
-      --deadline      Set a deadline to a task
-      --start      	  Set a date/datetime to a task to run
 ```
 
 ## Flags
 
-`detached`
+| Flag                                  | Short code | Description                                       | 
+| -------                               | ------     | -------                                           | 
+| [detached](#detached)                 | d          | Run the task in detached mode and returns the PGID|
+| [env](#env)                           | e          | Set env variable to the task/s                    |
+| [file](#file)                         | f          | Run task from a file                              |
+| [global](#global)                     | g          | Run task from global file                         |
+| [help](#help)                         | h          | Help for run                                      |
+| [ignore-logfile](#ignore-logfile)     |            | Ignores task log property                         |
+| [ignore-error](#ignore-error)         |            | Ignore errors from task                           |
+| [delay](#delay)                       |            | Set a delay to a task                             |
+| [log](#log)                           | l          | Log output from a task to a file                  |
+| [watch](#watch)                       | w          | Enable watch mode                                 |
+| [timeout](#timeout)                   | t          | Set a timeout to a task                           |
+| [deadline](#deadline)                 |            | Set a deadline to a task                          |
+| [start](#start)                       |            | Set a date/datetime to a task                     | 
+
+
+### detached
 
 This will group all the tasks under the same `PGID` and then it will detach from the process, and returns the `PGID` so 
 the user can kill the process later.
@@ -52,7 +58,7 @@ elk cron "* * * * *" test -d
 elk cron "* * * * *" test --detached
 ```
 
-`env`
+### env
 
 This flag will overwrite whatever env variable already declared in the file. You can call this flag multiple times.
 
@@ -61,7 +67,7 @@ Example:
 elk cron "* * * * *" test -e HELLO=WORLD --env FOO=BAR
 ```
 
-`file`
+### file
 
 This flag force `elk` to use a particular file path to run the commands.
 
@@ -71,7 +77,7 @@ elk cron "* * * * *" test -f ./elk.yml
 elk cron "* * * * *" test --file ./elk.yml
 ```
 
-`global`
+### global
 
 This force the task to run from the global file either declared at `ELK_FILE` or the default global path `~/elk.yml`.
 
@@ -82,17 +88,17 @@ elk cron "* * * * *" test -g
 elk cron "* * * * *" test --global
 ```
 
-`ignore-log`
+### ignore-log
 
 Force task to output to stdout.
 
 Example:
 
 ```
-elk cron "* * * * *" test --ignore-log
+elk cron "* * * * *" test --ignore-logfile
 ```
 
-`ignore-error`
+### ignore-error
 
 Ignore errors that happened during a `task`.
 
@@ -102,7 +108,7 @@ Example:
 elk cron "* * * * *" test --ignore-error
 ```
 
-`delay`
+### delay
 
 This flag will run the task after some duration.
 
@@ -122,7 +128,7 @@ elk cron "* * * * *" test --delay 2h
 elk cron "* * * * *" test --delay 2h45m
 ```
 
-`log`
+### log
 
 This saves the output to a specific file.
 
@@ -133,7 +139,7 @@ elk cron "* * * * *" test -l ./test.log
 elk cron "* * * * *" test --log ./test.log
 ```
 
-`watch`
+### watch
 
 This requires that the task has a property `sources` already setup, otherwise it will throw an error. When this flag is 
 enable it will kill the existing process and create a new one every time a file that match the regex is changed.
@@ -148,7 +154,7 @@ elk cron "* * * * *" test -w
 elk cron "* * * * *" test --watch
 ```
 
-`timeout`
+### timeout
 
 This flag with kill the task after some duration since the program was started.
 
@@ -168,7 +174,7 @@ elk cron "* * * * *" test --timeout 2h
 elk cron "* * * * *" test --timeout 2h45m
 ```
 
-`deadline`
+### deadline
 
 This flag with kill the task at a particular datetime.
 
@@ -188,7 +194,6 @@ It supports the following datetime standards:
 If the `Kitchen` format is used and the time is before the current time it will run at the same time in the following 
 day.
 
-
 Example:
 
 ```
@@ -196,7 +201,7 @@ elk cron "* * * * *" test --deadline 11:00PM
 elk cron "* * * * *" test --deadline 2020-12-12T09:41:00Z00:00
 ```
 
-`start`
+### start
 
 This flag with run the task at a particular datetime.
 
@@ -215,7 +220,6 @@ It supports the following datetime standards:
 
 If the `Kitchen` format is used and the time is before the current time it will run at the same time in the following 
 day.
-
 
 Example:
 

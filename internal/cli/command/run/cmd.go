@@ -27,7 +27,7 @@ elk run foo -t 1s
 elk run foo --delay 1s
 elk run foo -e FOO=BAR --env HELLO=WORLD
 elk run foo -l ./foo.log -d
-elk run foo --ignore-log
+elk run foo --ignore-logfile
 elk run foo --ignore-error
 elk run foo --deadline 09:41AM
 elk run foo --start 09:41PM
@@ -40,7 +40,7 @@ Flags:
   -f, --file string   Run elk in a specific file
   -g, --global        Run from the path set in config
   -h, --help          help for run
-      --ignore-log    Force task to output to stdout
+      --ignore-logfile    Force task to output to stdout
       --ignore-error  Ignore errors that happened during a task
       --delay         Set a delay to a task
   -l, --log string    File that log output from a task
@@ -72,7 +72,7 @@ func NewRunCommand() *cobra.Command {
 
 	cmd.Flags().BoolP("global", "g", false, "Run from the path set in config")
 	cmd.Flags().StringSliceVarP(&envs, "env", "e", []string{}, "")
-	cmd.Flags().Bool("ignore-log", false, "Force task to output to stdout")
+	cmd.Flags().Bool("ignore-logfile", false, "Force task to output to stdout")
 	cmd.Flags().Bool("ignore-error", false, "Ignore errors that happened during a task")
 	cmd.Flags().BoolP("detached", "d", false, "Run the command in detached mode and returns the PGID")
 	cmd.Flags().BoolP("watch", "w", false, "Enable watch mode")

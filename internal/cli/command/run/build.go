@@ -2,15 +2,16 @@ package run
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/primitives/elk"
 	"github.com/spf13/cobra"
-	"os"
-	"path/filepath"
 )
 
 func Build(cmd *cobra.Command, e *elk.Elk) error {
-	ignoreLog, err := cmd.Flags().GetBool("ignore-log")
+	ignoreLog, err := cmd.Flags().GetBool("ignore-logfile")
 	if err != nil {
 		return err
 	}
