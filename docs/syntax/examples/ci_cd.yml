@@ -1,0 +1,86 @@
+version: '1'
+env:
+  NODE_ENV: production
+tasks:
+  services_health:
+    description: Health check the services
+    deps:
+      - name: service_1_health
+        detached: true
+      - name: service_2_health
+        detached: true
+    cmds:
+      - echo "----------------"
+
+  service_1_health:
+    description: Health check the service 1
+    env:
+      PORT: 8080
+    cmds:
+      - echo "Service 1 Status:"
+      - curl http://localhost:$PORT/health
+      - echo ""
+
+  service_1_deploy:
+    description: Deploy the service 1
+    dir: /home/example/deploy/service_1
+    env:
+      PORT: 8080
+    deps:
+      - name: service_1_build
+    cmds:
+      - pm2 start app.js --name service_1
+      - pm2 save
+
+  service_1_build:
+    description: Build the service 1
+    dir: /home/example/ci/service_1
+    env:
+      target: /home/example/deploy/service_1
+    deps:
+      - name: service_1_test
+    cmds:
+      - npm run build
+      - cp -a ./build/* $target
+
+  service_1_test:
+    description: Test the service 1
+    dir: /home/example/ci/service_1
+    cmds:
+      - npm test
+  
+  service_2_health:
+    description: Health check the service 2
+    env:
+      PORT: 8081
+    cmds:
+      - echo "Service 2 Status:"
+      - curl http://localhost:$PORT/health
+      - echo ""
+
+  service_2_deploy:
+    description: Deploy the service 2
+    dir: /home/example/deploy/service_2
+    env:
+      PORT: 8081
+    deps:
+      - name: service_2_test
+      - name: service_2_build
+    cmds:
+      - pm2 start app.js --name service_2
+      - pm2 save
+
+  service_2_build:
+    description: Build the service 2
+    dir: /home/example/ci/service_2
+    env:
+      target: /home/example/deploy/service_2
+    cmds:
+      - npm run build
+      - cp -a ./build/* $target
+
+  service_2_test:
+    description: Test the service 2
+    dir: /home/example/ci/service_2
+    cmds:
+      - npm test

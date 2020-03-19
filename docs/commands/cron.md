@@ -90,7 +90,7 @@ elk cron "* * * * *" test -g
 elk cron "* * * * *" test --global
 ```
 
-### ignore-log
+### ignore-log-file
 
 Force task to output to stdout.
 

@@ -1,0 +1,29 @@
+version: '1'
+ignore_error: true
+env_file: /home/developer/server.env #Load env variables from file
+tasks:
+  restart:
+    description: 'Restart the machine'
+    cmds:
+      - reboot
+  
+  shutdown:
+    description: 'Command to shutdown the machine'
+    cmds:
+      - shutdown
+  
+  alarm:
+    description: 'Runs a http request that triggers an alarm'
+    cmds:
+      - curl -X POST $server?command=wake_me_up
+  
+  open_the_door:
+    description: 'Runs a http request that triggers an event that open the garage door'
+    cmds:
+      - curl -X POST $server?command=open_the_door
+  
+  close_the_door:
+    description: 'Runs a http request that triggers an event that open the close the garage door'
+    cmds:
+      - curl -X POST $server?command=open_the_door
+

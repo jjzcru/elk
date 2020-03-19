@@ -31,7 +31,7 @@ Flags:
   -w, --watch            Enable watch mode
   -t, --timeout          Set a timeout to a task
       --deadline         Set a deadline to a task
-      --start      	     Set a date/datetime to a task to run
+      --start            Set a date/datetime to a task to run
   -i, --interval         Set a duration for an interval
 `
 

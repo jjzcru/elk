@@ -1,0 +1,21 @@
+version: '1'
+tasks:
+  start:
+    description: Start development mode
+    dir: /home/example/cra
+    cmds:
+      - npm start # Starts create react app development mode
+  
+  test:
+    description: Test application components
+    dir: /home/example/cra
+    sources: (.)*.(js|jsx)$ # We are watching all .js or .jsx files
+    cmds:
+      - npm test # Runs jest tests
+  
+  build:
+    description: Build application 
+    dir: /home/example/cra
+    sources: (.)*.(js|jsx)$ # We are watching all .js or .jsx files
+    cmds:
+      - npm run build # Runs jest tests

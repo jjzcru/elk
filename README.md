@@ -76,7 +76,7 @@ tasks:
 [releases]: https://github.com/jjzcru/elk/releases
 [changelog]: https://github.com/jjzcru/elk/blob/master/CHANGELOG.md
 
-[syntax]: docs/syntax.md
+[syntax]: docs/syntax/syntax.md
 
 [cron]: docs/commands/cron.md
 [init]: docs/commands/init.md

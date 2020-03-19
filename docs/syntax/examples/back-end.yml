@@ -1,0 +1,40 @@
+version: '1'
+env:
+  service_1_url: http://localhost:8080
+  service_2_url: http://localhost:8081
+tasks:
+  service_1:
+    description: Example of microservice 1
+    dir: /home/example/service_1
+    log: /home/example/service_1.log
+    sources: (.)*.js$ # We are watching all .js files
+    env:
+      PORT: 8080 # Setting the application port to 8080
+    cmds:
+      - node app.js # Scripts that starts the microservice
+  
+  service_2:
+    description: Example of microservice 1
+    dir: /home/example/service_2
+    log: /home/example/service_2.log
+    sources: (.)*.js$ # We are watching all .js files
+    env:
+      PORT: 8081 # Setting the application port to 8081
+    cmds:
+      - node app.js # Scripts that starts the microservice
+  
+  health:
+    description: 'Check the health of microservices'
+    ignore_error: true
+    env:
+      reset: \e[0m
+      success: \e[1m\e[32m
+      error: \e[1m\e[31m
+    cmds:
+      - clear
+      - |
+        curl -s $service_1_url > /dev/null && /bin/echo -e "Service 1: ${success}Alive 🚀" || /bin/echo -e "Service 1: ${error}Dead 💀"
+      - /bin/echo -e "$reset---------------------------" 
+      - |
+        curl -s $service_2_url > /dev/null && /bin/echo -e "Service 2: ${success}Alive 🚀" || /bin/echo -e "Service 2: ${error}Dead 💀"
+      - /bin/echo -e "$reset---------------------------"
