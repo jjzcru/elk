@@ -91,7 +91,7 @@ elk run test -g
 elk run test --global
 ```
 
-### ignore-log
+### ignore-logfile
 
 Force task to output to stdout.
 
