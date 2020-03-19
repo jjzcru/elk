@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Build loads elk object with the values
 func Build(cmd *cobra.Command, e *elk.Elk) error {
 	ignoreLog, err := cmd.Flags().GetBool("ignore-logfile")
 	if err != nil {

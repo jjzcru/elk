@@ -235,6 +235,7 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 	return nil
 }
 
+// DelayStart sleep the program by an amount of time
 func DelayStart(delay time.Duration, start string) {
 	var startDuration time.Duration
 	var delayDuration time.Duration
@@ -269,6 +270,7 @@ func DelayStart(delay time.Duration, start string) {
 	}
 }
 
+// GetTimeFromString transform a string to a duration
 func GetTimeFromString(input string) (time.Time, error) {
 	validTimeFormats := []string{
 		time.ANSIC,
@@ -329,6 +331,7 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 	Task(ctx, cliEngine, task)
 }
 
+// Task runs a task on the engine
 func Task(ctx context.Context, cliEngine *engine.Engine, task string) {
 	ctx, _ = context.WithCancel(ctx)
 
