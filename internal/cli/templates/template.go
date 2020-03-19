@@ -1,6 +1,6 @@
 package templates
 
-// Elk template use for elk.yml
+// Elk template use for ox.yml
 var Elk = `version: '1'
 tasks: {{ range $name, $task := .Tasks }}
   {{ $name }}:

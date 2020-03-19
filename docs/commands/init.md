@@ -1,7 +1,7 @@
 init
 ==========
 
-This command creates a dummy `elk.yml` in the current directory.
+This command creates a dummy `ox.yml` in the current directory.
 
 ## Syntax
 ```

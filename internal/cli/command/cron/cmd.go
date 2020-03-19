@@ -24,7 +24,7 @@ elk cron "*/2 * * * *" foo -t 1s
 elk cron "*/2 * * * *" foo --delay 1s
 elk cron "*/2 * * * *" foo -e FOO=BAR --env HELLO=WORLD
 elk cron "*/6 * * * *" foo -l ./foo.log -d
-elk cron "*/1 * * * *" foo --ignore-logfile
+elk cron "*/1 * * * *" foo --ignore-log-file
 elk cron "*/2 * * * *" foo --ignore-error
 elk cron "*/5 * * * *" foo --deadline 09:41AM
 elk cron "*/1 * * * *" foo --start 09:41PM
@@ -35,7 +35,7 @@ Flags:
   -f, --file string   Run elk in a specific file
   -g, --global        Run from the path set in config
   -h, --help          help for run
-      --ignore-logfile    Force task to output to stdout
+      --ignore-log-file    Force task to output to stdout
       --ignore-error  Ignore errors that happened during a task
       --delay         Set a delay to a task
   -l, --log string    File that log output from a task
@@ -65,7 +65,7 @@ func NewCronCommand() *cobra.Command {
 
 	cmd.Flags().BoolP("global", "g", false, "Run from the path set in config")
 	cmd.Flags().StringSliceVarP(&envs, "env", "e", []string{}, "")
-	cmd.Flags().Bool("ignore-logfile", false, "Force task to output to stdout")
+	cmd.Flags().Bool("ignore-log-file", false, "Force task to output to stdout")
 	cmd.Flags().Bool("ignore-error", false, "Ignore errors that happened during a task")
 	cmd.Flags().BoolP("detached", "d", false, "Run the command in detached mode and returns the PGID")
 	cmd.Flags().StringP("file", "f", "", "Run elk in a specific file")

@@ -23,7 +23,7 @@ elk cron "*/2 * * * *" foo -t 1s
 elk cron "*/2 * * * *" foo --delay 1s
 elk cron "*/2 * * * *" foo -e FOO=BAR --env HELLO=WORLD
 elk cron "*/6 * * * *" foo -l ./foo.log -d
-elk cron "*/1 * * * *" foo --ignore-logfile
+elk cron "*/1 * * * *" foo --ignore-log-file
 elk cron "*/2 * * * *" foo --ignore-error
 elk cron "*/5 * * * *" foo --deadline 09:41AM
 elk cron "*/1 * * * *" foo --start 09:41PM
@@ -38,7 +38,7 @@ elk cron "*/1 * * * *" foo --start 09:41PM
 | [file](#file)                         | f          | Run task from a file                              |
 | [global](#global)                     | g          | Run task from global file                         |
 | [help](#help)                         | h          | Help for run                                      |
-| [ignore-logfile](#ignore-logfile)     |            | Ignores task log property                         |
+| [ignore-log-file](#ignore-log-file)   |            | Ignores task log property                         |
 | [ignore-error](#ignore-error)         |            | Ignore errors from task                           |
 | [delay](#delay)                       |            | Set a delay to a task                             |
 | [log](#log)                           | l          | Log output from a task to a file                  |
@@ -75,13 +75,13 @@ This flag force `elk` to use a particular file path to run the commands.
 
 Example:
 ```
-elk cron "* * * * *" test -f ./elk.yml
-elk cron "* * * * *" test --file ./elk.yml
+elk cron "* * * * *" test -f ./ox.yml
+elk cron "* * * * *" test --file ./ox.yml
 ```
 
 ### global
 
-This force the task to run from the global file either declared at `ELK_FILE` or the default global path `~/elk.yml`.
+This force the task to run from the global file either declared at `ELK_FILE` or the default global path `~/ox.yml`.
 
 Example:
 
@@ -97,7 +97,7 @@ Force task to output to stdout.
 Example:
 
 ```
-elk cron "* * * * *" test --ignore-logfile
+elk cron "* * * * *" test --ignore-log-file
 ```
 
 ### ignore-error

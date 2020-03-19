@@ -22,7 +22,7 @@ elk run foo -t 1s
 elk run foo --delay 1s
 elk run foo -e FOO=BAR --env HELLO=WORLD
 elk run foo -l ./foo.log -d
-elk run foo --ignore-logfile
+elk run foo --ignore-log-file
 elk run foo --ignore-error
 elk run foo --deadline 09:41AM
 elk run foo --start 09:41PM
@@ -39,7 +39,7 @@ elk run foo --interval 2s
 | [file](#file)                         | f          | Run task from a file                              |
 | [global](#global)                     | g          | Run task from global file                         |
 | [help](#help)                         | h          | Help for run                                      |
-| [ignore-logfile](#ignore-logfile)     |            | Ignores task log property                         |
+| [ignore-log-file](#ignore-log-file)   |            | Ignores task log property                         |
 | [ignore-error](#ignore-error)         |            | Ignore errors from task                           |
 | [delay](#delay)                       |            | Set a delay to a task                             |
 | [log](#log)                           | l          | Log output from a task to a file                  |
@@ -76,13 +76,13 @@ This flag force `elk` to use a particular file path to run the commands.
 
 Example:
 ```
-elk run test -f ./elk.yml
-elk run test --file ./elk.yml
+elk run test -f ./ox.yml
+elk run test --file ./ox.yml
 ```
 
 ### global
 
-This force the task to run from the global file either declared at `ELK_FILE` or the default global path `~/elk.yml`.
+This force the task to run from the global file either declared at `ELK_FILE` or the default global path `~/ox.yml`.
 
 Example:
 
@@ -91,14 +91,14 @@ elk run test -g
 elk run test --global
 ```
 
-### ignore-logfile
+### ignore-log-file
 
 Force task to output to stdout.
 
 Example:
 
 ```
-elk run test --ignore-logfile
+elk run test --ignore-log-file
 ```
 
 ### ignore-error

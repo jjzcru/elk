@@ -12,7 +12,7 @@ import (
 
 // Build loads elk object with the values
 func Build(cmd *cobra.Command, e *elk.Elk) error {
-	ignoreLog, err := cmd.Flags().GetBool("ignore-logfile")
+	ignoreLog, err := cmd.Flags().GetBool("ignore-log-file")
 	if err != nil {
 		return err
 	}

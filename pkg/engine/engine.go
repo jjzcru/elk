@@ -3,8 +3,9 @@ package engine
 import (
 	"context"
 	"fmt"
-	"github.com/jjzcru/elk/pkg/primitives/elk"
 	"strings"
+
+	"github.com/jjzcru/elk/pkg/primitives/elk"
 )
 
 // Engine is the data structure responsible of processing the content
@@ -14,7 +15,7 @@ type Engine struct {
 	Build    func() error
 }
 
-// Run task declared in elk.yml file
+// Run task declared in ox.yml file
 func (e *Engine) Run(ctx context.Context, task string) error {
 	if !e.Elk.HasTask(task) {
 		return fmt.Errorf("task '%s' not found", task)

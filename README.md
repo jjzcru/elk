@@ -3,7 +3,7 @@
 Elk
 ==========
 
-Elk is a minimalist, [YAML][yaml] based task runner that aims to help developers to focus on building cool stuff, 
+Elk 🦌 is a minimalist, [YAML][yaml] based task runner that aims to help developers to focus on building cool stuff,
 instead of remembering to perform tedious tasks.
 
 Since it's written in [Go][go], most of the commands runs across multiple operating systems (`Linux`, `macOS`, 
@@ -20,13 +20,13 @@ Since it's written in [Go][go], most of the commands runs across multiple operat
 ## Getting Started
 The main use case for `elk` is that you are able to run any command/s in a declarative way in any path. 
 
-By default the global file that is going to be used is `~/elk.yml`. You can change this path if you wish to use another 
+By default the global file that is going to be used is `~/ox.yml`. You can change this path if you wish to use another 
 file by setting the `env` variable `ELK_FILE`.
 
-`elk` will first search if there is a `elk.yml` file in the current directory and use that first, if the file is not 
+`elk` will first search if there is a `ox.yml` file in the current directory and use that first, if the file is not 
 found it will use the `global` file. 
 
-This enables the user to have multiples `elk.yml` one per project while also having one for the system itself.
+This enables the user to have multiples `ox.yml` one per project while also having one for the system itself.
 
 ### Installing
 1. Grab the latest binary of your platform from the [Releases](https://github.com/jjzcru/elk/releases) page.

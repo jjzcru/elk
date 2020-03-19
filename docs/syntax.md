@@ -1,7 +1,7 @@
 Syntax
 ==========
 
-`elk.yml` consists on two main section one is `global` which serves to set defaults for all the tasks and the other is `tasks` which defines the behavior for each of the task.
+The syntax consists on two main section one is `global` which serves to set defaults for all the tasks and the other is `tasks` which defines the behavior for each of the task.
 
 ## Properties
 ### Global

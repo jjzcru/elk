@@ -9,20 +9,20 @@ List tasks
 elk ls [flags]
 ```
 
-This command do not take any argument. Be default it will try to search for an `elk.yml` in the local directory, 
+This command do not take any argument. Be default it will try to search for an `ox.yml` in the local directory, 
 if not found I will search for the global file as a fallback.
 
 ## Examples
 
 ```
 elk ls
-elk ls -f ./elk.yml
-elk ls --file ./elk.yml
+elk ls -f ./ox.yml
+elk ls --file ./ox.yml
 elk ls -g
 elk ls --global
 elk ls -a
 elk ls --all
-elk ls -a -f ./elk.yml
+elk ls -a -f ./ox.yml
 elk ls -a -g
 ```
 
@@ -48,8 +48,8 @@ This flag force `elk` to use a particular file path to fetch the tasks.
 
 Example:
 ```
-elk ls -f ./elk.yml
-elk ls -—file ./elk.yml
+elk ls -f ./ox.yml
+elk ls -—file ./ox.yml
 ```
 
 ### global

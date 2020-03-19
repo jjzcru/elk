@@ -15,8 +15,8 @@ not have a `log` property it will throw an error.
 
 ```
 elk logs foo
-elk logs foo -f ./elk.yml
-elk logs foo --file ./elk.yml
+elk logs foo -f ./ox.yml
+elk logs foo --file ./ox.yml
 elk logs foo -g
 elk logs foo --global
 ```
@@ -33,13 +33,13 @@ This flag force `elk` to use a particular file.
 
 Example:
 ```
-elk logs test -f ./elk.yml
-elk logs test --file ./elk.yml
+elk logs test -f ./ox.yml
+elk logs test --file ./ox.yml
 ```
 
 ### global
 
-This force the task to run from the global file either declared at `ELK_FILE` or the default global path `~/elk.yml`.
+This force the task to run from the global file either declared at `ELK_FILE` or the default global path `~/ox.yml`.
 
 Example:
 
