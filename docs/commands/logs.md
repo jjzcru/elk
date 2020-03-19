@@ -1,4 +1,5 @@
-# `logs`
+`logs`
+==========
 
 Attach logs from a task to the terminal. 
 
