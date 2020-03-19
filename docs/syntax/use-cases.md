@@ -114,10 +114,10 @@ are feeling lazy for cooking so we will go out to buy some food and we are going
 back at `1:30PM`. We can program all of that bu running:
 
 - `elk run alarm --start 1:00PM`: To setup the alarm that is going to remind us that is time to eat.
-- `elk run open_the_door 1:10PM`: So the garage door get open while we are getting ready.
-- `elk run close_the_door 1:11PM`: To close the garage door once we leave.
-- `elk run open_the_door 1:30PM`: So the garage door get open while we are heading back.
-- `elk run close_the_door 1:31PM`: To close the garage door when we enter.
+- `elk run open_the_door --start 1:10PM`: So the garage door get open while we are getting ready.
+- `elk run close_the_door --start 1:11PM`: To close the garage door once we leave.
+- `elk run open_the_door --start 1:30PM`: So the garage door get open while we are heading back.
+- `elk run close_the_door --start 1:31PM`: To close the garage door when we enter.
 
 We can program all that in the morning and just going on with our day. If you never turn down your computer you can
 use the command `cron` to creates more complex automate scenarios.
