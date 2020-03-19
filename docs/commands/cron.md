@@ -1,7 +1,7 @@
 cron
 ==========
 
-Run one or more task as a `cron job`.
+Run one or more task as a `cron job` ⏱
 
 ## Syntax
 ```

@@ -18,37 +18,21 @@ import (
 var usageTemplate = `Usage:
   elk run [tasks] [flags]
 
-Examples:
-elk run foo
-elk run foo bar
-elk run foo -d
-elk run foo -d -w
-elk run foo -t 1s
-elk run foo --delay 1s
-elk run foo -e FOO=BAR --env HELLO=WORLD
-elk run foo -l ./foo.log -d
-elk run foo --ignore-log-file
-elk run foo --ignore-error
-elk run foo --deadline 09:41AM
-elk run foo --start 09:41PM
-elk run foo -i 2s
-elk run foo --interval 2s
-
 Flags:
-  -d, --detached      Run the task in detached mode and returns the PGID
-  -e, --env strings   Overwrite env variable in task   
-  -f, --file string   Run elk in a specific file
-  -g, --global        Run from the path set in config
-  -h, --help          help for run
-      --ignore-log-file    Force task to output to stdout
-      --ignore-error  Ignore errors that happened during a task
-      --delay         Set a delay to a task
-  -l, --log string    File that log output from a task
-  -w, --watch         Enable watch mode
-  -t, --timeout       Set a timeout to a task
-      --deadline      Set a deadline to a task
-      --start      	  Set a date/datetime to a task to run
-  -i, --interval      Set a duration for an interval
+  -d, --detached         Run the task in detached mode and returns the PGID
+  -e, --env strings      Overwrite env variable in task   
+  -f, --file string      Run elk in a specific file
+  -g, --global           Run from the path set in config
+  -h, --help             Help for run
+      --ignore-log-file  Force task to output to stdout
+      --ignore-error     Ignore errors that happened during a task
+      --delay            Set a delay to a task
+  -l, --log string       File that log output from a task
+  -w, --watch            Enable watch mode
+  -t, --timeout          Set a timeout to a task
+      --deadline         Set a deadline to a task
+      --start      	     Set a date/datetime to a task to run
+  -i, --interval         Set a duration for an interval
 `
 
 // NewRunCommand returns a cobra command for `run` sub command
@@ -56,7 +40,7 @@ func NewRunCommand() *cobra.Command {
 	var envs []string
 	var cmd = &cobra.Command{
 		Use:   "run",
-		Short: "Run one or more task in a terminal",
+		Short: "Run one or more tasks 🤖",
 		Args:  cobra.MinimumNArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return Validate(cmd, args)

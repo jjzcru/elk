@@ -11,6 +11,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var usageTemplate = `Usage:
+  elk ls [flags]
+
+Flags:
+  -a, --all           Specify the file to used
+  -f, --file string   Run in follow mode
+  -g, --global        Search the task in the global path
+  -h, --help          help for logs
+`
+
 // NewListCommand returns a cobra command for `ls` sub command
 func NewListCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -26,7 +36,9 @@ func NewListCommand() *cobra.Command {
 
 	cmd.Flags().BoolP("all", "a", false, "Display task details")
 	cmd.Flags().StringP("file", "f", "", "Specify elk file path")
-	cmd.Flags().BoolP("global", "g", false, "Use elk file path declared on global")
+	cmd.Flags().BoolP("global", "g", false, "Search the task in the global path")
+
+	cmd.SetUsageTemplate(usageTemplate)
 
 	return cmd
 }

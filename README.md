@@ -60,13 +60,14 @@ tasks:
 
 ## Commands
 
-| Command       | Description                                      | Syntax                               | 
-| -------       | ------                                           | -------                              | 
-| [cron][cron]  | Run one or more task as a `cron job`             | `elk cron [crontab] [tasks] [flags]` |
-| [init][init]  | This command creates a dummy file in current dir | `elk init`                           |
-| [logs][logs]  | Attach logs from a task to the terminal          | `elk logs [task] [flags]`            |
-| [ls][ls]      | List tasks                                       | `elk ls [flags]`                     |
-| [run][run]    | Run one or more task                             | `elk run [tasks] [flags]`            |
+| Command           | Description                                            | Syntax                               |
+| -------           | ------                                                 | -------                              |
+| [cron][cron]      | Run one or more task as a `cron job` ⏱                | `elk cron [crontab] [tasks] [flags]` |
+| [init][init]      | This command creates a dummy file in current directory | `elk init [flags]`                   |
+| [logs][logs]      | Attach logs from a task to the terminal 📝             | `elk logs [task] [flags]`            |
+| [ls][ls]          | List tasks                                             | `elk ls [flags]`                     |
+| [run][run]        | Run one or more tasks 🤖                               | `elk run [tasks] [flags]`            |
+| [version][version]| Display version number                                 | `elk version [flags]`                |
 
 [go]: https://golang.org/
 [yaml]: https://yaml.org/
@@ -75,9 +76,11 @@ tasks:
 [releases]: https://github.com/jjzcru/elk/releases
 [changelog]: https://github.com/jjzcru/elk/blob/master/CHANGELOG.md
 
+[syntax]: docs/syntax.md
+
 [cron]: docs/commands/cron.md
 [init]: docs/commands/init.md
 [logs]: docs/commands/logs.md
 [ls]: docs/commands/ls.md
 [run]: docs/commands/run.md
-[syntax]: docs/syntax.md
+[version]: docs/commands/version.md
