@@ -3,10 +3,11 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"github.com/jjzcru/elk/pkg/primitives/elk"
 	"os"
 	"os/user"
 	"path"
+
+	"github.com/jjzcru/elk/pkg/primitives/elk"
 )
 
 // GetElk get an elk pointer from a file path
@@ -42,9 +43,9 @@ func getElkFilePath(isGlobal bool) (string, error) {
 		return elkFilePath, nil
 	}
 
-	isLocal := isLocalElkFile(path.Join(dir, "elk.yml"))
+	isLocal := isLocalElkFile(path.Join(dir, "ox.yml"))
 	if isLocal {
-		elkFilePath = path.Join(dir, "elk.yml")
+		elkFilePath = path.Join(dir, "ox.yml")
 	} else {
 		elkFilePath, err = getGlobalElkFile()
 		if err != nil {
@@ -82,7 +83,7 @@ func getGlobalElkFile() (string, error) {
 		return "", err
 	}
 
-	globalElkFilePath = path.Join(usr.HomeDir, "elk.yml")
+	globalElkFilePath = path.Join(usr.HomeDir, "ox.yml")
 	if _, err := os.Stat(globalElkFilePath); os.IsNotExist(err) {
 		return "", fmt.Errorf("default global path %s do not exist, please create it or set the env variable ELK_FILE", globalElkFilePath)
 	}

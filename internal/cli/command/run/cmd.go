@@ -18,37 +18,21 @@ import (
 var usageTemplate = `Usage:
   elk run [tasks] [flags]
 
-Examples:
-elk run foo
-elk run foo bar
-elk run foo -d
-elk run foo -d -w
-elk run foo -t 1s
-elk run foo --delay 1s
-elk run foo -e FOO=BAR --env HELLO=WORLD
-elk run foo -l ./foo.log -d
-elk run foo --ignore-log
-elk run foo --ignore-error
-elk run foo --deadline 09:41AM
-elk run foo --start 09:41PM
-elk run foo -i 2s
-elk run foo --interval 2s
-
 Flags:
-  -d, --detached      Run the task in detached mode and returns the PGID
-  -e, --env strings   Overwrite env variable in task   
-  -f, --file string   Run elk in a specific file
-  -g, --global        Run from the path set in config
-  -h, --help          help for run
-      --ignore-log    Force task to output to stdout
-      --ignore-error  Ignore errors that happened during a task
-      --delay         Set a delay to a task
-  -l, --log string    File that log output from a task
-  -w, --watch         Enable watch mode
-  -t, --timeout       Set a timeout to a task
-      --deadline      Set a deadline to a task
-      --start      	  Set a date/datetime to a task to run
-  -i, --interval      Set a duration for an interval
+  -d, --detached         Run the task in detached mode and returns the PGID
+  -e, --env strings      Overwrite env variable in task   
+  -f, --file string      Run elk in a specific file
+  -g, --global           Run from the path set in config
+  -h, --help             Help for run
+      --ignore-log-file  Force task to output to stdout
+      --ignore-error     Ignore errors that happened during a task
+      --delay            Set a delay to a task
+  -l, --log string       File that log output from a task
+  -w, --watch            Enable watch mode
+  -t, --timeout          Set a timeout to a task
+      --deadline         Set a deadline to a task
+      --start            Set a date/datetime to a task to run
+  -i, --interval         Set a duration for an interval
 `
 
 // NewRunCommand returns a cobra command for `run` sub command
@@ -56,14 +40,16 @@ func NewRunCommand() *cobra.Command {
 	var envs []string
 	var cmd = &cobra.Command{
 		Use:   "run",
-		Short: "Run one or more task in a terminal",
+		Short: "Run one or more tasks 🤖",
 		Args:  cobra.MinimumNArgs(1),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return Validate(cmd, args)
-			// return validate(cmd, args, &e)
-		},
 		Run: func(cmd *cobra.Command, args []string) {
-			err := run(cmd, args, envs)
+			err := Validate(cmd, args)
+			if err != nil {
+				utils.PrintError(err)
+				return
+			}
+
+			err = run(cmd, args, envs)
 			if err != nil {
 				utils.PrintError(err)
 			}
@@ -72,7 +58,7 @@ func NewRunCommand() *cobra.Command {
 
 	cmd.Flags().BoolP("global", "g", false, "Run from the path set in config")
 	cmd.Flags().StringSliceVarP(&envs, "env", "e", []string{}, "")
-	cmd.Flags().Bool("ignore-log", false, "Force task to output to stdout")
+	cmd.Flags().Bool("ignore-log-file", false, "Force task to output to stdout")
 	cmd.Flags().Bool("ignore-error", false, "Ignore errors that happened during a task")
 	cmd.Flags().BoolP("detached", "d", false, "Run the command in detached mode and returns the PGID")
 	cmd.Flags().BoolP("watch", "w", false, "Enable watch mode")
@@ -235,6 +221,7 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 	return nil
 }
 
+// DelayStart sleep the program by an amount of time
 func DelayStart(delay time.Duration, start string) {
 	var startDuration time.Duration
 	var delayDuration time.Duration
@@ -269,6 +256,7 @@ func DelayStart(delay time.Duration, start string) {
 	}
 }
 
+// GetTimeFromString transform a string to a duration
 func GetTimeFromString(input string) (time.Time, error) {
 	validTimeFormats := []string{
 		time.ANSIC,
@@ -321,7 +309,7 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 		return
 	}
 
-	if len(t.Watch) > 0 && isWatch {
+	if len(t.Sources) > 0 && isWatch {
 		Watch(ctx, cliEngine, task, *t)
 		return
 	}
@@ -329,6 +317,7 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 	Task(ctx, cliEngine, task)
 }
 
+// Task runs a task on the engine
 func Task(ctx context.Context, cliEngine *engine.Engine, task string) {
 	ctx, _ = context.WithCancel(ctx)
 

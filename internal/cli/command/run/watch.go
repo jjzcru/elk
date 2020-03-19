@@ -2,19 +2,21 @@ package run
 
 import (
 	"context"
+	"os"
+	"path/filepath"
+	"regexp"
+
 	"github.com/fsnotify/fsnotify"
 	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/engine"
 	"github.com/jjzcru/elk/pkg/primitives/elk"
-	"os"
-	"path/filepath"
-	"regexp"
 )
 
+// Watch runs elk in watch mode
 func Watch(ctx context.Context, cliEngine *engine.Engine, task string, t elk.Task) {
 	taskCtx, cancel := context.WithCancel(ctx)
 
-	files, err := getWatcherFiles(t.Watch, t.Dir)
+	files, err := getWatcherFiles(t.Sources, t.Dir)
 	if err != nil {
 		utils.PrintError(err)
 		return

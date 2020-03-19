@@ -1,0 +1,24 @@
+version: '1'
+env:
+  URL: http://localhost:8080
+tasks:
+  build:
+    description: Build the typescript project
+    sources: (.)*.ts$ # We are watching all .ts files
+    ignore_error: true
+    cmds:
+      - npm run build
+  
+  serve:
+    description: Build and run a typescript project
+    sources: (.)*.ts$ # We are watching all .ts files
+    deps:
+      - name: build
+    cmds:
+      - node ./dist/app.js
+  
+  health:
+    description: Check health of the service
+    cmds:
+      - clear
+      - curl $URL/health # Here we are using the env variable URL that was declared at the global level

@@ -2,15 +2,17 @@ package run
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/primitives/elk"
 	"github.com/spf13/cobra"
-	"os"
-	"path/filepath"
 )
 
+// Build loads elk object with the values
 func Build(cmd *cobra.Command, e *elk.Elk) error {
-	ignoreLog, err := cmd.Flags().GetBool("ignore-log")
+	ignoreLog, err := cmd.Flags().GetBool("ignore-log-file")
 	if err != nil {
 		return err
 	}

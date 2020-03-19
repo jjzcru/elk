@@ -2,12 +2,13 @@ package elk
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"math/rand"
 	"os"
 	"reflect"
 	"testing"
+
+	"gopkg.in/yaml.v2"
 )
 
 func TestElkLoadEnvFile(t *testing.T) {
@@ -385,7 +386,7 @@ func TestFromFile(t *testing.T) {
 		t.Error(err)
 	}
 
-	path := fmt.Sprint("./elk.yml")
+	path := fmt.Sprint("./ox.yml")
 	err = ioutil.WriteFile(path, content, 0644)
 	if err != nil {
 		t.Error(err)
@@ -416,7 +417,7 @@ func TestFromFileWithoutTasks(t *testing.T) {
 		t.Error(err)
 	}
 
-	path := fmt.Sprint("./elk.yml")
+	path := fmt.Sprint("./ox.yml")
 	err = ioutil.WriteFile(path, content, 0644)
 	if err != nil {
 		t.Error(err)
@@ -442,7 +443,7 @@ func TestFromFileWithoutTasks(t *testing.T) {
 }
 
 func TestFromFileNotExist(t *testing.T) {
-	path := fmt.Sprint("./elk.yml")
+	path := fmt.Sprint("./ox.yml")
 
 	_, err := FromFile(path)
 	if err == nil {
@@ -451,7 +452,7 @@ func TestFromFileNotExist(t *testing.T) {
 }
 
 func TestFromFileInvalidFileContent(t *testing.T) {
-	path := fmt.Sprint("./elk.yml")
+	path := fmt.Sprint("./ox.yml")
 	err := ioutil.WriteFile(path, []byte("FOO=BAR"), 0644)
 	if err != nil {
 		t.Error(err)

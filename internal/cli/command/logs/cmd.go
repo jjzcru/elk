@@ -17,21 +17,22 @@ Flags:
   -f, --file string   Specify the file to used
       --follow        Run in follow mode
   -g, --global        Search the task in the global path
-  -h, --help          help for logs
+  -h, --help          Help for logs
 `
 
 func NewLogsCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "logs",
-		Short: "Fetch logs of a task",
+		Short: "Attach logs from a task to the terminal 📝",
 		Args:  cobra.ExactArgs(1),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return validate(cmd, args)
-
-			// return validate(cmd, args, &e)
-		},
 		Run: func(cmd *cobra.Command, args []string) {
-			err := run(cmd, args)
+			err := validate(cmd, args)
+			if err != nil {
+				utils.PrintError(err)
+				return
+			}
+
+			err = run(cmd, args)
 			if err != nil {
 				utils.PrintError(err)
 			}

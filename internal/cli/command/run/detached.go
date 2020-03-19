@@ -11,6 +11,7 @@ import (
 	"github.com/jjzcru/elk/internal/cli/utils"
 )
 
+// Detached runs elk in detached mode
 func Detached() error {
 	cwd, err := os.Getwd()
 	if err != nil {
