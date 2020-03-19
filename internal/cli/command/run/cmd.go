@@ -42,12 +42,14 @@ func NewRunCommand() *cobra.Command {
 		Use:   "run",
 		Short: "Run one or more tasks 🤖",
 		Args:  cobra.MinimumNArgs(1),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return Validate(cmd, args)
-			// return validate(cmd, args, &e)
-		},
 		Run: func(cmd *cobra.Command, args []string) {
-			err := run(cmd, args, envs)
+			err := Validate(cmd, args)
+			if err != nil {
+				utils.PrintError(err)
+				return
+			}
+
+			err = run(cmd, args, envs)
 			if err != nil {
 				utils.PrintError(err)
 			}

@@ -39,11 +39,14 @@ func NewCronCommand() *cobra.Command {
 		Use:   "cron",
 		Short: "Run one or more task as a cron job ⏱",
 		Args:  cobra.MinimumNArgs(2),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return run.Validate(cmd, args[1:])
-		},
 		Run: func(cmd *cobra.Command, args []string) {
-			err := Run(cmd, args, envs)
+			err := run.Validate(cmd, args[1:])
+			if err != nil {
+				utils.PrintError(err)
+				return
+			}
+
+			err = Run(cmd, args, envs)
 			if err != nil {
 				utils.PrintError(err)
 			}
