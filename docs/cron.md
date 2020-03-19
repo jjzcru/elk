@@ -2,14 +2,15 @@
 
 Run one or more task as a `cron job`.
 
-This command takes at least two arguments. The first one is going to be `crontab` which is the syntax used to describe a `cron job`.
-
-The rest of the arguments are the names of the `task` that are going to be executed follow by the flags.
-
 ## Syntax
 ```
 elk cron [crontab] [tasks] [flags]
 ```
+
+This command takes at least two arguments. The first one is going to be `crontab` which is the syntax used to describe 
+a `cron job`.
+
+The rest of the arguments are the names of the `task` that are going to be executed follow by the flags.
 
 ## Examples
 

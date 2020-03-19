@@ -7,9 +7,8 @@ Attach logs from a task to the terminal.
 elk logs [task] [flags]
 ```
 
-This command takes only one argument which is the name of the task that you want to attach the logs to the terminal. Optionally you can follow the args with the logs flags.
-
-If the `task` do not have a `log` property it will throw an error.
+This command takes only one argument which is the name of the `task` that you want to attach the logs. If the `task` do 
+not have a `log` property it will throw an error.
 
 ## Examples
 
