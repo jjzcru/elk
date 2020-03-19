@@ -9,7 +9,7 @@ import (
 	"github.com/jjzcru/elk/internal/cli/utils"
 )
 
-var v = "0.3.0"
+var v = "0.3.1"
 
 func main() {
 	version.SetVersion(v)
