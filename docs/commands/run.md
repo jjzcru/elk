@@ -21,6 +21,7 @@ elk run foo -d -w
 elk run foo -t 1s
 elk run foo --delay 1s
 elk run foo -e FOO=BAR --env HELLO=WORLD
+elk run foo -v FOO=BAR --var HELLO=WORLD
 elk run foo -l ./foo.log -d
 elk run foo --ignore-log-file
 elk run foo --ignore-error
@@ -35,7 +36,8 @@ elk run foo --interval 2s
 | Flag                                  | Short code | Description                                       | 
 | -------                               | ------     | -------                                           | 
 | [detached](#detached)                 | d          | Run the task in detached mode and returns the PGID|
-| [env](#env)                           | e          | Set env variable to the task/s                    |
+| [env](#env)                           | e          | Set `env` variable to the task/s                  |
+| [var](#var)                           | v          | Set `var` variable to the task/s                  |
 | [file](#file)                         | f          | Run task from a file                              |
 | [global](#global)                     | g          | Run task from global file                         |
 | [help](#help)                         | h          | Help for run                                      |
@@ -68,6 +70,15 @@ This flag will overwrite whatever env variable already declared in the file. You
 Example:
 ```
 elk run test -e HELLO=WORLD --env FOO=BAR
+```
+
+### var
+
+This flag will overwrite whatever `var` variable already declared in the file. You can call this flag multiple times.
+
+Example:
+```
+elk run test -v HELLO=WORLD --var FOO=BAR
 ```
 
 ### file

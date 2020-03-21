@@ -11,7 +11,7 @@ import (
 )
 
 var usageTemplate = `Usage:
-  ox logs [task] [flags]
+  elk logs [task] [flags]
 
 Flags:
   -f, --file string   Specify the file to used

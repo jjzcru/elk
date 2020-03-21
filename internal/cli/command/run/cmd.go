@@ -16,11 +16,12 @@ import (
 )
 
 var usageTemplate = `Usage:
-  ox run [tasks] [flags]
+  elk run [tasks] [flags]
 
 Flags:
   -d, --detached         Run the task in detached mode and returns the PGID
-  -e, --env strings      Overwrite env variable in task   
+  -e, --env strings      Overwrite env variable in task
+  -v, --var strings      Overwrite var variable in task
   -f, --file string      Run ox in a specific file
   -g, --global           Run from the path set in config
   -h, --help             Help for run
@@ -38,6 +39,7 @@ Flags:
 // NewRunCommand returns a cobra command for `run` sub command
 func NewRunCommand() *cobra.Command {
 	var envs []string
+	var vars [] string
 	var cmd = &cobra.Command{
 		Use:   "run",
 		Short: "Run one or more tasks 🤖",
@@ -49,7 +51,7 @@ func NewRunCommand() *cobra.Command {
 				return
 			}
 
-			err = run(cmd, args, envs)
+			err = run(cmd, args, envs, vars)
 			if err != nil {
 				utils.PrintError(err)
 			}
@@ -58,6 +60,7 @@ func NewRunCommand() *cobra.Command {
 
 	cmd.Flags().BoolP("global", "g", false, "Run from the path set in config")
 	cmd.Flags().StringSliceVarP(&envs, "env", "e", []string{}, "")
+	cmd.Flags().StringSliceVarP(&vars, "var", "v", []string{}, "")
 	cmd.Flags().Bool("ignore-log-file", false, "Force task to output to stdout")
 	cmd.Flags().Bool("ignore-error", false, "Ignore errors that happened during a task")
 	cmd.Flags().BoolP("detached", "d", false, "Run the command in detached mode and returns the PGID")
@@ -75,7 +78,7 @@ func NewRunCommand() *cobra.Command {
 	return cmd
 }
 
-func run(cmd *cobra.Command, args []string, envs []string) error {
+func run(cmd *cobra.Command, args []string, envs []string, vars []string) error {
 	isDetached, err := cmd.Flags().GetBool("detached")
 	if err != nil {
 		return err
@@ -146,8 +149,13 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 		for _, en := range envs {
 			parts := strings.SplitAfterN(en, "=", 2)
 			env := strings.ReplaceAll(parts[0], "=", "")
-			value := parts[1]
-			task.Env[env] = value
+			task.Env[env] = parts[1]
+		}
+
+		for _, v := range vars {
+			parts := strings.SplitAfterN(v, "=", 2)
+			k := strings.ReplaceAll(parts[0], "=", "")
+			task.Vars[k] = parts[1]
 		}
 
 		clientEngine.Elk.Tasks[name] = task

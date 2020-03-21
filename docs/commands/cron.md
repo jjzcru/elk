@@ -22,6 +22,7 @@ elk cron "*/1 * * * *" foo -d
 elk cron "*/2 * * * *" foo -t 1s
 elk cron "*/2 * * * *" foo --delay 1s
 elk cron "*/2 * * * *" foo -e FOO=BAR --env HELLO=WORLD
+elk cron "*/2 * * * *" foo -v FOO=BAR --var HELLO=WORLD
 elk cron "*/6 * * * *" foo -l ./foo.log -d
 elk cron "*/1 * * * *" foo --ignore-log-file
 elk cron "*/2 * * * *" foo --ignore-error
@@ -34,7 +35,8 @@ elk cron "*/1 * * * *" foo --start 09:41PM
 | Flag                                  | Short code | Description                                       | 
 | -------                               | ------     | -------                                           | 
 | [detached](#detached)                 | d          | Run the task in detached mode and returns the PGID|
-| [env](#env)                           | e          | Set env variable to the task/s                    |
+| [env](#env)                           | e          | Set `env` variable to the task/s                  |
+| [var](#var)                           | v          | Set `var` variable to the task/s                  |
 | [file](#file)                         | f          | Run task from a file                              |
 | [global](#global)                     | g          | Run task from global file                         |
 | [help](#help)                         | h          | Help for run                                      |
@@ -62,11 +64,20 @@ elk cron "* * * * *" test --detached
 
 ### env
 
-This flag will overwrite whatever env variable already declared in the file. You can call this flag multiple times.
+This flag will overwrite whatever `env` variable already declared in the file. You can call this flag multiple times.
 
 Example:
 ```
 elk cron "* * * * *" test -e HELLO=WORLD --env FOO=BAR
+```
+
+### var
+
+This flag will overwrite whatever `var` variable already declared in the file. You can call this flag multiple times.
+
+Example:
+```
+elk cron "* * * * *" test -v HELLO=WORLD --var FOO=BAR
 ```
 
 ### file

@@ -12,7 +12,7 @@ import (
 )
 
 var usageTemplate = `Usage:
-  ox ls [flags]
+  elk ls [flags]
 
 Flags:
   -a, --all           Specify the file to used
