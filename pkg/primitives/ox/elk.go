@@ -13,6 +13,7 @@ import (
 type Elk struct {
 	Version string
 	Env     map[string]string `yaml:"env"`
+	Vars    map[string]string `yaml:"vars"`
 	EnvFile string            `yaml:"env_file"`
 	Tasks   map[string]Task
 }
@@ -73,6 +74,28 @@ func (e *Elk) Build() error {
 			envs[env] = value
 		}
 		task.Env = envs
+
+		if e.Vars != nil {
+			if task.Vars == nil {
+				task.Vars = e.Vars
+			} else {
+				vars := make(map[string]string)
+				if task.Vars != nil {
+					for v, value := range task.Vars {
+						vars[v] = value
+						task.Vars[v] = value
+					}
+				}
+
+				for v, value := range e.Vars {
+					task.Vars[v] = value
+				}
+
+				for v, value := range vars {
+					task.Vars[v] = value
+				}
+			}
+		}
 
 		e.Tasks[name] = task
 	}
