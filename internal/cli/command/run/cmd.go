@@ -39,7 +39,7 @@ Flags:
 // NewRunCommand returns a cobra command for `run` sub command
 func NewRunCommand() *cobra.Command {
 	var envs []string
-	var vars [] string
+	var vars []string
 	var cmd = &cobra.Command{
 		Use:   "run",
 		Short: "Run one or more tasks 🤖",
@@ -197,7 +197,7 @@ func run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 	if interval > 0 {
 		executeTasks := func() {
 			for _, task := range args {
-				go runTask(ctx, clientEngine, task, nil, false)
+				go TaskWG(ctx, clientEngine, task, nil, false)
 			}
 		}
 
@@ -222,10 +222,9 @@ func run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 	var wg sync.WaitGroup
 	for _, task := range args {
 		wg.Add(1)
-		go runTask(ctx, clientEngine, task, &wg, isWatch)
+		go TaskWG(ctx, clientEngine, task, &wg, isWatch)
 	}
 
-	wg.Wait()
 	return nil
 }
 
@@ -306,7 +305,7 @@ func GetTimeFromString(input string) (time.Time, error) {
 	return time.Now(), errors.New("invalid input")
 }
 
-func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, isWatch bool) {
+func TaskWG(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, isWatch bool) {
 	if wg != nil {
 		defer wg.Done()
 	}
