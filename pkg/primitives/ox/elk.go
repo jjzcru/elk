@@ -3,6 +3,7 @@ package ox
 import (
 	"fmt"
 	"github.com/jjzcru/elk/pkg/file"
+	"github.com/jjzcru/elk/pkg/maps"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
@@ -69,33 +70,8 @@ func (e *Elk) Build() error {
 			return err
 		}
 
-		envs := e.Env
-		for env, value := range task.Env {
-			envs[env] = value
-		}
-		task.Env = envs
-
-		if e.Vars != nil {
-			if task.Vars == nil {
-				task.Vars = e.Vars
-			} else {
-				vars := make(map[string]string)
-				if task.Vars != nil {
-					for v, value := range task.Vars {
-						vars[v] = value
-						task.Vars[v] = value
-					}
-				}
-
-				for v, value := range e.Vars {
-					task.Vars[v] = value
-				}
-
-				for v, value := range vars {
-					task.Vars[v] = value
-				}
-			}
-		}
+		task.Env = maps.MergeMaps(maps.CopyMap(e.Env), maps.CopyMap(task.Env))
+		task.Vars = maps.MergeMaps(maps.CopyMap(e.Vars), maps.CopyMap(task.Vars))
 
 		e.Tasks[name] = task
 	}
