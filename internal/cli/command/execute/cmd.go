@@ -18,18 +18,20 @@ var usageTemplate = `Usage:
   elk exec [commands] [flags]
 
 Flags:
-  -d, --detached         Run the task in detached mode and returns the PGID
-  -e, --env strings      Overwrite env variable in task
-  -v, --var strings      Overwrite var variable in task
-  -h, --help             Help for run
-	  --delay            Set a delay to a task
-	  --dir              Set a directory to the command
-  -l, --log string       File that log output from a task
-  -w, --watch            Enable watch mode
-  -t, --timeout          Set a timeout to a task
-      --deadline         Set a deadline to a task
-	  --start            Set a date/datetime to a task to run
-  -i, --interval         Set a duration for an interval 
+  -d, --detached           Run the commands in detached mode and returns the PGID
+  -e, --env strings        Overwrite env variable in commands
+      --env-file string    Set an env file
+  -v, --var strings        Overwrite var variable in commands
+  -h, --help               Help for run
+	  --delay              Set a delay to a task
+	  --dir                Set a directory to the command
+  -l, --log string         File that log output from the commands
+      --ignore-error       Ignore errors that happened during a task
+  -w, --watch              Enable watch mode
+  -t, --timeout            Set a timeout to the commands
+      --deadline           Set a deadline to the commands
+	  --start              Set a date/datetime to the commands to run
+  -i, --interval           Set a duration for an interval 
 `
 
 // NewExecCommand returns a cobra command for `exec` sub command
@@ -51,6 +53,7 @@ func NewExecCommand() *cobra.Command {
 	cmd.Flags().StringSliceVarP(&envs, "env", "e", []string{}, "")
 	cmd.Flags().StringSliceVarP(&vars, "var", "v", []string{}, "")
 	cmd.Flags().Bool("ignore-log-file", false, "Force task to output to stdout")
+	cmd.Flags().String("env-file", "", "Set an env file")
 	cmd.Flags().Bool("ignore-error", false, "Ignore errors that happened during a task")
 	cmd.Flags().BoolP("detached", "d", false, "Run the command in detached mode and returns the PGID")
 	cmd.Flags().StringP("log", "l", "", "File that log output from a task")
@@ -107,10 +110,30 @@ func Run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 		if !isDir {
 			return fmt.Errorf("path '%s' is not a directory", dir)
 		}
+	}
 
+	envFile, err := cmd.Flags().GetString("env-file")
+	if err != nil {
+		return err
+	}
+
+	if len(envFile) > 0 {
+		isFile, err := utils.IsPathAFile(envFile)
+		if err != nil {
+			return err
+		}
+
+		if !isFile {
+			return fmt.Errorf("path '%s' is not a file", envFile)
+		}
 	}
 
 	interval, err := cmd.Flags().GetDuration("interval")
+	if err != nil {
+		return err
+	}
+
+	ignoreError, err := cmd.Flags().GetBool("ignore-error")
 	if err != nil {
 		return err
 	}
@@ -120,9 +143,10 @@ func Run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 			"elk": {
 				Cmds:        args,
 				Dir:         dir,
+				EnvFile:     envFile,
 				Env:         make(map[string]string),
 				Vars:        make(map[string]string),
-				IgnoreError: false,
+				IgnoreError: ignoreError,
 			},
 		},
 	}
