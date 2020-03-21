@@ -22,7 +22,8 @@ Flags:
   -e, --env strings      Overwrite env variable in task
   -v, --var strings      Overwrite var variable in task
   -h, --help             Help for run
-      --delay            Set a delay to a task
+	  --delay            Set a delay to a task
+	  --dir              Set a directory to the command
   -l, --log string       File that log output from a task
   -w, --watch            Enable watch mode
   -t, --timeout          Set a timeout to a task
@@ -55,6 +56,7 @@ func NewExecCommand() *cobra.Command {
 	cmd.Flags().StringP("log", "l", "", "File that log output from a task")
 	cmd.Flags().DurationP("timeout", "t", 0, "Set a timeout for a task in milliseconds")
 	cmd.Flags().Duration("delay", 0, "Set a delay for a task in milliseconds")
+	cmd.Flags().String("dir", "", "Set a directory to the command")
 	cmd.Flags().String("deadline", "", "Set a deadline to a task")
 	cmd.Flags().String("start", "", "Set a date/datetime for a task to run")
 	cmd.Flags().DurationP("interval", "i", 0, "Set a duration for an interval")
@@ -91,17 +93,33 @@ func Run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 		return err
 	}
 
+	dir, err := cmd.Flags().GetString("dir")
+	if err != nil {
+		return err
+	}
+
+	if len(dir) > 0 {
+		isDir, err := utils.IsPathADir(dir)
+		if err != nil {
+			return err
+		}
+
+		if !isDir {
+			return fmt.Errorf("path '%s' is not a directory", dir)
+		}
+
+	}
+
 	interval, err := cmd.Flags().GetDuration("interval")
 	if err != nil {
 		return err
 	}
 
 	elk := ox.Elk{
-		Env:  make(map[string]string),
-		Vars: make(map[string]string),
 		Tasks: map[string]ox.Task{
 			"elk": {
 				Cmds:        args,
+				Dir:         dir,
 				Env:         make(map[string]string),
 				Vars:        make(map[string]string),
 				IgnoreError: false,

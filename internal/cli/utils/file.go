@@ -18,7 +18,7 @@ func IsPathExist(path string) bool {
 // IsPathADir returns a bool depending if a path is a dir and an error if the file do not exist
 func IsPathADir(path string) (bool, error) {
 	if !IsPathExist(path) {
-		return false, fmt.Errorf("file \"%s\" do not exist", path)
+		return false, fmt.Errorf("path \"%s\" do not exist", path)
 	}
 
 	info, _ := os.Stat(path)
