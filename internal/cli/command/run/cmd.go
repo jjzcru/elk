@@ -170,26 +170,29 @@ func run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 	if len(start) > 0 {
 		startTime, err := GetTimeFromString(start)
 		if err != nil {
+			cancel()
 			return err
 		}
 
 		now := time.Now()
 		if startTime.Before(now) {
+			cancel()
 			return fmt.Errorf("start can't be before of current time")
 		}
 	}
 
 	if timeout > 0 {
-		ctx, _ = context.WithTimeout(ctx, timeout)
+		ctx, cancel = context.WithTimeout(ctx, timeout)
 	}
 
 	if len(deadline) > 0 {
 		deadlineTime, err := GetTimeFromString(deadline)
 		if err != nil {
+			cancel()
 			return err
 		}
 
-		ctx, _ = context.WithDeadline(ctx, deadlineTime)
+		ctx, cancel = context.WithDeadline(ctx, deadlineTime)
 	}
 
 	DelayStart(delay, start)
@@ -203,15 +206,11 @@ func run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 
 		go executeTasks()
 		ticker := time.NewTicker(interval)
-		quit := make(chan struct{})
 		for {
 			select {
 			case <-ticker.C:
 				go executeTasks()
 			case <-ctx.Done():
-				ticker.Stop()
-				return nil
-			case <-quit:
 				ticker.Stop()
 				cancel()
 				return nil
@@ -224,6 +223,9 @@ func run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 		wg.Add(1)
 		go TaskWG(ctx, clientEngine, task, &wg, isWatch)
 	}
+
+	wg.Wait()
+	cancel()
 
 	return nil
 }
@@ -305,6 +307,7 @@ func GetTimeFromString(input string) (time.Time, error) {
 	return time.Now(), errors.New("invalid input")
 }
 
+// TaskWG runs task with a wait group
 func TaskWG(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, isWatch bool) {
 	if wg != nil {
 		defer wg.Done()
@@ -326,9 +329,10 @@ func TaskWG(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync
 
 // Task runs a task on the engine
 func Task(ctx context.Context, cliEngine *engine.Engine, task string) {
-	ctx, _ = context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx)
 
 	err := cliEngine.Run(ctx, task)
+	cancel()
 	if err != nil {
 		utils.PrintError(err)
 		return

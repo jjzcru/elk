@@ -66,6 +66,7 @@ func Watch(ctx context.Context, cliEngine *engine.Engine, task string, t ox.Task
 			return
 		case err := <-watcher.Errors:
 			utils.PrintError(err)
+			cancel()
 			return
 		}
 	}

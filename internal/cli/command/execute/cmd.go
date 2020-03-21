@@ -27,10 +27,11 @@ Flags:
   -w, --watch            Enable watch mode
   -t, --timeout          Set a timeout to a task
       --deadline         Set a deadline to a task
-      --start            Set a date/datetime to a task to run
+	  --start            Set a date/datetime to a task to run
+  -i, --interval         Set a duration for an interval 
 `
 
-// NewRunCommand returns a cobra command for `run` sub command
+// NewExecCommand returns a cobra command for `exec` sub command
 func NewExecCommand() *cobra.Command {
 	var envs []string
 	var vars []string
@@ -56,14 +57,14 @@ func NewExecCommand() *cobra.Command {
 	cmd.Flags().Duration("delay", 0, "Set a delay for a task in milliseconds")
 	cmd.Flags().String("deadline", "", "Set a deadline to a task")
 	cmd.Flags().String("start", "", "Set a date/datetime for a task to run")
-
-	// TODO Support for interval
+	cmd.Flags().DurationP("interval", "i", 0, "Set a duration for an interval")
 
 	cmd.SetUsageTemplate(usageTemplate)
 
 	return cmd
 }
 
+// Run the command
 func Run(cmd *cobra.Command, args []string, envs []string, vars []string) error {
 	isDetached, err := cmd.Flags().GetBool("detached")
 	if err != nil {
@@ -86,6 +87,11 @@ func Run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 	}
 
 	start, err := cmd.Flags().GetString("start")
+	if err != nil {
+		return err
+	}
+
+	interval, err := cmd.Flags().GetDuration("interval")
 	if err != nil {
 		return err
 	}
@@ -139,34 +145,56 @@ func Run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 		return run.Detached()
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
 
 	if len(start) > 0 {
 		startTime, err := run.GetTimeFromString(start)
 		if err != nil {
+			cancel()
 			return err
 		}
 
 		now := time.Now()
 		if startTime.Before(now) {
+			cancel()
 			return fmt.Errorf("start can't be before of current time")
 		}
 	}
 
 	if timeout > 0 {
-		ctx, _ = context.WithTimeout(ctx, timeout)
+		ctx, cancel = context.WithTimeout(ctx, timeout)
 	}
 
 	if len(deadline) > 0 {
 		deadlineTime, err := run.GetTimeFromString(deadline)
 		if err != nil {
+			cancel()
 			return err
 		}
 
-		ctx, _ = context.WithDeadline(ctx, deadlineTime)
+		ctx, cancel = context.WithDeadline(ctx, deadlineTime)
 	}
 
 	run.DelayStart(delay, start)
+
+	if interval > 0 {
+		executeTasks := func() {
+			go run.TaskWG(ctx, clientEngine, "elk", nil, false)
+		}
+
+		go executeTasks()
+		ticker := time.NewTicker(interval)
+		for {
+			select {
+			case <-ticker.C:
+				go executeTasks()
+			case <-ctx.Done():
+				ticker.Stop()
+				cancel()
+				return nil
+			}
+		}
+	}
 
 	var wg sync.WaitGroup
 
@@ -174,5 +202,6 @@ func Run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 	go run.TaskWG(ctx, clientEngine, "elk", &wg, false)
 
 	wg.Wait()
+	cancel()
 	return nil
 }
