@@ -3,7 +3,7 @@
 VERSION=$(<VERSION)
 BASE_PATH=$(pwd)
 BUILD_PATH=$(pwd)/bin
-MODULE_PATH=$(pwd)/cmd/elk
+MODULE_PATH=$(pwd)/cmd/ox
 
 declare -A platforms
 platforms[linux,0]=amd64

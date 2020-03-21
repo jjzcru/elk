@@ -1,4 +1,4 @@
-package elk
+package ox
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 type Task struct {
 	Cmds        []string          `yaml:"cmds"`
 	Env         map[string]string `yaml:"env,omitempty"`
+	Vars        map[string]string `yaml:"vars,omitempty"`
 	EnvFile     string            `yaml:"env_file,omitempty"`
 	Description string            `yaml:"description,omitempty"`
 	Dir         string            `yaml:"dir,omitempty"`

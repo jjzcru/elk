@@ -8,7 +8,7 @@ import (
 
 	"github.com/jjzcru/elk/internal/cli/templates"
 	"github.com/jjzcru/elk/internal/cli/utils"
-	"github.com/jjzcru/elk/pkg/primitives/elk"
+	"github.com/jjzcru/elk/pkg/primitives/ox"
 	"gopkg.in/yaml.v2"
 
 	"github.com/spf13/cobra"
@@ -40,7 +40,7 @@ func NewInitializeCommand() *cobra.Command {
 	return cmd
 }
 
-// CreateElkFile create an elk file in path
+// CreateElkFile create an ox file in path
 func CreateElkFile(elkFilePath string) error {
 	response, err := template.New("installation").Parse(templates.Installation)
 	if err != nil {
@@ -55,7 +55,7 @@ func CreateElkFile(elkFilePath string) error {
 	elkFile, _ := os.Create(elkFilePath)
 	defer elkFile.Close()
 
-	response, err = template.New("elk").Parse(templates.Elk)
+	response, err = template.New("ox").Parse(templates.Elk)
 	if err != nil {
 		return err
 	}
@@ -68,12 +68,12 @@ func CreateElkFile(elkFilePath string) error {
 		shutdown = "shutdown /s"
 	}
 
-	e := elk.Elk{
+	e := ox.Elk{
 		Version: "1",
 		Env: map[string]string{
 			"HELLO": "World",
 		},
-		Tasks: map[string]elk.Task{
+		Tasks: map[string]ox.Task{
 			"hello": {
 				Description: "Print hello world",
 				Env: map[string]string{
@@ -95,7 +95,7 @@ func CreateElkFile(elkFilePath string) error {
 				Cmds: []string{
 					"npm start",
 				},
-				Deps: []elk.Dep{
+				Deps: []ox.Dep{
 					{
 						Name:     "ts-build",
 						Detached: false,

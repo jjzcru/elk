@@ -3,7 +3,7 @@ package engine
 import (
 	"context"
 	"fmt"
-	"github.com/jjzcru/elk/pkg/primitives/elk"
+	"github.com/jjzcru/elk/pkg/primitives/ox"
 	"os"
 	"strings"
 
@@ -14,7 +14,7 @@ import (
 
 // Executer runs a task and returns a PID and an error
 type Executer interface {
-	Execute(context.Context, *elk.Elk, string) (int, error)
+	Execute(context.Context, *ox.Elk, string) (int, error)
 }
 
 // DefaultExecuter Execute task with a POSIX emulator
@@ -23,7 +23,7 @@ type DefaultExecuter struct {
 }
 
 // Execute task and returns a PID
-func (e DefaultExecuter) Execute(ctx context.Context, elk *elk.Elk, name string) (int, error) {
+func (e DefaultExecuter) Execute(ctx context.Context, elk *ox.Elk, name string) (int, error) {
 	ctx, _ = context.WithCancel(ctx)
 	pid := os.Getpid()
 
@@ -82,6 +82,11 @@ func (e DefaultExecuter) Execute(ctx context.Context, elk *elk.Elk, name string)
 	}
 
 	for _, command := range task.Cmds {
+		command, err := ox.GetCmdFromVars(task.Vars, command)
+		if err != nil {
+			return pid, err
+		}
+
 		p, err := syntax.NewParser().Parse(strings.NewReader(command), "")
 		if err != nil {
 			return pid, err

@@ -16,12 +16,12 @@ import (
 )
 
 var usageTemplate = `Usage:
-  elk run [tasks] [flags]
+  ox run [tasks] [flags]
 
 Flags:
   -d, --detached         Run the task in detached mode and returns the PGID
   -e, --env strings      Overwrite env variable in task   
-  -f, --file string      Run elk in a specific file
+  -f, --file string      Run ox in a specific file
   -g, --global           Run from the path set in config
   -h, --help             Help for run
       --ignore-log-file  Force task to output to stdout
@@ -62,7 +62,7 @@ func NewRunCommand() *cobra.Command {
 	cmd.Flags().Bool("ignore-error", false, "Ignore errors that happened during a task")
 	cmd.Flags().BoolP("detached", "d", false, "Run the command in detached mode and returns the PGID")
 	cmd.Flags().BoolP("watch", "w", false, "Enable watch mode")
-	cmd.Flags().StringP("file", "f", "", "Run elk in a specific file")
+	cmd.Flags().StringP("file", "f", "", "Run ox in a specific file")
 	cmd.Flags().StringP("log", "l", "", "File that log output from a task")
 	cmd.Flags().DurationP("timeout", "t", 0, "Set a timeout for a task in milliseconds")
 	cmd.Flags().Duration("delay", 0, "Set a delay for a task in milliseconds")

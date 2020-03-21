@@ -1,4 +1,4 @@
-package elk
+package ox
 
 import (
 	"fmt"
@@ -12,8 +12,8 @@ import (
 // Elk is the structure of the application
 type Elk struct {
 	Version string
-	Env     map[string]string
-	EnvFile string `yaml:"env_file"`
+	Env     map[string]string `yaml:"env"`
+	EnvFile string            `yaml:"env_file"`
 	Tasks   map[string]Task
 }
 
@@ -36,7 +36,7 @@ func (e *Elk) HasTask(name string) bool {
 	return false
 }
 
-// Build compiles the elk structure and validates its integrity
+// Build compiles the ox structure and validates its integrity
 func (e *Elk) Build() error {
 	osEnvs := make(map[string]string)
 	for _, en := range os.Environ() {

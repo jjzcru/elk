@@ -15,7 +15,7 @@ import (
 // Execute starts the CLI application
 func Execute() error {
 	var rootCmd = &cobra.Command{
-		Use:   "elk",
+		Use:   "ox",
 		Short: "Minimalist yaml based task runner 🦌",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) == 0 {

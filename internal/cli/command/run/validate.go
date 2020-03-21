@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jjzcru/elk/internal/cli/utils"
-	"github.com/jjzcru/elk/pkg/primitives/elk"
+	"github.com/jjzcru/elk/pkg/primitives/ox"
 	"github.com/spf13/cobra"
 )
 
@@ -50,7 +50,7 @@ func Validate(cmd *cobra.Command, tasks []string) error {
 	for _, name := range tasks {
 		task, err := e.GetTask(name)
 		if err != nil {
-			if err == elk.ErrTaskNotFound {
+			if err == ox.ErrTaskNotFound {
 				return fmt.Errorf("task \"%s\" not found", name)
 			}
 			return err

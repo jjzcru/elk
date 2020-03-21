@@ -3,7 +3,7 @@ package ls
 import (
 	"fmt"
 	"github.com/jjzcru/elk/internal/cli/utils"
-	"github.com/jjzcru/elk/pkg/primitives/elk"
+	"github.com/jjzcru/elk/pkg/primitives/ox"
 	"os"
 	"strings"
 	"text/tabwriter"
@@ -12,7 +12,7 @@ import (
 )
 
 var usageTemplate = `Usage:
-  elk ls [flags]
+  ox ls [flags]
 
 Flags:
   -a, --all           Specify the file to used
@@ -35,7 +35,7 @@ func NewListCommand() *cobra.Command {
 	}
 
 	cmd.Flags().BoolP("all", "a", false, "Display task details")
-	cmd.Flags().StringP("file", "f", "", "Specify elk file path")
+	cmd.Flags().StringP("file", "f", "", "Specify ox file path")
 	cmd.Flags().BoolP("global", "g", false, "Search the task in the global path")
 
 	cmd.SetUsageTemplate(usageTemplate)
@@ -76,7 +76,7 @@ func run(cmd *cobra.Command, _ []string) error {
 	return printPlain(w, e)
 }
 
-func printAll(w *tabwriter.Writer, e *elk.Elk) error {
+func printAll(w *tabwriter.Writer, e *ox.Elk) error {
 	_, err := fmt.Fprintf(w, "\n%s\t%s\t%s\t\n", "TASK NAME", "DESCRIPTION", "DEPENDENCIES")
 	if err != nil {
 		return err
@@ -98,7 +98,7 @@ func printAll(w *tabwriter.Writer, e *elk.Elk) error {
 	return nil
 }
 
-func printPlain(w *tabwriter.Writer, elk *elk.Elk) error {
+func printPlain(w *tabwriter.Writer, elk *ox.Elk) error {
 	_, err := fmt.Fprintf(w, "\n%s\t%s\t\n", "TASK NAME", "DESCRIPTION")
 	if err != nil {
 		return err

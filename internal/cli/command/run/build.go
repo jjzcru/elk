@@ -6,12 +6,12 @@ import (
 	"path/filepath"
 
 	"github.com/jjzcru/elk/internal/cli/utils"
-	"github.com/jjzcru/elk/pkg/primitives/elk"
+	"github.com/jjzcru/elk/pkg/primitives/ox"
 	"github.com/spf13/cobra"
 )
 
-// Build loads elk object with the values
-func Build(cmd *cobra.Command, e *elk.Elk) error {
+// Build loads ox object with the values
+func Build(cmd *cobra.Command, e *ox.Elk) error {
 	ignoreLog, err := cmd.Flags().GetBool("ignore-log-file")
 	if err != nil {
 		return err
