@@ -1,9 +1,8 @@
 #!/bin/bash
 
 VERSION=$(<VERSION)
-BASE_PATH=$(pwd)
 BUILD_PATH=$(pwd)/bin
-MODULE_PATH=$(pwd)/cmd/ox
+MODULE_PATH=$(pwd)/cmd/elk
 
 declare -A platforms
 platforms[linux,0]=amd64
