@@ -1,4 +1,4 @@
-$COMMIT = "$(git rev-parse --short HEAD)"
+$COMMIT = $(git rev-parse --short "$GITHUB_SHA")
 $DATE = Get-Date -UFormat "%a_%b_%d_%T_%Y"
 
 $BUILD_PATH = "$((Get-Item -Path ".\").FullName)\bin"
