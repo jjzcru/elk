@@ -211,8 +211,8 @@ day.
 Example:
 
 ```
-elk run test --deadline 11:00PM
-elk run test --deadline 2020-12-12T09:41:00Z00:00
+elk run test --deadline 09:41AM
+elk run test --deadline 2007-01-09T09:41:00Z00:00
 ```
 
 ### start
@@ -238,8 +238,8 @@ day.
 Example:
 
 ```
-elk run test --start 11:00PM
-elk run test --start 2020-12-12T09:41:00Z00:00
+elk run test --start 09:41AM
+elk run test --start 2007-01-09T09:41:00Z00:00
 ```
 
 ### interval

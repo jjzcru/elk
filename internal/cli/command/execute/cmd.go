@@ -23,14 +23,13 @@ Flags:
       --env-file string    Set an env file
   -v, --var strings        Overwrite var variable in commands
   -h, --help               Help for run
-	  --delay              Set a delay to a task
-	  --dir                Set a directory to the command
+      --delay              Set a delay to a task
+      --dir                Set a directory to the command
   -l, --log string         File that log output from the commands
       --ignore-error       Ignore errors that happened during a task
-  -w, --watch              Enable watch mode
   -t, --timeout            Set a timeout to the commands
       --deadline           Set a deadline to the commands
-	  --start              Set a date/datetime to the commands to run
+      --start              Set a date/datetime to the commands to run
   -i, --interval           Set a duration for an interval 
 `
 
@@ -40,7 +39,7 @@ func NewExecCommand() *cobra.Command {
 	var vars []string
 	var cmd = &cobra.Command{
 		Use:   "exec",
-		Short: "Run ad-hoc commands ⚡",
+		Short: "Execute ad-hoc commands ⚡",
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			err := Run(cmd, args, envs, vars)
@@ -50,19 +49,20 @@ func NewExecCommand() *cobra.Command {
 		},
 	}
 
+	cmd.Flags().BoolP("detached", "d", false, "")
 	cmd.Flags().StringSliceVarP(&envs, "env", "e", []string{}, "")
+	cmd.Flags().String("env-file", "", "")
 	cmd.Flags().StringSliceVarP(&vars, "var", "v", []string{}, "")
-	cmd.Flags().Bool("ignore-log-file", false, "Force task to output to stdout")
-	cmd.Flags().String("env-file", "", "Set an env file")
-	cmd.Flags().Bool("ignore-error", false, "Ignore errors that happened during a task")
-	cmd.Flags().BoolP("detached", "d", false, "Run the command in detached mode and returns the PGID")
-	cmd.Flags().StringP("log", "l", "", "File that log output from a task")
-	cmd.Flags().DurationP("timeout", "t", 0, "Set a timeout for a task in milliseconds")
-	cmd.Flags().Duration("delay", 0, "Set a delay for a task in milliseconds")
-	cmd.Flags().String("dir", "", "Set a directory to the command")
-	cmd.Flags().String("deadline", "", "Set a deadline to a task")
-	cmd.Flags().String("start", "", "Set a date/datetime for a task to run")
-	cmd.Flags().DurationP("interval", "i", 0, "Set a duration for an interval")
+	cmd.Flags().Duration("delay", 0, "")
+	cmd.Flags().String("dir", "", "")
+	cmd.Flags().StringP("log", "l", "", "")
+	cmd.Flags().Bool("ignore-error", false, "")
+	cmd.Flags().DurationP("timeout", "t", 0, "")
+	cmd.Flags().String("deadline", "", "")
+	cmd.Flags().String("start", "", "")
+	cmd.Flags().DurationP("interval", "i", 0, "")
+
+	cmd.Flags().Bool("ignore-log-file", false, "")
 
 	cmd.SetUsageTemplate(usageTemplate)
 

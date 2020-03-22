@@ -210,8 +210,8 @@ day.
 Example:
 
 ```
-elk cron "* * * * *" test --deadline 11:00PM
-elk cron "* * * * *" test --deadline 2020-12-12T09:41:00Z00:00
+elk cron "* * * * *" test --deadline 09:41AM
+elk cron "* * * * *" test --deadline 2007-01-09T09:41:00Z00:00
 ```
 
 ### start
@@ -237,6 +237,6 @@ day.
 Example:
 
 ```
-elk cron "* * * * *" test --deadline 11:00PM
-elk cron "* * * * *" test --deadline 2020-12-12T09:41:00Z00:00
+elk cron "* * * * *" test --start 09:41AM
+elk cron "* * * * *" test --start 2007-01-09T09:41:00Z00:00
 ```

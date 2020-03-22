@@ -22,7 +22,7 @@ Flags:
   -d, --detached         Run the task in detached mode and returns the PGID
   -e, --env strings      Overwrite env variable in task
   -v, --var strings      Overwrite var variable in task
-  -f, --file string      Run ox in a specific file
+  -f, --file string      Run elk in a specific file
   -g, --global           Run from the path set in config
   -h, --help             Help for run
       --ignore-log-file  Force task to output to stdout
