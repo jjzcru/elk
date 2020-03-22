@@ -1,5 +1,6 @@
-$COMMIT = $(git rev-parse --short "$GITHUB_SHA")
 $DATE = Get-Date -UFormat "%a_%b_%d_%T_%Y"
+
+echo $GITHUB_SHA
 
 $BUILD_PATH = "$((Get-Item -Path ".\").FullName)\bin"
 $MODULE_PATH = "$((Get-Item -Path ".\").FullName)\cmd\elk"
