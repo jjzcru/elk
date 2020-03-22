@@ -24,12 +24,12 @@ func NewVersionCommand() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			// fmt.Println("Elk version " + version)
-			fmt.Print("Elk 🦌\n\n")
-			fmt.Printf("Version:    \t %s\n", version.version)
-			fmt.Printf("Git Commit: \t %s\n", version.commit)
-			fmt.Printf("Built:      \t %s\n", strings.Replace(version.date, "_", " ", -1))
-			fmt.Printf("OS:         \t %s\n", version.os)
-			fmt.Printf("Arch:       \t %s\n", version.arch)
+			fmt.Print("Elk 🦌\n")
+			fmt.Printf("  Version:    \t %s\n", version.version)
+			fmt.Printf("  Git Commit: \t %s\n", version.commit)
+			fmt.Printf("  Built:      \t %s\n", strings.Replace(version.date, "_", " ", -1))
+			fmt.Printf("  OS:         \t %s\n", version.os)
+			fmt.Printf("  Arch:       \t %s\n", version.arch)
 		},
 	}
 
