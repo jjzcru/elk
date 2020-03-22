@@ -86,16 +86,19 @@ jobs:
       - name: Check out source code
         uses: actions/checkout@v1
       
-      - name: Set Commit tag
+      - name: Get Built Information
         shell: bash
-        id: commit
-        run: echo ::set-output name=commit::${git rev-parse --short HEAD}
+        id: built
+        run: |
+          echo "##[set-output name=commit;]$(git rev-parse --short HEAD)"
+          echo "##[set-output name=version;]$(git describe --tags $(git rev-list --tags --max-count=1))"
 
       - name: Build Binaries
         shell: powershell
         env:
           GOPROXY: "https://proxy.golang.org"
-          COMMIT: ${{steps.commit.outputs.commit}}
+          COMMIT: ${{steps.built.outputs.commit}}
+          VERSION: ${{steps.built.outputs.version}}
         run: .\ci\build-windows
       
       - name: Upload Artifact
