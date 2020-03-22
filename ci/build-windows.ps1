@@ -1,3 +1,4 @@
+$COMMIT = "$(git rev-parse --short HEAD)"
 $DATE = Get-Date -UFormat "%a_%b_%d_%T_%Y"
 
 $BUILD_PATH = "$((Get-Item -Path ".\").FullName)\bin"
