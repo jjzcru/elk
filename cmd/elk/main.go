@@ -9,10 +9,14 @@ import (
 	"github.com/jjzcru/elk/internal/cli/utils"
 )
 
-var v = "0.3.1"
+var v = ""
+var o = ""
+var arch = ""
+var commit = ""
+var date = ""
 
 func main() {
-	version.SetVersion(v)
+	version.SetVersion(v, o, arch, commit, date)
 	err := command.Execute()
 	if err != nil {
 		utils.PrintError(err)
