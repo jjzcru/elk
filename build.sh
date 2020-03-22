@@ -1,9 +1,17 @@
 #!/bin/bash
 
-VERSION=$(<VERSION)
 BASE_PATH=$(pwd)
 BUILD_PATH=$(pwd)/bin
-MODULE_PATH=$(pwd)/cmd/ox
+MODULE_PATH=$(pwd)/cmd/elk
+
+COMMIT=$(git rev-parse --short HEAD)
+VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))
+
+day=$(date +'%a')
+month=$(date +'%b')
+fill_date=$(date +'%d_%T_%Y')
+
+DATE="${day^}_${month^}_${fill_date}"
 
 declare -A platforms
 platforms[linux,0]=amd64
@@ -19,15 +27,14 @@ for key in "${!platforms[@]}"; do
     GOOS=${key::-2}
     GOARCH=${platforms[$key]}
     cd $MODULE_PATH
-    NAME=elk_v${VERSION}_${GOOS}_${GOARCH}
-    
+    NAME=elk_${VERSION}_${GOOS}_${GOARCH}
 
     BIN_PATH=$BUILD_PATH/$NAME
     if [ $GOOS == "windows" ]
     then
-        go build -o ${BIN_PATH}.exe
+        go build -ldflags "-X main.v=$VERSION -X main.o=$GOOS -X main.arch=$GOARCH -X main.commit=$COMMIT -X main.date=$DATE" -o ${BIN_PATH}.exe
     else
-        go build -o $BIN_PATH
+        go build -ldflags "-X main.v=$VERSION -X main.o=$GOOS -X main.arch=$GOARCH -X main.commit=$COMMIT -X main.date=$DATE" -o $BIN_PATH
     fi
     
     cd $BUILD_PATH
