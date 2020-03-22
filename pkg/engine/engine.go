@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jjzcru/elk/pkg/primitives/elk"
+	"github.com/jjzcru/elk/pkg/primitives/ox"
 )
 
 // Engine is the data structure responsible of processing the content
 type Engine struct {
-	Elk      *elk.Elk
+	Elk      *ox.Elk
 	Executer Executer
 	Build    func() error
 }

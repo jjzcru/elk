@@ -9,11 +9,11 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/engine"
-	"github.com/jjzcru/elk/pkg/primitives/elk"
+	"github.com/jjzcru/elk/pkg/primitives/ox"
 )
 
-// Watch runs elk in watch mode
-func Watch(ctx context.Context, cliEngine *engine.Engine, task string, t elk.Task) {
+// Watch runs ox in watch mode
+func Watch(ctx context.Context, cliEngine *engine.Engine, task string, t ox.Task) {
 	taskCtx, cancel := context.WithCancel(ctx)
 
 	files, err := getWatcherFiles(t.Sources, t.Dir)
@@ -66,6 +66,7 @@ func Watch(ctx context.Context, cliEngine *engine.Engine, task string, t elk.Tas
 			return
 		case err := <-watcher.Errors:
 			utils.PrintError(err)
+			cancel()
 			return
 		}
 	}

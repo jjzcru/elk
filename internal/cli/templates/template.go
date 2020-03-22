@@ -10,9 +10,9 @@ tasks: {{ range $name, $task := .Tasks }}
 {{end}}
 `
 
-// Installation template use when installing elk
+// Installation template use when installing ox
 var Installation = `
-This will create a default elk file
+This will create a default ox file
 
 It only covers just a few tasks. 
 

@@ -1,3 +1,21 @@
+## [v0.4.0](https://github.com/jjzcru/elk/tree/v0.4.0) (2020-03-22)
+[Release](https://github.com/jjzcru/elk/releases/tag/v0.4.0)
+
+**Commands 🤖:**
+- **[exec]** Create command
+- **[version]** Add built information 
+
+**Documentation 📖:**
+- **[exec]** Create documentation
+
+**Flags 🚩:**
+- **--var** Add flag to **[run]** command
+- **--var** Add flag to **[cron]** command
+
+**Syntax:**
+- **var** Add property at `task` level
+- **var** Add property at `global` level
+
 ## [v0.3.1](https://github.com/jjzcru/elk/tree/v0.3.1) (2020-03-19)
 [Release](https://github.com/jjzcru/elk/releases/tag/v0.3.1)
 

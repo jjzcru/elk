@@ -19,6 +19,10 @@ variable. This overwrites the existing `env` variable.
 In here you declare all the `env` variable that you wish that all the task inherit this property overwrites the 
 existing `env` variables, also the ones declared in the `env_file` property.
 
+`vars`
+It takes a map with all the variables that you wish to include in your program. Once you declared your `vars` you 
+can write your `cmds` in [Go Template][go-template] syntax.
+
 `tasks`
 In here you have a list of all the tasks that you wish to perform. The name of the task is going to be used to know 
 which task is going to perform.
@@ -31,8 +35,22 @@ This is a path to a file that declares the `env` variables as `ENV_NAME=ENV_VALU
 `env` variable. This overwrites the existing `env` variable already declared on global.
 
 `env`
-In here you declare all the `env` variable that you wish that all the task inherit this property overwrites the 
-existing `env` variables, also the ones declared in the `env_file` property and global.
+In here you declare all the `env` variables that you wish that the task uses, `env` declared in here overwrites the 
+ones written in the `env_file` property and global.
+
+`vars`
+It takes a `map` with all the variables that you wish to include in your program. `vars` declared in here overwrites
+the ones that were declared at `global`. Once you declared your `vars` you can write your `cmds` in 
+[Go Template][go-template] syntax.
+
+Example: 
+```yml
+test:
+  vars:
+    hello: "hello"
+  cmds:
+    - "echo {{.hello}} world" # This will print "hello world"
+```
 
 `description`
 In here you describe what is the purpose of the task, this is also display by the `ls` command.
@@ -60,11 +78,10 @@ This is a list of all the dependencies that the task requires to run. The `dep` 
 Example: 
 ```yml
 test:
-    deps:
-      - name: build
-      - name: hello
-        detached: true
-
+  deps:
+    - name: build
+    - name: hello
+      detached: true
 ```
 
 If a `dep` is run as `detached` it will run without waiting the result of the previous command. If you are going to run 
@@ -78,9 +95,11 @@ entire task fails.
 Example:
 ```yml
 hello:
-    description: “Print hello world”
-    env:
-      HELLO: HELLO
-    cmds:
-      - echo $HELLO WORLD 
+  description: “Print hello world”
+  env:
+    HELLO: HELLO
+  cmds:
+    - echo $HELLO WORLD 
 ```
+
+[go-template]: https://golang.org/pkg/text/template/

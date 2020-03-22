@@ -20,7 +20,8 @@ var usageTemplate = `Usage:
 
 Flags:
   -d, --detached         Run the task in detached mode and returns the PGID
-  -e, --env strings      Overwrite env variable in task   
+  -e, --env strings      Overwrite env variable in task
+  -v, --var strings      Overwrite var variable in task
   -f, --file string      Run elk in a specific file
   -g, --global           Run from the path set in config
   -h, --help             Help for run
@@ -38,6 +39,7 @@ Flags:
 // NewRunCommand returns a cobra command for `run` sub command
 func NewRunCommand() *cobra.Command {
 	var envs []string
+	var vars []string
 	var cmd = &cobra.Command{
 		Use:   "run",
 		Short: "Run one or more tasks 🤖",
@@ -49,7 +51,7 @@ func NewRunCommand() *cobra.Command {
 				return
 			}
 
-			err = run(cmd, args, envs)
+			err = run(cmd, args, envs, vars)
 			if err != nil {
 				utils.PrintError(err)
 			}
@@ -58,11 +60,12 @@ func NewRunCommand() *cobra.Command {
 
 	cmd.Flags().BoolP("global", "g", false, "Run from the path set in config")
 	cmd.Flags().StringSliceVarP(&envs, "env", "e", []string{}, "")
+	cmd.Flags().StringSliceVarP(&vars, "var", "v", []string{}, "")
 	cmd.Flags().Bool("ignore-log-file", false, "Force task to output to stdout")
 	cmd.Flags().Bool("ignore-error", false, "Ignore errors that happened during a task")
 	cmd.Flags().BoolP("detached", "d", false, "Run the command in detached mode and returns the PGID")
 	cmd.Flags().BoolP("watch", "w", false, "Enable watch mode")
-	cmd.Flags().StringP("file", "f", "", "Run elk in a specific file")
+	cmd.Flags().StringP("file", "f", "", "Run ox in a specific file")
 	cmd.Flags().StringP("log", "l", "", "File that log output from a task")
 	cmd.Flags().DurationP("timeout", "t", 0, "Set a timeout for a task in milliseconds")
 	cmd.Flags().Duration("delay", 0, "Set a delay for a task in milliseconds")
@@ -75,7 +78,7 @@ func NewRunCommand() *cobra.Command {
 	return cmd
 }
 
-func run(cmd *cobra.Command, args []string, envs []string) error {
+func run(cmd *cobra.Command, args []string, envs []string, vars []string) error {
 	isDetached, err := cmd.Flags().GetBool("detached")
 	if err != nil {
 		return err
@@ -146,8 +149,13 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 		for _, en := range envs {
 			parts := strings.SplitAfterN(en, "=", 2)
 			env := strings.ReplaceAll(parts[0], "=", "")
-			value := parts[1]
-			task.Env[env] = value
+			task.Env[env] = parts[1]
+		}
+
+		for _, v := range vars {
+			parts := strings.SplitAfterN(v, "=", 2)
+			k := strings.ReplaceAll(parts[0], "=", "")
+			task.Vars[k] = parts[1]
 		}
 
 		clientEngine.Elk.Tasks[name] = task
@@ -162,26 +170,29 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 	if len(start) > 0 {
 		startTime, err := GetTimeFromString(start)
 		if err != nil {
+			cancel()
 			return err
 		}
 
 		now := time.Now()
 		if startTime.Before(now) {
+			cancel()
 			return fmt.Errorf("start can't be before of current time")
 		}
 	}
 
 	if timeout > 0 {
-		ctx, _ = context.WithTimeout(ctx, timeout)
+		ctx, cancel = context.WithTimeout(ctx, timeout)
 	}
 
 	if len(deadline) > 0 {
 		deadlineTime, err := GetTimeFromString(deadline)
 		if err != nil {
+			cancel()
 			return err
 		}
 
-		ctx, _ = context.WithDeadline(ctx, deadlineTime)
+		ctx, cancel = context.WithDeadline(ctx, deadlineTime)
 	}
 
 	DelayStart(delay, start)
@@ -189,21 +200,17 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 	if interval > 0 {
 		executeTasks := func() {
 			for _, task := range args {
-				go runTask(ctx, clientEngine, task, nil, false)
+				go TaskWG(ctx, clientEngine, task, nil, false)
 			}
 		}
 
 		go executeTasks()
 		ticker := time.NewTicker(interval)
-		quit := make(chan struct{})
 		for {
 			select {
 			case <-ticker.C:
 				go executeTasks()
 			case <-ctx.Done():
-				ticker.Stop()
-				return nil
-			case <-quit:
 				ticker.Stop()
 				cancel()
 				return nil
@@ -214,10 +221,12 @@ func run(cmd *cobra.Command, args []string, envs []string) error {
 	var wg sync.WaitGroup
 	for _, task := range args {
 		wg.Add(1)
-		go runTask(ctx, clientEngine, task, &wg, isWatch)
+		go TaskWG(ctx, clientEngine, task, &wg, isWatch)
 	}
 
 	wg.Wait()
+	cancel()
+
 	return nil
 }
 
@@ -298,7 +307,8 @@ func GetTimeFromString(input string) (time.Time, error) {
 	return time.Now(), errors.New("invalid input")
 }
 
-func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, isWatch bool) {
+// TaskWG runs task with a wait group
+func TaskWG(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, isWatch bool) {
 	if wg != nil {
 		defer wg.Done()
 	}
@@ -319,9 +329,10 @@ func runTask(ctx context.Context, cliEngine *engine.Engine, task string, wg *syn
 
 // Task runs a task on the engine
 func Task(ctx context.Context, cliEngine *engine.Engine, task string) {
-	ctx, _ = context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx)
 
 	err := cliEngine.Run(ctx, task)
+	cancel()
 	if err != nil {
 		utils.PrintError(err)
 		return

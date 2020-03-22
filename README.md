@@ -73,11 +73,13 @@ To learn about some use cases for `elk` go to [Use Cases][use-cases] to figure o
 | Command           | Description                                            | Syntax                               |
 | -------           | ------                                                 | -------                              |
 | [cron][cron]      | Run one or more task as a `cron job` ⏱                | `elk cron [crontab] [tasks] [flags]` |
+| [exec][exec]      | Execute ad-hoc commands ⚡                              | `elk exec [commands] [flags]`        |
 | [init][init]      | This command creates a dummy file in current directory | `elk init [flags]`                   |
 | [logs][logs]      | Attach logs from a task to the terminal 📝             | `elk logs [task] [flags]`            |
 | [ls][ls]          | List tasks                                             | `elk ls [flags]`                     |
 | [run][run]        | Run one or more tasks 🤖                               | `elk run [tasks] [flags]`            |
 | [version][version]| Display version number                                 | `elk version [flags]`                |
+
 
 [go]: https://golang.org/
 [yaml]: https://yaml.org/
@@ -95,3 +97,4 @@ To learn about some use cases for `elk` go to [Use Cases][use-cases] to figure o
 [ls]: docs/commands/ls.md
 [run]: docs/commands/run.md
 [version]: docs/commands/version.md
+[exec]: docs/commands/exec.md

@@ -7,11 +7,11 @@ import (
 	"os/user"
 	"path"
 
-	"github.com/jjzcru/elk/pkg/primitives/elk"
+	"github.com/jjzcru/elk/pkg/primitives/ox"
 )
 
-// GetElk get an elk pointer from a file path
-func GetElk(filePath string, isGlobal bool) (*elk.Elk, error) {
+// GetElk get an ox pointer from a file path
+func GetElk(filePath string, isGlobal bool) (*ox.Elk, error) {
 	var elkConfigPath string
 	var err error
 
@@ -24,7 +24,7 @@ func GetElk(filePath string, isGlobal bool) (*elk.Elk, error) {
 		}
 	}
 
-	return elk.FromFile(elkConfigPath)
+	return ox.FromFile(elkConfigPath)
 }
 
 func getElkFilePath(isGlobal bool) (string, error) {

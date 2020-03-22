@@ -5,7 +5,7 @@ import (
 	"github.com/jjzcru/elk/internal/cli/utils"
 	"os"
 
-	"github.com/jjzcru/elk/pkg/primitives/elk"
+	"github.com/jjzcru/elk/pkg/primitives/ox"
 	"github.com/spf13/cobra"
 )
 
@@ -38,7 +38,7 @@ func validate(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func getElk(cmd *cobra.Command) (*elk.Elk, error) {
+func getElk(cmd *cobra.Command) (*ox.Elk, error) {
 	isGlobal, err := cmd.Flags().GetBool("global")
 	if err != nil {
 		return nil, err

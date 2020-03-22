@@ -2,16 +2,16 @@ package engine
 
 import (
 	"context"
-	"github.com/jjzcru/elk/pkg/primitives/elk"
+	"github.com/jjzcru/elk/pkg/primitives/ox"
 	"testing"
 )
 
 func TestDefaultExecuterExecute(t *testing.T) {
-	e := elk.Elk{
+	e := ox.Elk{
 		Version: "1",
-		Tasks: map[string]elk.Task{
+		Tasks: map[string]ox.Task{
 			"world": {
-				Deps: []elk.Dep{
+				Deps: []ox.Dep{
 					{
 						Name: "hello",
 					},
@@ -60,11 +60,11 @@ func TestDefaultExecuterExecute(t *testing.T) {
 }
 
 func TestDefaultExecuterExecuteTaskNotExist(t *testing.T) {
-	e := elk.Elk{
+	e := ox.Elk{
 		Version: "1",
-		Tasks: map[string]elk.Task{
+		Tasks: map[string]ox.Task{
 			"world": {
-				Deps: []elk.Dep{
+				Deps: []ox.Dep{
 					{
 						Name: "hello",
 					},
