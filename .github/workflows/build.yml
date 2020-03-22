@@ -85,11 +85,17 @@ jobs:
 
       - name: Check out source code
         uses: actions/checkout@v1
+      
+      - name: Set Commit tag
+        shell: bash
+        id: commit
+        run: echo ::set-output name=commit::${git rev-parse --short HEAD}
 
       - name: Build Binaries
         shell: powershell
         env:
           GOPROXY: "https://proxy.golang.org"
+          COMMIT: ${{steps.commit.outputs.commit}}
         run: .\ci\build-windows
       
       - name: Upload Artifact

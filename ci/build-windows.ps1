@@ -1,6 +1,7 @@
 $DATE = Get-Date -UFormat "%a_%b_%d_%T_%Y"
 
-echo $GITHUB_SHA
+echo "COMMIT 1: $COMMIT"
+echo "COMMIT 2: $env:COMMIT"
 
 $BUILD_PATH = "$((Get-Item -Path ".\").FullName)\bin"
 $MODULE_PATH = "$((Get-Item -Path ".\").FullName)\cmd\elk"
