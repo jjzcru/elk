@@ -1,7 +1,3 @@
-$COMMIT = git rev-parse --short HEAD
-$VERSION = git describe --tags $(git rev-list --tags --max-count=1)
-$DATE = Get-Date -UFormat "%a_%b_%d_%T_%Y"
-
 $BUILD_PATH = "$((Get-Item -Path ".\").FullName)\bin"
 $MODULE_PATH = "$((Get-Item -Path ".\").FullName)\cmd\elk"
 
