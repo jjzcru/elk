@@ -3,6 +3,7 @@
 
 **Commands 🤖:**
 - **[exec]** Create command
+- **[version]** Add built information 
 
 **Documentation 📖:**
 - **[exec]** Create documentation
@@ -14,9 +15,6 @@
 **Syntax:**
 - **var** Add property at `task` level
 - **var** Add property at `global` level
-
-**Misc 👾:**
-- Add build information to `version` command
 
 ## [v0.3.1](https://github.com/jjzcru/elk/tree/v0.3.1) (2020-03-19)
 [Release](https://github.com/jjzcru/elk/releases/tag/v0.3.1)
