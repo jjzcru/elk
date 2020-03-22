@@ -1,3 +1,6 @@
+$COMMIT = git rev-parse --short HEAD
+echo $COMMIT
+
 $BUILD_PATH = "$((Get-Item -Path ".\").FullName)\bin"
 $MODULE_PATH = "$((Get-Item -Path ".\").FullName)\cmd\elk"
 
