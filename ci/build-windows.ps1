@@ -1,7 +1,6 @@
 $DATE = Get-Date -UFormat "%a_%b_%d_%T_%Y"
-
-echo "COMMIT 1: $COMMIT"
-echo "COMMIT 2: $env:COMMIT"
+$COMMIT = $env:COMMIT
+$VERSION = $env:VERSION
 
 $BUILD_PATH = "$((Get-Item -Path ".\").FullName)\bin"
 $MODULE_PATH = "$((Get-Item -Path ".\").FullName)\cmd\elk"
@@ -21,7 +20,7 @@ $BIN_PATH = "$BUILD_PATH\$NAME"
 echo "ARCH: $($GOARCH)"
 echo "--------------------------"
 echo "Building $($GOARCH) binary"
-go build -ldflags "-X main.o=$GOOS -X main.arch=$GOARCH -X main.date=$DATE" -o "$BIN_PATH.exe"
+go build -ldflags "-X main.v=$VERSION -X main.o=$GOOS -X main.arch=$GOARCH -X main.commit=$COMMIT -X main.date=$DATE" -o "$BIN_PATH.exe"
 echo "Build successful"
 
 cd "$BUILD_PATH"
@@ -43,7 +42,7 @@ $BIN_PATH = "$BUILD_PATH\$NAME"
 echo "ARCH: $($GOARCH)"
 echo "--------------------------"
 echo "Building $($GOARCH) binary"
-go build -ldflags "-X main.o=$GOOS -X main.arch=$GOARCH -X main.date=$DATE" -o "$BIN_PATH.exe"
+go build -ldflags "-X main.v=$VERSION -X main.o=$GOOS -X main.arch=$GOARCH -X main.commit=$COMMIT -X main.date=$DATE" -o "$BIN_PATH.exe"
 echo "Build successful"
 
 cd "$BUILD_PATH"
