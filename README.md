@@ -9,7 +9,7 @@ instead of remembering to perform tedious tasks.
 Since it's written in [Go][go], most of the commands runs across multiple operating systems (`Linux`, `macOS`, 
 `Windows`) and use the same syntax between them thanks to this [library][sh].
 
-*Why should i use this?* You can watch some [Use Cases]
+*Why should i use this?* You can watch some [Use Cases](#use-cases)
 
 ## Table of contents
   * [Getting Started](#getting-started)
