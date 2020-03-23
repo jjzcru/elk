@@ -1,11 +1,7 @@
 #!/bin/bash
 
-VERSION=$(<VERSION)
 BUILD_PATH=$(pwd)/bin
 MODULE_PATH=$(pwd)/cmd/elk
-
-COMMIT=$(git rev-parse --short HEAD)
-VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))
 
 day=$(date +'%a')
 month=$(date +'%b')

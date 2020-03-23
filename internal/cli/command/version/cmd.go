@@ -2,8 +2,9 @@ package version
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"strings"
+
+	"github.com/spf13/cobra"
 )
 
 type data struct {
@@ -28,8 +29,7 @@ func NewVersionCommand() *cobra.Command {
 			fmt.Printf("  Version:    \t %s\n", version.version)
 			fmt.Printf("  Git Commit: \t %s\n", version.commit)
 			fmt.Printf("  Built:      \t %s\n", strings.Replace(version.date, "_", " ", -1))
-			fmt.Printf("  OS:         \t %s\n", version.os)
-			fmt.Printf("  Arch:       \t %s\n", version.arch)
+			fmt.Printf("  OS/Arch:    \t %s/%s\n", version.os, version.arch)
 		},
 	}
 
