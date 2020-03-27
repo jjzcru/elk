@@ -36,7 +36,7 @@ func getTestEngine() *Engine {
 	return &Engine{
 		Elk: elk,
 		Executer: DefaultExecuter{
-			Logger: &DefaultLogger,
+			Logger: make(map[string]Logger),
 		},
 	}
 }

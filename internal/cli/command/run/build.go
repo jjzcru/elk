@@ -16,7 +16,7 @@ import (
 func Build(cmd *cobra.Command, e *ox.Elk) (map[string]engine.Logger, error) {
 	logger := make(map[string]engine.Logger)
 
-	ignoreLog, err := cmd.Flags().GetBool("ignore-log-file")
+	ignoreLogFile, err := cmd.Flags().GetBool("ignore-log-file")
 	if err != nil {
 		return logger, err
 	}
@@ -37,10 +37,7 @@ func Build(cmd *cobra.Command, e *ox.Elk) (map[string]engine.Logger, error) {
 	}
 
 	if len(logFilePath) > 0 {
-		isFile, err := utils.IsPathAFile(logFilePath)
-		if err != nil {
-			return logger, err
-		}
+		isFile, _ := utils.IsPathAFile(logFilePath)
 
 		if !isFile {
 			return logger, fmt.Errorf("path is not a file: %s", logFilePath)
@@ -66,26 +63,45 @@ func Build(cmd *cobra.Command, e *ox.Elk) (map[string]engine.Logger, error) {
 	}
 
 	for name, task := range e.Tasks {
-		if len(logFilePath) > 0 {
-			task.Log = logFilePath
+		 taskLogger := engine.Logger{
+			StdinReader:  os.Stdin,
+			StdoutWriter: os.Stdout,
+			StderrWriter: os.Stderr,
 		}
 
-		if len(task.Log) > 0 {
-			logFile, err := os.OpenFile(task.Log, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if len(logFilePath) > 0 {
+			task.Log = ox.Log{
+				Out: logFilePath,
+				Err: logFilePath,
+			}
+		}
+
+		if len(task.Log.Out) > 0 {
+			logFile, err := os.OpenFile(task.Log.Out, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 			if err != nil {
 				return logger, err
 			}
 
-			logger[name] = engine.Logger{
-				StderrWriter: logFile,
-				StdoutWriter: logFile,
-				StdinReader:  os.Stdin,
-			}
+			taskLogger.StdoutWriter = logFile
 		}
 
-		if ignoreLog {
-			task.Log = ""
+		if len(task.Log.Err) > 0 {
+			logFile, err := os.OpenFile(task.Log.Err, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			if err != nil {
+				return logger, err
+			}
+
+			taskLogger.StderrWriter = logFile
+		} else {
+			taskLogger.StderrWriter = taskLogger.StdoutWriter
 		}
+
+		if ignoreLogFile {
+			taskLogger.StdoutWriter = os.Stdout
+			taskLogger.StderrWriter = os.Stderr
+		}
+
+		logger[name] = taskLogger
 
 		if ignoreError {
 			task.IgnoreError = true

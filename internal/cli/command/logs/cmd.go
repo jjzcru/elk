@@ -20,6 +20,7 @@ Flags:
   -h, --help          Help for logs
 `
 
+// NewLogsCommand returns a cobra command for `logs` sub command
 func NewLogsCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "logs",
@@ -68,7 +69,7 @@ func run(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		file, err := os.Open(task.Log)
+		file, err := os.Open(task.Log.Out)
 		if err != nil {
 			return err
 		}

@@ -85,7 +85,9 @@ func CreateElkFile(elkFilePath string) error {
 			},
 			"test-log": {
 				Description: "Print World",
-				Log:         "./test.log",
+				Log: ox.Log{
+					Out: "./test.log",
+				},
 				Cmds: []string{
 					"echo $HELLO",
 				},
