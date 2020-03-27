@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/jjzcru/elk/pkg/primitives/ox"
+	"io"
 	"os"
 	"strings"
 
@@ -19,7 +20,7 @@ type Executer interface {
 
 // DefaultExecuter Execute task with a POSIX emulator
 type DefaultExecuter struct {
-	Logger *Logger
+	Logger map[string]Logger
 }
 
 // Execute task and returns a PID
@@ -67,18 +68,20 @@ func (e DefaultExecuter) Execute(ctx context.Context, elk *ox.Elk, name string) 
 		}
 	}
 
-	stdinReader := e.Logger.StdinReader
-	stdoutWriter := e.Logger.StdoutWriter
-	stderrWriter := e.Logger.StderrWriter
+	var stdinReader io.Reader
+	var stdoutWriter io.Writer
+	var stderrWriter io.Writer
 
-	if len(task.Log) > 0 {
-		logFile, err := os.OpenFile(task.Log, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			return 0, err
-		}
+	logger, exists := e.Logger[name]
 
-		stdoutWriter = logFile
-		stderrWriter = logFile
+	if !exists {
+		stdinReader = os.Stdin
+		stdoutWriter = os.Stdout
+		stderrWriter = os.Stderr
+	} else {
+		stdinReader = logger.StdinReader
+		stdoutWriter = logger.StdoutWriter
+		stderrWriter = logger.StderrWriter
 	}
 
 	for _, command := range task.Cmds {

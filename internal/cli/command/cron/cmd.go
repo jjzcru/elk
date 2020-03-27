@@ -25,7 +25,7 @@ Flags:
   -h, --help             Help for run
       --ignore-log-file  Force task to output to stdout
       --ignore-error     Ignore errors that happened during a task
-      --ignore-dep       Ignore task dependencies
+      --ignore-deps      Ignore task dependencies
       --delay            Set a delay to a task
   -l, --log string       File that log output from a task
   -w, --watch            Enable watch mode
@@ -61,7 +61,7 @@ func NewCronCommand() *cobra.Command {
 	cmd.Flags().StringSliceVarP(&vars, "var", "v", []string{}, "")
 	cmd.Flags().Bool("ignore-log-file", false, "")
 	cmd.Flags().Bool("ignore-error", false, "")
-	cmd.Flags().Bool("ignore-dep", false, "")
+	cmd.Flags().Bool("ignore-deps", false, "")
 	cmd.Flags().BoolP("detached", "d", false, "")
 	cmd.Flags().StringP("file", "f", "", "")
 	cmd.Flags().StringP("log", "l", "", "")
@@ -117,19 +117,16 @@ func Run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 		return err
 	}
 
+	logger, err := run.Build(cmd, e)
+	if err != nil {
+		return err
+	}
+
 	clientEngine := &engine.Engine{
 		Elk: e,
 		Executer: engine.DefaultExecuter{
-			Logger: &engine.DefaultLogger,
+			Logger: logger,
 		},
-		Build: func() error {
-			return run.Build(cmd, e)
-		},
-	}
-
-	err = clientEngine.Build()
-	if err != nil {
-		return err
 	}
 
 	for name, task := range e.Tasks {
