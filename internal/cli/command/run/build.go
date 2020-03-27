@@ -2,10 +2,10 @@ package run
 
 import (
 	"fmt"
+	"github.com/jjzcru/elk/pkg/engine"
 	"os"
 	"path/filepath"
-
-	"github.com/jjzcru/elk/pkg/engine"
+	"time"
 
 	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/primitives/ox"
@@ -63,11 +63,7 @@ func Build(cmd *cobra.Command, e *ox.Elk) (map[string]engine.Logger, error) {
 	}
 
 	for name, task := range e.Tasks {
-		 taskLogger := engine.Logger{
-			StdinReader:  os.Stdin,
-			StdoutWriter: os.Stdout,
-			StderrWriter: os.Stderr,
-		}
+		taskLogger := engine.DefaultLogger()
 
 		if len(logFilePath) > 0 {
 			task.Log = ox.Log{
@@ -96,9 +92,20 @@ func Build(cmd *cobra.Command, e *ox.Elk) (map[string]engine.Logger, error) {
 			taskLogger.StderrWriter = taskLogger.StdoutWriter
 		}
 
+		if len(task.Log.Format) > 0 {
+			format, err := getDateFormat(task.Log.Format)
+			if err != nil {
+				return nil, err
+			}
+
+			taskLogger, err = engine.TimeStampLogger(taskLogger, format)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		if ignoreLogFile {
-			taskLogger.StdoutWriter = os.Stdout
-			taskLogger.StderrWriter = os.Stderr
+			taskLogger = engine.DefaultLogger()
 		}
 
 		logger[name] = taskLogger
@@ -120,4 +127,41 @@ func Build(cmd *cobra.Command, e *ox.Elk) (map[string]engine.Logger, error) {
 	}
 
 	return logger, nil
+}
+
+func getDateFormat(format string) (string, error) {
+	switch format {
+	case "ANSIC":
+		fallthrough
+	case "ansic":
+		return time.ANSIC, nil
+	case "UnixDate":
+		fallthrough
+	case "unixdate":
+		return time.UnixDate, nil
+	case "rubydate":
+		fallthrough
+	case "RubyDate":
+		return time.RubyDate, nil
+	case "RFC822":
+		return time.RFC822, nil
+	case "RFC822Z":
+		return time.RFC822Z, nil
+	case "RFC850":
+		return time.RFC850, nil
+	case "RFC1123":
+		return time.RFC1123, nil
+	case "RFC1123Z":
+		return time.RFC1123Z, nil
+	case "RFC3339":
+		return time.RFC3339, nil
+	case "RFC3339Nano":
+		return time.RFC3339Nano, nil
+	case "kitchen":
+		fallthrough
+	case "Kitchen":
+		return time.Kitchen, nil
+	default:
+		return "", fmt.Errorf("%s is an invalid date format", format)
+	}
 }

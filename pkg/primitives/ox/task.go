@@ -25,8 +25,9 @@ type Dep struct {
 }
 
 type Log struct {
-	Out string `yaml:"out"`
-	Err string `yaml:"error"`
+	Out    string `yaml:"out"`
+	Format string `yaml:"format"`
+	Err    string `yaml:"error"`
 }
 
 // LoadEnvFile Log to the variable env the values
