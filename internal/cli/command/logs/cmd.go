@@ -39,9 +39,9 @@ func NewLogsCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolP("global", "g", false, "Search the task in the path set in config")
-	cmd.Flags().StringP("file", "f", "", "Path used to search for the tasks to log")
-	cmd.Flags().Bool("follow", false, "Read the file in follow mode")
+	cmd.Flags().BoolP("global", "g", false, "")
+	cmd.Flags().StringP("file", "f", "", "")
+	cmd.Flags().Bool("follow", false, "")
 
 	cmd.SetUsageTemplate(usageTemplate)
 

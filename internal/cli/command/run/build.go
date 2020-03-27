@@ -22,6 +22,11 @@ func Build(cmd *cobra.Command, e *ox.Elk) error {
 		return err
 	}
 
+	ignoreDep, err := cmd.Flags().GetBool("ignore-dep")
+	if err != nil {
+		ignoreDep = false
+	}
+
 	logFilePath, err := cmd.Flags().GetString("log")
 	if err != nil {
 		return err
@@ -67,6 +72,10 @@ func Build(cmd *cobra.Command, e *ox.Elk) error {
 
 		if ignoreError {
 			task.IgnoreError = true
+		}
+
+		if ignoreDep {
+			task.Deps = []ox.Dep{}
 		}
 
 		e.Tasks[name] = task

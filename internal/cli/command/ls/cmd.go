@@ -15,8 +15,8 @@ var usageTemplate = `Usage:
   elk ls [flags]
 
 Flags:
-  -a, --all           Specify the file to used
-  -f, --file string   Run in follow mode
+  -a, --all           Display task details
+  -f, --file string   Specify the file to used
   -g, --global        Search the task in the global path
   -h, --help          help for logs
 `
@@ -34,9 +34,9 @@ func NewListCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolP("all", "a", false, "Display task details")
-	cmd.Flags().StringP("file", "f", "", "Specify ox file path")
-	cmd.Flags().BoolP("global", "g", false, "Search the task in the global path")
+	cmd.Flags().BoolP("all", "a", false, "")
+	cmd.Flags().StringP("file", "f", "", "")
+	cmd.Flags().BoolP("global", "g", false, "")
 
 	cmd.SetUsageTemplate(usageTemplate)
 
