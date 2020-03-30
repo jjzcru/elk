@@ -7,9 +7,9 @@ GOOS=darwin
 
 day=$(date +'%a')
 month=$(date +'%b')
-fill_date=$(date +'%d_%T_%Y')
+fill_date=$(date +'%d %T %Y')
 
-DATE="${day^}_${month^}_${fill_date}"
+DATE="${day} ${month} ${fill_date}"
 
 # Build for 386
 GOARCH=386
