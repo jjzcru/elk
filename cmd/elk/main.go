@@ -14,9 +14,10 @@ var o = ""
 var arch = ""
 var commit = ""
 var date = ""
+var goVersion = ""
 
 func main() {
-	version.SetVersion(v, o, arch, commit, date)
+	version.SetVersion(v, o, arch, commit, date, goVersion)
 	err := command.Execute()
 	if err != nil {
 		utils.PrintError(err)
