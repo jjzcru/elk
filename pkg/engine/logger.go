@@ -52,6 +52,7 @@ type TimeStampWriter struct {
 	TimeStamp func() string
 }
 
+// Writes timestamp to a writer
 func (t TimeStampWriter) Write(p []byte) (int, error) {
 	var err error
 	if t.writer != nil {

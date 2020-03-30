@@ -19,22 +19,23 @@ var usageTemplate = `Usage:
   elk run [tasks] [flags]
 
 Flags:
-  -d, --detached         Run the task in detached mode and returns the PGID
-  -e, --env strings      Overwrite env variable in task
-  -v, --var strings      Overwrite var variable in task
-  -f, --file string      Run elk in a specific file
-  -g, --global           Run from the path set in config
-  -h, --help             Help for run
-      --ignore-log-file  Force task to output to stdout
-      --ignore-error     Ignore errors that happened during a task
-      --ignore-deps      Ignore task dependencies
-      --delay            Set a delay to a task
-  -l, --log string       File that log output from a task
-  -w, --watch            Enable watch mode
-  -t, --timeout          Set a timeout to a task
-      --deadline         Set a deadline to a task
-      --start            Set a date/datetime to a task to run
-  -i, --interval         Set a duration for an interval
+  -d, --detached            Run the task in detached mode and returns the PGID
+  -e, --env strings         Overwrite env variable in task
+  -v, --var strings         Overwrite var variable in task
+  -f, --file string         Run elk in a specific file
+  -g, --global              Run from the path set in config
+  -h, --help                Help for run
+      --ignore-log-file     Force task to output to stdout
+      --ignore-log-format   Ignores format value in log
+      --ignore-error        Ignore errors that happened during a task
+      --ignore-deps         Ignore task dependencies
+      --delay               Set a delay to a task
+  -l, --log string          File that log output from a task
+  -w, --watch               Enable watch mode
+  -t, --timeout             Set a timeout to a task
+      --deadline            Set a deadline to a task
+      --start               Set a date/datetime to a task to run
+  -i, --interval            Set a duration for an interval
 `
 
 // NewRunCommand returns a cobra command for `run` sub command
@@ -63,6 +64,7 @@ func NewRunCommand() *cobra.Command {
 	cmd.Flags().StringSliceVarP(&envs, "env", "e", []string{}, "")
 	cmd.Flags().StringSliceVarP(&vars, "var", "v", []string{}, "")
 	cmd.Flags().Bool("ignore-log-file", false, "")
+	cmd.Flags().Bool("ignore-log-format", false, "")
 	cmd.Flags().Bool("ignore-error", false, "")
 	cmd.Flags().Bool("ignore-deps", false, "")
 	cmd.Flags().BoolP("detached", "d", false, "")

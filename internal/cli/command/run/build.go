@@ -26,6 +26,11 @@ func Build(cmd *cobra.Command, e *ox.Elk) (map[string]engine.Logger, error) {
 		return logger, err
 	}
 
+	ignoreLogFormat, err := cmd.Flags().GetBool("ignore-log-format")
+	if err != nil {
+		return logger, err
+	}
+
 	ignoreDep, err := cmd.Flags().GetBool("ignore-deps")
 	if err != nil {
 		ignoreDep = false
@@ -65,6 +70,11 @@ func Build(cmd *cobra.Command, e *ox.Elk) (map[string]engine.Logger, error) {
 	for name, task := range e.Tasks {
 		taskLogger := engine.DefaultLogger()
 
+		if ignoreLogFile {
+			logger[name] = taskLogger
+			continue
+		}
+
 		if len(logFilePath) > 0 {
 			task.Log = ox.Log{
 				Out: logFilePath,
@@ -92,7 +102,7 @@ func Build(cmd *cobra.Command, e *ox.Elk) (map[string]engine.Logger, error) {
 			taskLogger.StderrWriter = taskLogger.StdoutWriter
 		}
 
-		if len(task.Log.Format) > 0 {
+		if len(task.Log.Format) > 0 && !ignoreLogFormat {
 			format, err := getDateFormat(task.Log.Format)
 			if err != nil {
 				return nil, err
@@ -102,10 +112,6 @@ func Build(cmd *cobra.Command, e *ox.Elk) (map[string]engine.Logger, error) {
 			if err != nil {
 				return nil, err
 			}
-		}
-
-		if ignoreLogFile {
-			taskLogger = engine.DefaultLogger()
 		}
 
 		logger[name] = taskLogger
@@ -162,6 +168,6 @@ func getDateFormat(format string) (string, error) {
 	case "Kitchen":
 		return time.Kitchen, nil
 	default:
-		return "", fmt.Errorf("%s is an invalid date format", format)
+		return "", fmt.Errorf("%s is an invalid timestamp format", format)
 	}
 }
