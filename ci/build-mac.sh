@@ -11,6 +11,11 @@ fill_date=$(date +'%d %T %Y')
 
 DATE="${day} ${month} ${fill_date}"
 
+echo "BUILT"
+echo "VERSION: $VERSION"
+echo "COMMIT: $COMMIT"
+echo "DATE: $DATE"
+
 # Build for 386
 GOARCH=386
 cd $MODULE_PATH
