@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 )
@@ -57,18 +56,20 @@ func (t TimeStampWriter) Write(p []byte) (int, error) {
 	var err error
 	if t.writer != nil {
 		content := string(p)
+		delimiter := "\n"
+
 		timestamp := t.TimeStamp()
-		prefix := fmt.Sprintf("%s | ", timestamp)
-
-		re := regexp.MustCompile("\\n")
-		content = re.ReplaceAllString(content, fmt.Sprintf("\n%s | ", timestamp))
-
-		suffix := "\n"
-		if strings.HasSuffix(content, "\n") {
-			suffix = ""
+		timeStampPrefix := fmt.Sprintf("\n%s | ", timestamp)
+		var inputs []string
+		for _, input := range strings.SplitN(content, delimiter, -1) {
+			if len(input) > 0 {
+				inputs = append(inputs, input)
+			}
 		}
 
-		_, err = t.writer.Write([]byte(prefix + content + suffix))
+		response := timeStampPrefix + strings.Join(inputs, timeStampPrefix)
+
+		_, err = t.writer.Write([]byte(response))
 	}
 	return len(p), err
 }
