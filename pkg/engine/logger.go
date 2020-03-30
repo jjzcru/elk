@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"github.com/jjzcru/elk/pkg/file"
 	"io"
 	"os"
 	"strings"
@@ -57,12 +58,12 @@ func (t TimeStampWriter) Write(p []byte) (int, error) {
 	var err error
 	if t.writer != nil {
 		content := string(p)
-		delimiter := "\n"
+		breakLine := file.BreakLine
 
 		timestamp := t.TimeStamp()
-		timeStampPrefix := fmt.Sprintf("\n%s | ", timestamp)
+		timeStampPrefix := fmt.Sprintf("%s%s | ", file.BreakLine, timestamp)
 		var inputs []string
-		for _, input := range strings.SplitN(content, delimiter, -1) {
+		for _, input := range strings.SplitN(content, breakLine, -1) {
 			if len(input) > 0 {
 				inputs = append(inputs, input)
 			}
