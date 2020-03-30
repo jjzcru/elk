@@ -28,6 +28,7 @@ cd $BUILD_PATH
 ZIP_PATH=${BIN_PATH}_${VERSION}_${GOOS}_${GOARCH}.zip
 
 zip $ZIP_PATH $NAME
+sleep 5s
 rm $NAME
 
 # Build for amd64
@@ -42,4 +43,5 @@ cd $BUILD_PATH
 ZIP_PATH=${BIN_PATH}_${VERSION}_${GOOS}_${GOARCH}.zip
 
 zip $ZIP_PATH $NAME
+sleep 5s
 rm $NAME
