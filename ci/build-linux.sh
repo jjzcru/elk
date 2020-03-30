@@ -14,8 +14,6 @@ platforms[linux,0]=amd64
 platforms[linux,1]=386
 platforms[linux,2]=arm
 platforms[linux,3]=arm64
-platforms[darwin,0]=amd64
-platforms[darwin,1]=386
 platforms[solaris,0]=amd64
 
 for key in "${!platforms[@]}"; do
