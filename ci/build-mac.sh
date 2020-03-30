@@ -7,9 +7,9 @@ GOOS=darwin
 
 day=$(date +'%a')
 month=$(date +'%b')
-fill_date=$(date +'%d %T %Y')
+fill_date=$(date +'%d_%T_%Y')
 
-DATE="${day} ${month} ${fill_date}"
+DATE="${day}_${month}_${fill_date}"
 
 echo "BUILT"
 echo "VERSION: $VERSION"
