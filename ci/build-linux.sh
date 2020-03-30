@@ -23,7 +23,7 @@ for key in "${!platforms[@]}"; do
     NAME=elk
 
     BIN_PATH=$BUILD_PATH/$NAME
-    go build -ldflags "-X main.v=$VERSION -X main.o=$GOOS -X main.arch=$GOARCH -X main.commit=$COMMIT -X main.date=$DATE" -o $BIN_PATH
+    go build -ldflags "-X main.v=$VERSION -X main.o=$GOOS -X main.arch=$GOARCH -X main.commit=$COMMIT -X main.date=$DATE -X main.goVersion=$GOVERSION" -o $BIN_PATH
 
     cd $BUILD_PATH
     ZIP_PATH=${BIN_PATH}_${VERSION}_${GOOS}_${GOARCH}.zip
