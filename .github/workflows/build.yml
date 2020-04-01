@@ -119,7 +119,7 @@ jobs:
       - name: Get Go Version
         shell: powershell
         id: go
-        run: echo "$((go version).Split(' ') | select -index 2)"
+        run: echo "##[set-output name=version;]$((go version).Split(' ') | select -index 2)"
 
       - name: Build Binaries
         shell: powershell
@@ -127,7 +127,7 @@ jobs:
           GOPROXY: "https://proxy.golang.org"
           COMMIT: ${{steps.built.outputs.commit}}
           VERSION: ${{steps.built.outputs.version}}
-          GOVERSION: ${{steps.go.outputs}}
+          GOVERSION: ${{steps.go.outputs.version}}
         run: .\ci\build-windows
       
       - name: Upload Artifact
