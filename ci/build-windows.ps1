@@ -1,6 +1,7 @@
 $DATE = Get-Date -UFormat "%a_%b_%d_%T_%Y"
 $COMMIT = $env:COMMIT
 $VERSION = $env:VERSION
+$GOVERSION = $env:GOVERSION
 
 $BUILD_PATH = "$((Get-Item -Path ".\").FullName)\bin"
 $MODULE_PATH = "$((Get-Item -Path ".\").FullName)\cmd\elk"
@@ -11,6 +12,12 @@ $NAME = "elk"
 
 cls
 
+echo "BUILT DETAILS"
+echo "VERSION: $VERSION"
+echo "COMMIT: $COMMIT"
+echo "DATE: $DATE"
+echo "GO VERSION: $GOVERSION"
+
 # 386
 $env:GOARCH = "386"
 $GOARCH = "386"
@@ -20,7 +27,7 @@ $BIN_PATH = "$BUILD_PATH\$NAME"
 echo "ARCH: $($GOARCH)"
 echo "--------------------------"
 echo "Building $($GOARCH) binary"
-go build -ldflags "-X main.v=$VERSION -X main.o=$GOOS -X main.arch=$GOARCH -X main.commit=$COMMIT -X main.date=$DATE" -o "$BIN_PATH.exe"
+go build -ldflags "-X main.v=$VERSION -X main.o=$GOOS -X main.arch=$GOARCH -X main.commit=$COMMIT -X main.date=$DATE -X main.goVersion=$GOVERSION" -o "$BIN_PATH.exe"
 echo "Build successful"
 
 cd "$BUILD_PATH"
@@ -42,7 +49,7 @@ $BIN_PATH = "$BUILD_PATH\$NAME"
 echo "ARCH: $($GOARCH)"
 echo "--------------------------"
 echo "Building $($GOARCH) binary"
-go build -ldflags "-X main.v=$VERSION -X main.o=$GOOS -X main.arch=$GOARCH -X main.commit=$COMMIT -X main.date=$DATE" -o "$BIN_PATH.exe"
+go build -ldflags "-X main.v=$VERSION -X main.o=$GOOS -X main.arch=$GOARCH -X main.commit=$COMMIT -X main.date=$DATE -X main.goVersion=$GOVERSION" -o "$BIN_PATH.exe"
 echo "Build successful"
 
 cd "$BUILD_PATH"

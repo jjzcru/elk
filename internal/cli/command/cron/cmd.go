@@ -23,7 +23,7 @@ Flags:
   -f, --file string         Run elk in a specific file
   -g, --global              Run from the path set in config
   -h, --help                Help for run
-      --ignore-log-file     Force task to output to stdout
+      --ignore-log-file     Ignores task log property
       --ignore-log-format   Ignores format value in log
       --ignore-error        Ignore errors that happened during a task
       --ignore-deps         Ignore task dependencies

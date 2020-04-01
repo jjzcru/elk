@@ -17,7 +17,7 @@ import (
 )
 
 var usageTemplate = `Usage:
-  elk logs [task] [flags]
+  elk logs [tasks] [flags]
 
 Flags:
   -f, --file string   Specify ox.yml file to be used

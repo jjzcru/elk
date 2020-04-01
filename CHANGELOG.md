@@ -1,3 +1,29 @@
+## [v0.5.0](https://github.com/jjzcru/elk/tree/v0.5.0) (2020-03-31)
+[Release](https://github.com/jjzcru/elk/releases/tag/v0.5.0)
+
+**Commands 🤖:**
+- **[logs]** Able to display logs for multiple `tasks` in the same command
+
+**Documentation 📖:**
+- **[logs]** Add documentation for the updated `log` property
+
+**Flags 🚩:**
+- **--ignore-dep** Add flag to **[run]** command
+- **--ignore-dep** Add flag to **[cron]** command
+- **--ignore-log-format** Add flag to **[run]** command
+- **--ignore-log-format** Add flag to **[cron]** command
+
+**Syntax:**
+- **log** Add properties `out`, `error` and `format` to log object
+
+**Bug Fix 🐛:**
+- Fix issue where `version` was not being display on `macOS amd64`
+
+**Misc 👾:**
+- `engine` now uses a `logger` per task, instead of one for the entire `engine`
+- If you display multiple tasks with the command `logs` it display which output belong to which task
+- Add which go version was used to built the binary in the `version` command
+  
 ## [v0.4.0](https://github.com/jjzcru/elk/tree/v0.4.0) (2020-03-22)
 [Release](https://github.com/jjzcru/elk/releases/tag/v0.4.0)
 
@@ -13,8 +39,8 @@
 - **--var** Add flag to **[cron]** command
 
 **Syntax:**
-- **var** Add property at `task` level
-- **var** Add property at `global` level
+- **vars** Add property at `task` level
+- **vars** Add property at `global` level
 
 ## [v0.3.1](https://github.com/jjzcru/elk/tree/v0.3.1) (2020-03-19)
 [Release](https://github.com/jjzcru/elk/releases/tag/v0.3.1)
