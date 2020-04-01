@@ -11,6 +11,11 @@ $NAME = "elk"
 
 cls
 
+echo "BUILT DETAILS"
+echo "VERSION: $VERSION"
+echo "COMMIT: $COMMIT"
+echo "DATE: $DATE"
+
 # 386
 $env:GOARCH = "386"
 $GOARCH = "386"
