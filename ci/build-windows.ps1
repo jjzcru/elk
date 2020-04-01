@@ -15,6 +15,7 @@ echo "BUILT DETAILS"
 echo "VERSION: $VERSION"
 echo "COMMIT: $COMMIT"
 echo "DATE: $DATE"
+echo "GOVERSION: $GOVERSION"
 
 # 386
 $env:GOARCH = "386"
