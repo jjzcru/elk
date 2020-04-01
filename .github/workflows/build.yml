@@ -115,6 +115,11 @@ jobs:
           echo "##[set-output name=commit;]$(git rev-parse --short HEAD)"
           echo "##[set-output name=version;]$(git describe --tags $(git rev-list --tags --max-count=1))"
           echo "##[set-output name=go_version;]$((go version).Split(' ') | select -index 2)"
+      
+      - name: Get Go Version
+        shell: powershell
+        id: go
+        run: echo "$((go version).Split(' ') | select -index 2)"
 
       - name: Build Binaries
         shell: powershell
@@ -122,7 +127,7 @@ jobs:
           GOPROXY: "https://proxy.golang.org"
           COMMIT: ${{steps.built.outputs.commit}}
           VERSION: ${{steps.built.outputs.version}}
-          GOVERSION: ${{steps.built.outputs.go_version}}
+          GOVERSION: ${{steps.go.outputs}}
         run: .\ci\build-windows
       
       - name: Upload Artifact
