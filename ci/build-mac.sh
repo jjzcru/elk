@@ -26,7 +26,7 @@ then
     GOVERSION=$(go version | awk '{print $3}')
 fi
 
-echo "BUILT"
+echo "BUILT DETAILS"
 echo "VERSION: $VERSION"
 echo "COMMIT: $COMMIT"
 echo "DATE: $DATE"

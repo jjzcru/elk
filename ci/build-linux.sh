@@ -16,6 +16,11 @@ platforms[linux,2]=arm
 platforms[linux,3]=arm64
 platforms[solaris,0]=amd64
 
+echo "BUILT DETAILS"
+echo "VERSION: $VERSION"
+echo "COMMIT: $COMMIT"
+echo "DATE: $DATE"
+
 for key in "${!platforms[@]}"; do
     GOOS=${key::-2}
     GOARCH=${platforms[$key]}
