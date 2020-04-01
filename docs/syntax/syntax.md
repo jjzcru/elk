@@ -88,6 +88,17 @@ in the same path as the `out` property.
   - `RFC3339Nano`: *2006-01-02T15:04:05.999999999Z07:00*
   - `Kitchen`: *3:04PM*
 
+Example: 
+```yml
+test:
+  log:
+    out: ./hello.log
+    error: ./hello-error.log
+    format: RFC3339
+  cmds:
+    - "echo Hello world"
+```
+
 `ignore_error`
 
 Ignore errors that happened during a `task`.
