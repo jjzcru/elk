@@ -34,3 +34,5 @@ func IsPathAFile(path string) (bool, error) {
 
 	return !isPathADir, nil
 }
+
+

@@ -13,7 +13,7 @@ type Task struct {
 	EnvFile     string            `yaml:"env_file,omitempty"`
 	Description string            `yaml:"description,omitempty"`
 	Dir         string            `yaml:"dir,omitempty"`
-	Log         string            `yaml:"log,omitempty"`
+	Log         Log               `yaml:"log,omitempty"`
 	Sources     string            `yaml:"sources,omitempty"`
 	Deps        []Dep             `yaml:"deps,omitempty"`
 	IgnoreError bool              `yaml:"ignore_error,omitempty"`
@@ -22,6 +22,12 @@ type Task struct {
 type Dep struct {
 	Name     string `yaml:"name"`
 	Detached bool   `yaml:"detached"`
+}
+
+type Log struct {
+	Out    string `yaml:"out"`
+	Format string `yaml:"format"`
+	Err    string `yaml:"error"`
 }
 
 // LoadEnvFile Log to the variable env the values

@@ -35,11 +35,22 @@ jobs:
 
       - name: Check out source code
         uses: actions/checkout@v1
+      
+      - name: Get Built Information
+        shell: bash
+        id: built
+        run: |
+          echo "##[set-output name=commit;]$(git rev-parse --short HEAD)"
+          echo "##[set-output name=version;]$(git describe --tags $(git rev-list --tags --max-count=1))"
+          echo "##[set-output name=go_version;]$(go version | awk '{print $3}')"
 
       - name: Build Binaries
         shell: bash
         env:
           GOPROXY: "https://proxy.golang.org"
+          COMMIT: ${{steps.built.outputs.commit}}
+          VERSION: ${{steps.built.outputs.version}}
+          GOVERSION: ${{steps.built.outputs.go_version}}
         run: bash ./ci/build-linux.sh && rm ./bin/.gitkeep
       
       - name: Upload Artifact
@@ -60,11 +71,22 @@ jobs:
 
       - name: Check out source code
         uses: actions/checkout@v1
+      
+      - name: Get Built Information
+        shell: bash
+        id: built
+        run: |
+          echo "##[set-output name=commit;]$(git rev-parse --short HEAD)"
+          echo "##[set-output name=version;]$(git describe --tags $(git rev-list --tags --max-count=1))"
+          echo "##[set-output name=go_version;]$(go version | awk '{print $3}')"
 
       - name: Build Binaries
         shell: bash
         env:
           GOPROXY: "https://proxy.golang.org"
+          COMMIT: ${{steps.built.outputs.commit}}
+          VERSION: ${{steps.built.outputs.version}}
+          GOVERSION: ${{steps.built.outputs.go_version}}
         run: bash ./ci/build-mac.sh && rm ./bin/.gitkeep
       
       - name: Upload Artifact
@@ -92,6 +114,12 @@ jobs:
         run: |
           echo "##[set-output name=commit;]$(git rev-parse --short HEAD)"
           echo "##[set-output name=version;]$(git describe --tags $(git rev-list --tags --max-count=1))"
+          echo "##[set-output name=go_version;]$((go version).Split(' ') | select -index 2)"
+      
+      - name: Get Go Version
+        shell: powershell
+        id: go
+        run: echo "##[set-output name=version;]$((go version).Split(' ') | select -index 2)"
 
       - name: Build Binaries
         shell: powershell
@@ -99,6 +127,7 @@ jobs:
           GOPROXY: "https://proxy.golang.org"
           COMMIT: ${{steps.built.outputs.commit}}
           VERSION: ${{steps.built.outputs.version}}
+          GOVERSION: ${{steps.go.outputs.version}}
         run: .\ci\build-windows
       
       - name: Upload Artifact

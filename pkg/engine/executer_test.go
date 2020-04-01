@@ -2,8 +2,9 @@ package engine
 
 import (
 	"context"
-	"github.com/jjzcru/elk/pkg/primitives/ox"
 	"testing"
+
+	"github.com/jjzcru/elk/pkg/primitives/ox"
 )
 
 func TestDefaultExecuterExecute(t *testing.T) {
@@ -49,7 +50,7 @@ func TestDefaultExecuterExecute(t *testing.T) {
 	}
 
 	executer := DefaultExecuter{
-		Logger: &DefaultLogger,
+		Logger: make(map[string]Logger),
 	}
 
 	_, err := executer.Execute(context.Background(), &e, "world")
@@ -102,7 +103,7 @@ func TestDefaultExecuterExecuteTaskNotExist(t *testing.T) {
 	}
 
 	executer := DefaultExecuter{
-		Logger: &DefaultLogger,
+		Logger: make(map[string]Logger),
 	}
 
 	_, err := executer.Execute(context.Background(), &e, "bar")

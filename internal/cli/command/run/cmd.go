@@ -19,21 +19,23 @@ var usageTemplate = `Usage:
   elk run [tasks] [flags]
 
 Flags:
-  -d, --detached         Run the task in detached mode and returns the PGID
-  -e, --env strings      Overwrite env variable in task
-  -v, --var strings      Overwrite var variable in task
-  -f, --file string      Run elk in a specific file
-  -g, --global           Run from the path set in config
-  -h, --help             Help for run
-      --ignore-log-file  Force task to output to stdout
-      --ignore-error     Ignore errors that happened during a task
-      --delay            Set a delay to a task
-  -l, --log string       File that log output from a task
-  -w, --watch            Enable watch mode
-  -t, --timeout          Set a timeout to a task
-      --deadline         Set a deadline to a task
-      --start            Set a date/datetime to a task to run
-  -i, --interval         Set a duration for an interval
+  -d, --detached            Run the task in detached mode and returns the PGID
+  -e, --env strings         Overwrite env variable in task
+  -v, --var strings         Overwrite var variable in task
+  -f, --file string         Run elk in a specific file
+  -g, --global              Run from the path set in config
+  -h, --help                Help for run
+      --ignore-log-file     Ignores task log property
+      --ignore-log-format   Ignores format value in log
+      --ignore-error        Ignore errors that happened during a task
+      --ignore-deps         Ignore task dependencies
+      --delay               Set a delay to a task
+  -l, --log string          File that log output from a task
+  -w, --watch               Enable watch mode
+  -t, --timeout             Set a timeout to a task
+      --deadline            Set a deadline to a task
+      --start               Set a date/datetime to a task to run
+  -i, --interval            Set a duration for an interval
 `
 
 // NewRunCommand returns a cobra command for `run` sub command
@@ -58,20 +60,22 @@ func NewRunCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolP("global", "g", false, "Run from the path set in config")
+	cmd.Flags().BoolP("global", "g", false, "")
 	cmd.Flags().StringSliceVarP(&envs, "env", "e", []string{}, "")
 	cmd.Flags().StringSliceVarP(&vars, "var", "v", []string{}, "")
-	cmd.Flags().Bool("ignore-log-file", false, "Force task to output to stdout")
-	cmd.Flags().Bool("ignore-error", false, "Ignore errors that happened during a task")
-	cmd.Flags().BoolP("detached", "d", false, "Run the command in detached mode and returns the PGID")
-	cmd.Flags().BoolP("watch", "w", false, "Enable watch mode")
-	cmd.Flags().StringP("file", "f", "", "Run ox in a specific file")
-	cmd.Flags().StringP("log", "l", "", "File that log output from a task")
-	cmd.Flags().DurationP("timeout", "t", 0, "Set a timeout for a task in milliseconds")
-	cmd.Flags().Duration("delay", 0, "Set a delay for a task in milliseconds")
-	cmd.Flags().String("deadline", "", "Set a deadline to a task")
-	cmd.Flags().String("start", "", "Set a date/datetime for a task to run")
-	cmd.Flags().DurationP("interval", "i", 0, "Set a duration for an interval")
+	cmd.Flags().Bool("ignore-log-file", false, "")
+	cmd.Flags().Bool("ignore-log-format", false, "")
+	cmd.Flags().Bool("ignore-error", false, "")
+	cmd.Flags().Bool("ignore-deps", false, "")
+	cmd.Flags().BoolP("detached", "d", false, "")
+	cmd.Flags().BoolP("watch", "w", false, "")
+	cmd.Flags().StringP("file", "f", "", "")
+	cmd.Flags().StringP("log", "l", "", "")
+	cmd.Flags().DurationP("timeout", "t", 0, "")
+	cmd.Flags().Duration("delay", 0, "")
+	cmd.Flags().String("deadline", "", "")
+	cmd.Flags().String("start", "", "")
+	cmd.Flags().DurationP("interval", "i", 0, "")
 
 	cmd.SetUsageTemplate(usageTemplate)
 
@@ -130,19 +134,16 @@ func run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 		return err
 	}
 
+	logger, err := Build(cmd, e)
+	if err != nil {
+		return err
+	}
+
 	clientEngine := &engine.Engine{
 		Elk: e,
 		Executer: engine.DefaultExecuter{
-			Logger: &engine.DefaultLogger,
+			Logger: logger,
 		},
-		Build: func() error {
-			return Build(cmd, e)
-		},
-	}
-
-	err = clientEngine.Build()
-	if err != nil {
-		return err
 	}
 
 	for name, task := range e.Tasks {

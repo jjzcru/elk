@@ -9,7 +9,7 @@ instead of remembering to perform tedious tasks.
 Since it's written in [Go][go], most of the commands runs across multiple operating systems (`Linux`, `macOS`, 
 `Windows`) and use the same syntax between them thanks to this [library][sh].
 
-*Why should i use this?* You can watch some [Use Cases]
+*Why should i use this?* You can watch some [Use Cases](#use-cases)
 
 ## Table of contents
   * [Getting Started](#getting-started)
@@ -17,6 +17,7 @@ Since it's written in [Go][go], most of the commands runs across multiple operat
   * [Syntax](#syntax)
   * [Use Cases](#use-cases)
   * [Commands](#commands)
+  * [Roadmap](#roadmap)
   * [Changelog][changelog]
   * [Releases][releases]
 
@@ -80,6 +81,10 @@ To learn about some use cases for `elk` go to [Use Cases][use-cases] to figure o
 | [run][run]        | Run one or more tasks 🤖                               | `elk run [tasks] [flags]`            |
 | [version][version]| Display version number                                 | `elk version [flags]`                |
 
+## Roadmap
+Each release has a particular idea in mind and the tasks inside that release are focusing on that main idea.
+
+To learn more about the progress and what is being planned go to [Projects][projects].
 
 [go]: https://golang.org/
 [yaml]: https://yaml.org/
@@ -87,6 +92,7 @@ To learn about some use cases for `elk` go to [Use Cases][use-cases] to figure o
 
 [releases]: https://github.com/jjzcru/elk/releases
 [changelog]: https://github.com/jjzcru/elk/blob/master/CHANGELOG.md
+[projects]: https://github.com/jjzcru/elk/projects
 
 [syntax]: docs/syntax/syntax.md
 [use-cases]: docs/syntax/use-cases.md

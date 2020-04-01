@@ -2,8 +2,9 @@ package logs
 
 import (
 	"fmt"
-	"github.com/jjzcru/elk/internal/cli/utils"
 	"os"
+
+	"github.com/jjzcru/elk/internal/cli/utils"
 
 	"github.com/jjzcru/elk/pkg/primitives/ox"
 	"github.com/spf13/cobra"
@@ -21,11 +22,11 @@ func validate(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		if len(task.Log) == 0 {
+		if len(task.Log.Out) == 0 {
 			return fmt.Errorf("task '%s' do not have a log file", name)
 		}
 
-		info, err := os.Stat(task.Log)
+		info, err := os.Stat(task.Log.Out)
 		if os.IsNotExist(err) {
 			return err
 		}

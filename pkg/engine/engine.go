@@ -12,7 +12,6 @@ import (
 type Engine struct {
 	Elk      *ox.Elk
 	Executer Executer
-	Build    func() error
 }
 
 // Run task declared in ox.yml file

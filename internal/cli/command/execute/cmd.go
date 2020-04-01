@@ -151,19 +151,16 @@ func Run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 		},
 	}
 
+	logger, err := run.Build(cmd, &elk)
+	if err != nil {
+		return err
+	}
+
 	clientEngine := &engine.Engine{
 		Elk: &elk,
 		Executer: engine.DefaultExecuter{
-			Logger: &engine.DefaultLogger,
+			Logger: logger,
 		},
-		Build: func() error {
-			return run.Build(cmd, &elk)
-		},
-	}
-
-	err = clientEngine.Build()
-	if err != nil {
-		return err
 	}
 
 	for name, task := range elk.Tasks {
