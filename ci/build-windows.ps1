@@ -12,8 +12,6 @@ $NAME = "elk"
 
 cls
 
-# $GOVERSION = "$((go version).Split(' ') | select -index 2)"
-
 echo "BUILT DETAILS"
 echo "VERSION: $VERSION"
 echo "COMMIT: $COMMIT"
@@ -29,7 +27,7 @@ $BIN_PATH = "$BUILD_PATH\$NAME"
 echo "ARCH: $($GOARCH)"
 echo "--------------------------"
 echo "Building $($GOARCH) binary"
-go build -ldflags "-X main.v=$VERSION -X main.o=$GOOS -X main.arch=$GOARCH -X main.commit=$COMMIT -X main.date=$DATE" -o "$BIN_PATH.exe"
+go build -ldflags "-X main.v=$VERSION -X main.o=$GOOS -X main.arch=$GOARCH -X main.commit=$COMMIT -X main.date=$DATE -X main.goVersion=$GOVERSION" -o "$BIN_PATH.exe"
 echo "Build successful"
 
 cd "$BUILD_PATH"
@@ -51,7 +49,7 @@ $BIN_PATH = "$BUILD_PATH\$NAME"
 echo "ARCH: $($GOARCH)"
 echo "--------------------------"
 echo "Building $($GOARCH) binary"
-go build -ldflags "-X main.v=$VERSION -X main.o=$GOOS -X main.arch=$GOARCH -X main.commit=$COMMIT -X main.date=$DATE" -o "$BIN_PATH.exe"
+go build -ldflags "-X main.v=$VERSION -X main.o=$GOOS -X main.arch=$GOARCH -X main.commit=$COMMIT -X main.date=$DATE -X main.goVersion=$GOVERSION" -o "$BIN_PATH.exe"
 echo "Build successful"
 
 cd "$BUILD_PATH"
