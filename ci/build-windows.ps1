@@ -1,6 +1,7 @@
 $DATE = Get-Date -UFormat "%a_%b_%d_%T_%Y"
 $COMMIT = $env:COMMIT
 $VERSION = $env:VERSION
+$GOVERSION = $env:GOVERSION
 
 $BUILD_PATH = "$((Get-Item -Path ".\").FullName)\bin"
 $MODULE_PATH = "$((Get-Item -Path ".\").FullName)\cmd\elk"
@@ -11,7 +12,7 @@ $NAME = "elk"
 
 cls
 
-$GOVERSION = "$((go version).Split(' ') | select -index 2)"
+# $GOVERSION = "$((go version).Split(' ') | select -index 2)"
 
 echo "BUILT DETAILS"
 echo "VERSION: $VERSION"

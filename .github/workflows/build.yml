@@ -114,7 +114,7 @@ jobs:
         run: |
           echo "##[set-output name=commit;]$(git rev-parse --short HEAD)"
           echo "##[set-output name=version;]$(git describe --tags $(git rev-list --tags --max-count=1))"
-          echo "##[set-output name=go_version;]$(go version | awk '{print $3}')"
+          echo "##[set-output name=go_version;]$((go version).Split(' ') | select -index 2)"
 
       - name: Build Binaries
         shell: powershell
