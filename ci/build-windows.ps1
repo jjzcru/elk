@@ -11,6 +11,8 @@ $NAME = "elk"
 
 cls
 
+$GOVERSION = "$((go version).Split(' ') | select -index 2)"
+
 echo "BUILT DETAILS"
 echo "VERSION: $VERSION"
 echo "COMMIT: $COMMIT"
