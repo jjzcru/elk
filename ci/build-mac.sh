@@ -30,6 +30,7 @@ echo "BUILT DETAILS"
 echo "VERSION: $VERSION"
 echo "COMMIT: $COMMIT"
 echo "DATE: $DATE"
+echo "GO VERSION: $GOVERSION"
 
 # Build for amd64
 GOARCH=amd64

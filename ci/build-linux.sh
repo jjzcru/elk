@@ -20,6 +20,7 @@ echo "BUILT DETAILS"
 echo "VERSION: $VERSION"
 echo "COMMIT: $COMMIT"
 echo "DATE: $DATE"
+echo "GO VERSION: $GOVERSION"
 
 for key in "${!platforms[@]}"; do
     GOOS=${key::-2}
