@@ -24,7 +24,9 @@ elk run foo -e FOO=BAR --env HELLO=WORLD
 elk run foo -v FOO=BAR --var HELLO=WORLD
 elk run foo -l ./foo.log -d
 elk run foo --ignore-log-file
+elk run foo --ignore-log-format
 elk run foo --ignore-error
+elk run foo --ignore-deps
 elk run foo --deadline 09:41AM
 elk run foo --start 09:41PM
 elk run foo -i 2s
@@ -33,23 +35,25 @@ elk run foo --interval 2s
 
 ## Flags
 
-| Flag                                  | Short code | Description                                       | 
-| -------                               | ------     | -------                                           | 
-| [detached](#detached)                 | d          | Run the task in detached mode and returns the PGID|
-| [env](#env)                           | e          | Set `env` variable to the task/s                  |
-| [var](#var)                           | v          | Set `var` variable to the task/s                  |
-| [file](#file)                         | f          | Run task from a file                              |
-| [global](#global)                     | g          | Run task from global file                         |
-| [help](#help)                         | h          | Help for run                                      |
-| [ignore-log-file](#ignore-log-file)   |            | Ignores task log property                         |
-| [ignore-error](#ignore-error)         |            | Ignore errors from task                           |
-| [delay](#delay)                       |            | Set a delay to a task                             |
-| [log](#log)                           | l          | Log output from a task to a file                  |
-| [watch](#watch)                       | w          | Enable watch mode                                 |
-| [timeout](#timeout)                   | t          | Set a timeout to a task                           |
-| [deadline](#deadline)                 |            | Set a deadline to a task                          |
-| [start](#start)                       |            | Set a date/datetime to a task                     |
-| [interval](#interval)                 | i          | Set a duration for an interval                    | 
+| Flag                                      | Short code | Description                                       | 
+| -------                                   | ------     | -------                                           | 
+| [detached](#detached)                     | d          | Run the task in detached mode and returns the PGID|
+| [env](#env)                               | e          | Set `env` variable to the task/s                  |
+| [var](#var)                               | v          | Set `var` variable to the task/s                  |
+| [file](#file)                             | f          | Run task from a file                              |
+| [global](#global)                         | g          | Run task from global file                         |
+| [help](#help)                             | h          | Help for run                                      |
+| [ignore-log-file](#ignore-log-file)       |            | Ignores task log property                         |
+| [ignore-log-format](#ignore-log-format)   |            | Ignores format value in log                       |
+| [ignore-error](#ignore-error)             |            | Ignore errors from task                           |
+| [ignore-deps](#ignore-deps)               |            | Ignore task dependencies                          |
+| [delay](#delay)                           |            | Set a delay to a task                             |
+| [log](#log)                               | l          | Log output from a task to a file                  |
+| [watch](#watch)                           | w          | Enable watch mode                                 |
+| [timeout](#timeout)                       | t          | Set a timeout to a task                           |
+| [deadline](#deadline)                     |            | Set a deadline to a task                          |
+| [start](#start)                           |            | Set a date/datetime to a task                     |
+| [interval](#interval)                     | i          | Set a duration for an interval                    | 
 
 ### detached
 
@@ -112,6 +116,16 @@ Example:
 elk run test --ignore-log-file
 ```
 
+### ignore-log-format
+
+Ignores the `timestamp` format set in `log` property.
+
+Example:
+
+```
+elk run test --ignore-log-format
+```
+
 ### ignore-error
 
 Ignore errors that happened during a `task`.
@@ -120,6 +134,16 @@ Example:
 
 ```
 elk run test --ignore-error
+```
+
+### ignore-deps
+
+Ignore `deps` properties from the `task`.
+
+Example:
+
+```
+elk run test --ignore-deps
 ```
 
 ### delay
