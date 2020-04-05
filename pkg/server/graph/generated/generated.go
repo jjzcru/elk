@@ -63,7 +63,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		Run func(childComplexity int, tasks []string, detached *bool) int
+		Run func(childComplexity int, tasks []string, properties *model.TaskProperties) int
 	}
 
 	Output struct {
@@ -94,7 +94,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	Run(ctx context.Context, tasks []string, detached *bool) ([]*model.Output, error)
+	Run(ctx context.Context, tasks []string, properties *model.TaskProperties) ([]*model.Output, error)
 }
 type QueryResolver interface {
 	Elk(ctx context.Context) (*model.Elk, error)
@@ -197,7 +197,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.Run(childComplexity, args["tasks"].([]string), args["detached"].(*bool)), true
+		return e.complexity.Mutation.Run(childComplexity, args["tasks"].([]string), args["properties"].(*model.TaskProperties)), true
 
 	case "Output.error":
 		if e.complexity.Output.Error == nil {
@@ -431,9 +431,17 @@ type Query {
   task(name: String!): Task
 }
 
-type Mutation {
-  run(tasks: [String!]!, detached: Boolean): [Output]
+input TaskProperties {
+  vars: Map
+  env: Map
+  ignore_error: Boolean
 }
+
+type Mutation {
+  run(tasks: [String!]!, properties: TaskProperties): [Output]
+}
+
+
 
 type Output {
   task: String!
@@ -458,14 +466,14 @@ func (ec *executionContext) field_Mutation_run_args(ctx context.Context, rawArgs
 		}
 	}
 	args["tasks"] = arg0
-	var arg1 *bool
-	if tmp, ok := rawArgs["detached"]; ok {
-		arg1, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+	var arg1 *model.TaskProperties
+	if tmp, ok := rawArgs["properties"]; ok {
+		arg1, err = ec.unmarshalOTaskProperties2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskProperties(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["detached"] = arg1
+	args["properties"] = arg1
 	return args, nil
 }
 
@@ -891,7 +899,7 @@ func (ec *executionContext) _Mutation_run(ctx context.Context, field graphql.Col
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Run(rctx, args["tasks"].([]string), args["detached"].(*bool))
+		return ec.resolvers.Mutation().Run(rctx, args["tasks"].([]string), args["properties"].(*model.TaskProperties))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2599,6 +2607,36 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputTaskProperties(ctx context.Context, obj interface{}) (model.TaskProperties, error) {
+	var it model.TaskProperties
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "vars":
+			var err error
+			it.Vars, err = ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "env":
+			var err error
+			it.Env, err = ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "ignore_error":
+			var err error
+			it.IgnoreError, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -3703,6 +3741,18 @@ func (ec *executionContext) marshalOTask2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋ
 		return graphql.Null
 	}
 	return ec._Task(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOTaskProperties2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskProperties(ctx context.Context, v interface{}) (model.TaskProperties, error) {
+	return ec.unmarshalInputTaskProperties(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOTaskProperties2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskProperties(ctx context.Context, v interface{}) (*model.TaskProperties, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOTaskProperties2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskProperties(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

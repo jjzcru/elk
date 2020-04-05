@@ -40,3 +40,9 @@ type Task struct {
 	Deps        []*Dep                 `json:"deps"`
 	IgnoreError bool                   `json:"ignore_error"`
 }
+
+type TaskProperties struct {
+	Vars        map[string]interface{} `json:"vars"`
+	Env         map[string]interface{} `json:"env"`
+	IgnoreError *bool                  `json:"ignore_error"`
+}

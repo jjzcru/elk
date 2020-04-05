@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"sync"
 
@@ -14,23 +15,77 @@ import (
 	"github.com/jjzcru/elk/pkg/utils"
 )
 
-func (r *mutationResolver) Run(ctx context.Context, tasks []string, detached *bool) ([]*model.Output, error) {
+func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *model.TaskProperties) ([]*model.Output, error) {
 	elk, err := utils.GetElk(os.Getenv("ELK_FILE"), true)
 	if err != nil {
 		return nil, err
 	}
 
-	ouputs := make(map[string]model.Output)
-
+	outputs := make(map[string]model.Output)
 	for _, task := range tasks {
-		ouputs[task] = model.Output{
+		outputs[task] = model.Output{
 			Task:  task,
 			Out:   []string{},
 			Error: []string{},
 		}
 	}
 
-	logger, outChan, errTaskChan := GraphQLLogger(tasks)
+	logger, outChan, errTaskChan, err := GraphQLLogger(elk.Tasks)
+	if err != nil {
+		return nil, err
+	}
+
+	for name, task := range elk.Tasks {
+		for k, v := range properties.Vars {
+			switch v.(type) {
+			case string:
+				if task.Vars == nil {
+					task.Vars = make(map[string]string)
+				}
+				task.Vars[k] = fmt.Sprintf("%v", v)
+			}
+		}
+
+		for k, v := range properties.Env {
+			switch v.(type) {
+			case string:
+				if task.Env == nil {
+					task.Env = make(map[string]string)
+				}
+				task.Env[k] = fmt.Sprintf("%v", v)
+			}
+		}
+
+		task.IgnoreError = *properties.IgnoreError
+
+		elk.Tasks[name] = task
+	}
+
+	for name, task := range elk.Tasks {
+		for k, v := range properties.Vars {
+			switch v.(type) {
+			case string:
+				if task.Vars == nil {
+					task.Vars = make(map[string]string)
+				}
+				task.Vars[k] = fmt.Sprintf("%v", v)
+			}
+		}
+
+		for k, v := range properties.Env {
+			switch v.(type) {
+			case string:
+				if task.Env == nil {
+					task.Env = make(map[string]string)
+				}
+				task.Env[k] = fmt.Sprintf("%v", v)
+			}
+		}
+
+		task.IgnoreError = *properties.IgnoreError
+
+		elk.Tasks[name] = task
+	}
 
 	errChan := make(chan error)
 
@@ -62,9 +117,9 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, detached *bo
 			} else {
 				for taskName, value := range out {
 					if len(value) > 1 {
-						output := ouputs[taskName]
+						output := outputs[taskName]
 						output.Out = append(output.Out, value)
-						ouputs[taskName] = output
+						outputs[taskName] = output
 					}
 				}
 			}
@@ -74,9 +129,9 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, detached *bo
 			} else {
 				for taskName, value := range err {
 					if len(value) > 1 {
-						output := ouputs[taskName]
+						output := outputs[taskName]
 						output.Error = append(output.Error, value)
-						ouputs[taskName] = output
+						outputs[taskName] = output
 					}
 				}
 			}
@@ -95,15 +150,15 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, detached *bo
 
 	var response []*model.Output
 
-	for task := range ouputs {
-		resp := ouputs[task]
+	for task := range outputs {
+		resp := outputs[task]
 		response = append(response, &resp)
 	}
 
 	return response, nil
 }
 
-func (r *queryResolver) Elk(ctx context.Context) (*model.Elk, error) {
+func (r *queryResolver) Elk(_ context.Context) (*model.Elk, error) {
 	elk, err := utils.GetElk(os.Getenv("ELK_FILE"), true)
 	if err != nil {
 		return nil, err
@@ -117,7 +172,7 @@ func (r *queryResolver) Elk(ctx context.Context) (*model.Elk, error) {
 	return elkModel, nil
 }
 
-func (r *queryResolver) Tasks(ctx context.Context) ([]*model.Task, error) {
+func (r *queryResolver) Tasks(_ context.Context) ([]*model.Task, error) {
 	elk, err := utils.GetElk(os.Getenv("ELK_FILE"), true)
 	if err != nil {
 		return nil, err
@@ -131,7 +186,7 @@ func (r *queryResolver) Tasks(ctx context.Context) ([]*model.Task, error) {
 	return elkModel.Tasks, nil
 }
 
-func (r *queryResolver) Task(ctx context.Context, name string) (*model.Task, error) {
+func (r *queryResolver) Task(_ context.Context, name string) (*model.Task, error) {
 	return getTask(name)
 }
 

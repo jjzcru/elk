@@ -42,9 +42,17 @@ type Query {
   task(name: String!): Task
 }
 
-type Mutation {
-  run(tasks: [String!]!, detached: Boolean): [Output]
+input TaskProperties {
+  vars: Map
+  env: Map
+  ignore_error: Boolean
 }
+
+type Mutation {
+  run(tasks: [String!]!, properties: TaskProperties): [Output]
+}
+
+
 
 type Output {
   task: String!
