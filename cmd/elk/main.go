@@ -6,7 +6,7 @@ import (
 	"github.com/jjzcru/elk/internal/cli/command"
 
 	"github.com/jjzcru/elk/internal/cli/command/version"
-	"github.com/jjzcru/elk/internal/cli/utils"
+	"github.com/jjzcru/elk/pkg/utils"
 )
 
 var v = ""

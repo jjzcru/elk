@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"syscall"
 
-	"github.com/jjzcru/elk/internal/cli/utils"
+	"github.com/jjzcru/elk/pkg/utils"
 )
 
 // Detached runs ox in detached mode

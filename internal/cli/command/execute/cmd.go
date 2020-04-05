@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/jjzcru/elk/internal/cli/command/run"
-	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/engine"
 	"github.com/jjzcru/elk/pkg/primitives/ox"
+	"github.com/jjzcru/elk/pkg/utils"
 	"github.com/spf13/cobra"
 )
 

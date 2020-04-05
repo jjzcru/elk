@@ -7,8 +7,8 @@ import (
 	"text/template"
 
 	"github.com/jjzcru/elk/internal/cli/templates"
-	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/primitives/ox"
+	"github.com/jjzcru/elk/pkg/utils"
 	"gopkg.in/yaml.v2"
 
 	"github.com/spf13/cobra"

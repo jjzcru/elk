@@ -1,0 +1,42 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+scalar Map
+
+type Elk {
+  version: String!
+  ignore_error: Boolean!
+  env: Map
+  vars: Map
+  tasks: [Task]!
+}
+
+type Task {
+  name: String!
+  cmds: [String]!
+  env: Map
+  vars: Map
+  env_file: String!
+  description: String!
+  dir: String!
+  log: Log
+  sources: String
+  deps: [Dep]!
+  ignore_error: Boolean!
+}
+
+type Dep {
+  name: String!
+  detached: Boolean!
+}
+
+type Log {
+  out: String!
+  format: String!
+  error: String!
+}
+
+type Query {
+  elk: Elk!
+  task(name: String): Task
+}

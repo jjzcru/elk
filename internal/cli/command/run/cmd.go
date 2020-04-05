@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jjzcru/elk/internal/cli/utils"
+	"github.com/jjzcru/elk/pkg/utils"
 
 	"github.com/jjzcru/elk/pkg/engine"
 

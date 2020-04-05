@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/file"
+	"github.com/jjzcru/elk/pkg/utils"
 	"github.com/logrusorgru/aurora"
 	"github.com/spf13/cobra"
 )
