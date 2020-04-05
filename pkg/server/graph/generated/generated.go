@@ -73,8 +73,9 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Elk  func(childComplexity int) int
-		Task func(childComplexity int, name string) int
+		Elk   func(childComplexity int) int
+		Task  func(childComplexity int, name string) int
+		Tasks func(childComplexity int) int
 	}
 
 	Task struct {
@@ -97,6 +98,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	Elk(ctx context.Context) (*model.Elk, error)
+	Tasks(ctx context.Context) ([]*model.Task, error)
 	Task(ctx context.Context, name string) (*model.Task, error)
 }
 
@@ -236,6 +238,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Task(childComplexity, args["name"].(string)), true
+
+	case "Query.tasks":
+		if e.complexity.Query.Tasks == nil {
+			break
+		}
+
+		return e.complexity.Query.Tasks(childComplexity), true
 
 	case "Task.cmds":
 		if e.complexity.Task.Cmds == nil {
@@ -418,6 +427,7 @@ type Log {
 
 type Query {
   elk: Elk!
+  tasks: [Task]!
   task(name: String!): Task
 }
 
@@ -1029,6 +1039,40 @@ func (ec *executionContext) _Query_elk(ctx context.Context, field graphql.Collec
 	res := resTmp.(*model.Elk)
 	fc.Result = res
 	return ec.marshalNElk2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐElk(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_tasks(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Tasks(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Task)
+	fc.Result = res
+	return ec.marshalNTask2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTask(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_task(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2762,6 +2806,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_elk(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "tasks":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tasks(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

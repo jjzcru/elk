@@ -117,6 +117,20 @@ func (r *queryResolver) Elk(ctx context.Context) (*model.Elk, error) {
 	return elkModel, nil
 }
 
+func (r *queryResolver) Tasks(ctx context.Context) ([]*model.Task, error) {
+	elk, err := utils.GetElk(os.Getenv("ELK_FILE"), true)
+	if err != nil {
+		return nil, err
+	}
+
+	elkModel, err := mapElk(elk)
+	if err != nil {
+		return nil, err
+	}
+
+	return elkModel.Tasks, nil
+}
+
 func (r *queryResolver) Task(ctx context.Context, name string) (*model.Task, error) {
 	return getTask(name)
 }
@@ -130,6 +144,12 @@ func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
 func TaskWG(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, errChan chan error) {
 	if wg != nil {
 		defer wg.Done()

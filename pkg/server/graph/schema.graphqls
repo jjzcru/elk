@@ -38,6 +38,7 @@ type Log {
 
 type Query {
   elk: Elk!
+  tasks: [Task]!
   task(name: String!): Task
 }
 
