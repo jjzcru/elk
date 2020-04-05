@@ -21,6 +21,11 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *
 		return nil, err
 	}
 
+	err = elk.Build()
+	if err != nil {
+		return nil, err
+	}
+
 	outputs := make(map[string]model.Output)
 	for _, task := range tasks {
 		outputs[task] = model.Output{
@@ -205,13 +210,3 @@ type queryResolver struct{ *Resolver }
 //  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
 //    it when you're done.
 //  - You have helper methods in this file. Move them out to keep these resolver files clean.
-func TaskWG(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, errChan chan error) {
-	if wg != nil {
-		defer wg.Done()
-	}
-
-	err := cliEngine.Run(ctx, task)
-	if err != nil {
-		errChan <- err
-	}
-}

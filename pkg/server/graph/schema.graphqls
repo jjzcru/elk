@@ -4,58 +4,58 @@
 scalar Map
 
 type Elk {
-  version: String!
-  env: Map
-  env_file: String!
-  vars: Map
-  tasks: [Task]!
+    version: String!
+    env: Map
+    env_file: String!
+    vars: Map
+    tasks: [Task]!
 }
 
 type Task {
-  name: String!
-  cmds: [String]!
-  env: Map
-  vars: Map
-  env_file: String!
-  description: String!
-  dir: String!
-  log: Log
-  sources: String
-  deps: [Dep]!
-  ignore_error: Boolean!
+    name: String!
+    cmds: [String]!
+    env: Map
+    vars: Map
+    env_file: String!
+    description: String!
+    dir: String!
+    log: Log
+    sources: String
+    deps: [Dep]!
+    ignore_error: Boolean!
 }
 
 type Dep {
-  name: String!
-  detached: Boolean!
+    name: String!
+    detached: Boolean!
 }
 
 type Log {
-  out: String!
-  format: String!
-  error: String!
+    out: String!
+    format: String!
+    error: String!
 }
 
 type Query {
-  elk: Elk!
-  tasks: [Task]!
-  task(name: String!): Task
+    elk: Elk!
+    tasks: [Task]!
+    task(name: String!): Task
 }
 
 input TaskProperties {
-  vars: Map
-  env: Map
-  ignore_error: Boolean
+    vars: Map
+    env: Map
+    ignore_error: Boolean
 }
 
 type Mutation {
-  run(tasks: [String!]!, properties: TaskProperties): [Output]
+    run(tasks: [String!]!, properties: TaskProperties): [Output]
 }
 
 
 
 type Output {
-  task: String!
-  out: [String!]!
-  error: [String!]!
+    task: String!
+    out: [String!]!
+    error: [String!]!
 }

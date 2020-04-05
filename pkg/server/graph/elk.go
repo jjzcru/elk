@@ -1,9 +1,12 @@
 package graph
 
 import (
+	"context"
+	"github.com/jjzcru/elk/pkg/engine"
 	"github.com/jjzcru/elk/pkg/server/graph/model"
 	"github.com/jjzcru/elk/pkg/utils"
 	"os"
+	"sync"
 )
 
 func getTask(name string) (*model.Task, error) {
@@ -26,4 +29,15 @@ func getTask(name string) (*model.Task, error) {
 	}
 
 	return task, nil
+}
+
+func TaskWG(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, errChan chan error) {
+	if wg != nil {
+		defer wg.Done()
+	}
+
+	err := cliEngine.Run(ctx, task)
+	if err != nil {
+		errChan <- err
+	}
 }

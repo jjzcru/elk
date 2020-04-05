@@ -1,12 +1,13 @@
 package server
 
 import (
+	"log"
+	"net/http"
+
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/jjzcru/elk/pkg/server/graph"
 	"github.com/jjzcru/elk/pkg/server/graph/generated"
-	"log"
-	"net/http"
 )
 
 const defaultPort = "8080"
