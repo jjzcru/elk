@@ -7,11 +7,10 @@ import (
 
 func mapElk(elk *ox.Elk) (*model.Elk, error) {
 	elkModel := model.Elk{
-		Version:     elk.Version,
-		IgnoreError: false,
-		Env:         map[string]interface{}{},
-		Vars:        map[string]interface{}{},
-		Tasks:       []*model.Task{},
+		Version: elk.Version,
+		Env:     map[string]interface{}{},
+		Vars:    map[string]interface{}{},
+		Tasks:   []*model.Task{},
 	}
 
 	for k, v := range elk.Env {
@@ -42,9 +41,13 @@ func mapTask(task ox.Task) (*model.Task, error) {
 		EnvFile:     task.EnvFile,
 		Description: task.Description,
 		Dir:         task.Dir,
-		Log:         nil,
+		Log: &(model.Log{
+			Out:    task.Log.Out,
+			Format: task.Log.Format,
+			Error:  task.Log.Err,
+		}),
 		Sources:     &task.Sources,
-		Deps:        nil,
+		Deps:        []*model.Dep{},
 		IgnoreError: task.IgnoreError,
 	}
 
@@ -60,5 +63,18 @@ func mapTask(task ox.Task) (*model.Task, error) {
 		taskModel.Vars[k] = v
 	}
 
+	for _, dep := range task.Deps {
+		taskModel.Deps = append(taskModel.Deps, mapDep(dep))
+	}
+
 	return &taskModel, nil
+}
+
+func mapDep(dep ox.Dep) *model.Dep {
+	depModel := model.Dep{
+		Name:     dep.Name,
+		Detached: dep.Detached,
+	}
+
+	return &depModel
 }

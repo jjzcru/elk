@@ -5,8 +5,8 @@ scalar Map
 
 type Elk {
   version: String!
-  ignore_error: Boolean!
   env: Map
+  env_file: String!
   vars: Map
   tasks: [Task]!
 }
@@ -38,5 +38,9 @@ type Log {
 
 type Query {
   elk: Elk!
-  task(name: String): Task
+  task(name: String!): Task
+}
+
+type Mutation {
+  run(task: String!, detached: Boolean): [String]
 }

@@ -35,6 +35,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Mutation() MutationResolver
 	Query() QueryResolver
 }
 
@@ -48,11 +49,11 @@ type ComplexityRoot struct {
 	}
 
 	Elk struct {
-		Env         func(childComplexity int) int
-		IgnoreError func(childComplexity int) int
-		Tasks       func(childComplexity int) int
-		Vars        func(childComplexity int) int
-		Version     func(childComplexity int) int
+		Env     func(childComplexity int) int
+		EnvFile func(childComplexity int) int
+		Tasks   func(childComplexity int) int
+		Vars    func(childComplexity int) int
+		Version func(childComplexity int) int
 	}
 
 	Log struct {
@@ -61,9 +62,13 @@ type ComplexityRoot struct {
 		Out    func(childComplexity int) int
 	}
 
+	Mutation struct {
+		Run func(childComplexity int, task string, detached *bool) int
+	}
+
 	Query struct {
 		Elk  func(childComplexity int) int
-		Task func(childComplexity int, name *string) int
+		Task func(childComplexity int, name string) int
 	}
 
 	Task struct {
@@ -81,9 +86,12 @@ type ComplexityRoot struct {
 	}
 }
 
+type MutationResolver interface {
+	Run(ctx context.Context, task string, detached *bool) ([]*string, error)
+}
 type QueryResolver interface {
 	Elk(ctx context.Context) (*model.Elk, error)
-	Task(ctx context.Context, name *string) (*model.Task, error)
+	Task(ctx context.Context, name string) (*model.Task, error)
 }
 
 type executableSchema struct {
@@ -122,12 +130,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Elk.Env(childComplexity), true
 
-	case "Elk.ignore_error":
-		if e.complexity.Elk.IgnoreError == nil {
+	case "Elk.env_file":
+		if e.complexity.Elk.EnvFile == nil {
 			break
 		}
 
-		return e.complexity.Elk.IgnoreError(childComplexity), true
+		return e.complexity.Elk.EnvFile(childComplexity), true
 
 	case "Elk.tasks":
 		if e.complexity.Elk.Tasks == nil {
@@ -171,6 +179,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Log.Out(childComplexity), true
 
+	case "Mutation.run":
+		if e.complexity.Mutation.Run == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_run_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Run(childComplexity, args["task"].(string), args["detached"].(*bool)), true
+
 	case "Query.elk":
 		if e.complexity.Query.Elk == nil {
 			break
@@ -188,7 +208,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Task(childComplexity, args["name"].(*string)), true
+		return e.complexity.Query.Task(childComplexity, args["name"].(string)), true
 
 	case "Task.cmds":
 		if e.complexity.Task.Cmds == nil {
@@ -291,6 +311,20 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 				Data: buf.Bytes(),
 			}
 		}
+	case ast.Mutation:
+		return func(ctx context.Context) *graphql.Response {
+			if !first {
+				return nil
+			}
+			first = false
+			data := ec._Mutation(ctx, rc.Operation.SelectionSet)
+			var buf bytes.Buffer
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
+		}
 
 	default:
 		return graphql.OneShot(graphql.ErrorResponse(ctx, "unsupported GraphQL operation"))
@@ -324,8 +358,8 @@ scalar Map
 
 type Elk {
   version: String!
-  ignore_error: Boolean!
   env: Map
+  env_file: String!
   vars: Map
   tasks: [Task]!
 }
@@ -357,7 +391,11 @@ type Log {
 
 type Query {
   elk: Elk!
-  task(name: String): Task
+  task(name: String!): Task
+}
+
+type Mutation {
+  run(task: String!, detached: Boolean): [String]
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -365,6 +403,28 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_run_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["task"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["task"] = arg0
+	var arg1 *bool
+	if tmp, ok := rawArgs["detached"]; ok {
+		arg1, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["detached"] = arg1
+	return args, nil
+}
 
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -383,9 +443,9 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 func (ec *executionContext) field_Query_task_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *string
+	var arg0 string
 	if tmp, ok := rawArgs["name"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -532,40 +592,6 @@ func (ec *executionContext) _Elk_version(ctx context.Context, field graphql.Coll
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Elk_ignore_error(ctx context.Context, field graphql.CollectedField, obj *model.Elk) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Elk",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IgnoreError, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Elk_env(ctx context.Context, field graphql.CollectedField, obj *model.Elk) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -595,6 +621,40 @@ func (ec *executionContext) _Elk_env(ctx context.Context, field graphql.Collecte
 	res := resTmp.(map[string]interface{})
 	fc.Result = res
 	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Elk_env_file(ctx context.Context, field graphql.CollectedField, obj *model.Elk) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Elk",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EnvFile, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Elk_vars(ctx context.Context, field graphql.CollectedField, obj *model.Elk) (ret graphql.Marshaler) {
@@ -764,6 +824,44 @@ func (ec *executionContext) _Log_error(ctx context.Context, field graphql.Collec
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_run(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_run_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Run(rctx, args["task"].(string), args["detached"].(*bool))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*string)
+	fc.Result = res
+	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_elk(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -822,7 +920,7 @@ func (ec *executionContext) _Query_task(ctx context.Context, field graphql.Colle
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Task(rctx, args["name"].(*string))
+		return ec.resolvers.Query().Task(rctx, args["name"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2378,13 +2476,13 @@ func (ec *executionContext) _Elk(ctx context.Context, sel ast.SelectionSet, obj 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "ignore_error":
-			out.Values[i] = ec._Elk_ignore_error(ctx, field, obj)
+		case "env":
+			out.Values[i] = ec._Elk_env(ctx, field, obj)
+		case "env_file":
+			out.Values[i] = ec._Elk_env_file(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "env":
-			out.Values[i] = ec._Elk_env(ctx, field, obj)
 		case "vars":
 			out.Values[i] = ec._Elk_vars(ctx, field, obj)
 		case "tasks":
@@ -2429,6 +2527,34 @@ func (ec *executionContext) _Log(ctx context.Context, sel ast.SelectionSet, obj 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var mutationImplementors = []string{"Mutation"}
+
+func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mutationImplementors)
+
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Mutation",
+	})
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Mutation")
+		case "run":
+			out.Values[i] = ec._Mutation_run(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3241,6 +3367,38 @@ func (ec *executionContext) unmarshalOString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	return graphql.MarshalString(v)
+}
+
+func (ec *executionContext) unmarshalOString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

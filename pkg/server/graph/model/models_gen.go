@@ -8,11 +8,11 @@ type Dep struct {
 }
 
 type Elk struct {
-	Version     string                 `json:"version"`
-	IgnoreError bool                   `json:"ignore_error"`
-	Env         map[string]interface{} `json:"env"`
-	Vars        map[string]interface{} `json:"vars"`
-	Tasks       []*Task                `json:"tasks"`
+	Version string                 `json:"version"`
+	Env     map[string]interface{} `json:"env"`
+	EnvFile string                 `json:"env_file"`
+	Vars    map[string]interface{} `json:"vars"`
+	Tasks   []*Task                `json:"tasks"`
 }
 
 type Log struct {
