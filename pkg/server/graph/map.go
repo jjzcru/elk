@@ -51,7 +51,8 @@ func mapTask(task ox.Task) (*model.Task, error) {
 		IgnoreError: task.IgnoreError,
 	}
 
-	for _, cmd := range task.Cmds {
+	for i := range task.Cmds {
+		cmd := task.Cmds[i]
 		taskModel.Cmds = append(taskModel.Cmds, &cmd)
 	}
 

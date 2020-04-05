@@ -21,6 +21,12 @@ type Log struct {
 	Error  string `json:"error"`
 }
 
+type Output struct {
+	Task  string   `json:"task"`
+	Out   []string `json:"out"`
+	Error []string `json:"error"`
+}
+
 type Task struct {
 	Name        string                 `json:"name"`
 	Cmds        []*string              `json:"cmds"`

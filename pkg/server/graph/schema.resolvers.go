@@ -5,72 +5,99 @@ package graph
 
 import (
 	"context"
-	"fmt"
-	"github.com/jjzcru/elk/pkg/engine"
 	"os"
+	"sync"
 
+	"github.com/jjzcru/elk/pkg/engine"
 	"github.com/jjzcru/elk/pkg/server/graph/generated"
 	"github.com/jjzcru/elk/pkg/server/graph/model"
 	"github.com/jjzcru/elk/pkg/utils"
 )
 
-func (r *mutationResolver) Run(ctx context.Context, task string, detached *bool) ([]*string, error) {
+func (r *mutationResolver) Run(ctx context.Context, tasks []string, detached *bool) ([]*model.Output, error) {
 	elk, err := utils.GetElk(os.Getenv("ELK_FILE"), true)
 	if err != nil {
 		return nil, err
 	}
 
-	logger, outChan, errChan := GraphQLLogger()
+	ouputs := make(map[string]model.Output)
 
-	taskModel, err := getTask(task)
-	if err != nil {
-		return nil, err
+	for _, task := range tasks {
+		ouputs[task] = model.Output{
+			Task:  task,
+			Out:   []string{},
+			Error: []string{},
+		}
 	}
 
-	if taskModel == nil {
-		return nil, nil
-	}
+	logger, outChan, errTaskChan := GraphQLLogger(tasks)
+
+	errChan := make(chan error)
 
 	clientEngine := &engine.Engine{
 		Elk: elk,
 		Executer: engine.DefaultExecuter{
-			Logger: map[string]engine.Logger{
-				task: logger,
-			},
+			Logger: logger,
 		},
 	}
 
 	go func() {
-		err = clientEngine.Run(ctx, task)
-		if err != nil {
-			errChan <- err.Error()
+		var wg sync.WaitGroup
+		for _, task := range tasks {
+			wg.Add(1)
+			go TaskWG(ctx, clientEngine, task, &wg, errChan)
 		}
+
+		wg.Wait()
 		close(outChan)
+		close(errTaskChan)
 		close(errChan)
 	}()
 
-	var response []*string
 	for {
 		select {
 		case out, ok := <-outChan:
-			if len(out) > 1 {
-				response = append(response, &out)
-			}
-
 			if !ok {
 				outChan = nil
+			} else {
+				for taskName, value := range out {
+					if len(value) > 1 {
+						output := ouputs[taskName]
+						output.Out = append(output.Out, value)
+						ouputs[taskName] = output
+					}
+				}
+			}
+		case err, ok := <-errTaskChan:
+			if !ok {
+				errTaskChan = nil
+			} else {
+				for taskName, value := range err {
+					if len(value) > 1 {
+						output := ouputs[taskName]
+						output.Error = append(output.Error, value)
+						ouputs[taskName] = output
+					}
+				}
 			}
 		case err, ok := <-errChan:
 			if !ok {
 				errChan = nil
 			} else {
-				return nil, fmt.Errorf(err)
+				return nil, err
 			}
 		}
 
-		if outChan == nil && errChan == nil {
+		if outChan == nil && errTaskChan == nil {
 			break
 		}
+	}
+
+	var response []*model.Output
+
+	for task := range ouputs {
+		resp := ouputs[task]
+		response = append(response, &resp)
 	}
 
 	return response, nil
@@ -102,3 +129,14 @@ func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+func TaskWG(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, errChan chan error) {
+	if wg != nil {
+		defer wg.Done()
+	}
+
+	err := cliEngine.Run(ctx, task)
+	if err != nil {
+		errChan <- err
+	}
+}

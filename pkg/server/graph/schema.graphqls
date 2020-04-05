@@ -42,5 +42,11 @@ type Query {
 }
 
 type Mutation {
-  run(task: String!, detached: Boolean): [String]
+  run(tasks: [String!]!, detached: Boolean): [Output]
+}
+
+type Output {
+  task: String!
+  out: [String!]!
+  error: [String!]!
 }
