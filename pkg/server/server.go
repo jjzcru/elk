@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -25,10 +26,12 @@ func Start(port string) error {
 
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
 
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
+	endpoint := fmt.Sprintf("/%s", "graphql")
 
-	log.Printf("connect to http://localhost:%s/ for GraphQL playground 2", port)
+	http.Handle("/", playground.Handler("GraphQL playground", endpoint))
+	http.Handle(endpoint, srv)
+
+	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 
 	return nil

@@ -5,9 +5,9 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/jjzcru/elk/pkg/engine"
 	"github.com/jjzcru/elk/pkg/server/graph/generated"
@@ -40,59 +40,9 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *
 		return nil, err
 	}
 
-	for name, task := range elk.Tasks {
-		for k, v := range properties.Vars {
-			switch v.(type) {
-			case string:
-				if task.Vars == nil {
-					task.Vars = make(map[string]string)
-				}
-				task.Vars[k] = fmt.Sprintf("%v", v)
-			}
-		}
+	loadTaskProperties(elk, properties)
 
-		for k, v := range properties.Env {
-			switch v.(type) {
-			case string:
-				if task.Env == nil {
-					task.Env = make(map[string]string)
-				}
-				task.Env[k] = fmt.Sprintf("%v", v)
-			}
-		}
-
-		task.IgnoreError = *properties.IgnoreError
-
-		elk.Tasks[name] = task
-	}
-
-	for name, task := range elk.Tasks {
-		for k, v := range properties.Vars {
-			switch v.(type) {
-			case string:
-				if task.Vars == nil {
-					task.Vars = make(map[string]string)
-				}
-				task.Vars[k] = fmt.Sprintf("%v", v)
-			}
-		}
-
-		for k, v := range properties.Env {
-			switch v.(type) {
-			case string:
-				if task.Env == nil {
-					task.Env = make(map[string]string)
-				}
-				task.Env[k] = fmt.Sprintf("%v", v)
-			}
-		}
-
-		task.IgnoreError = *properties.IgnoreError
-
-		elk.Tasks[name] = task
-	}
-
-	errChan := make(chan error)
+	errChan := make(chan map[string]error)
 
 	clientEngine := &engine.Engine{
 		Elk: elk,
@@ -101,7 +51,14 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *
 		},
 	}
 
+	closeChannels := func() {
+		close(outChan)
+		close(errTaskChan)
+		close(errChan)
+	}
+
 	go func() {
+		defer closeChannels()
 		var wg sync.WaitGroup
 		for _, task := range tasks {
 			wg.Add(1)
@@ -109,9 +66,6 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *
 		}
 
 		wg.Wait()
-		close(outChan)
-		close(errTaskChan)
-		close(errChan)
 	}()
 
 	for {
@@ -144,7 +98,9 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *
 			if !ok {
 				errChan = nil
 			} else {
-				return nil, err
+				for _, taskError := range err {
+					return nil, taskError
+				}
 			}
 		}
 
@@ -161,6 +117,152 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *
 	}
 
 	return response, nil
+}
+
+func (r *mutationResolver) RunDetached(ctx context.Context, tasks []string, properties *model.TaskProperties) (*model.DetachedTask, error) {
+	ctx = context.Background()
+	id := getDetachedTaskID()
+	elk, err := utils.GetElk(os.Getenv("ELK_FILE"), true)
+	if err != nil {
+		return nil, err
+	}
+
+	loadTaskProperties(elk, properties)
+
+	err = elk.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	outputMap := make(map[string]*model.Output)
+	var outputs []*model.Output
+	for _, task := range tasks {
+		output := model.Output{
+			Task:  task,
+			Out:   []string{},
+			Error: []string{},
+		}
+
+		outputMap[task] = &output
+		outputs = append(outputs, outputMap[task])
+	}
+
+	logger, outChan, errTaskChan, err := GraphQLLogger(elk.Tasks)
+	if err != nil {
+		return nil, err
+	}
+
+	errChan := make(chan map[string]error)
+
+	clientEngine := &engine.Engine{
+		Elk: elk,
+		Executer: engine.DefaultExecuter{
+			Logger: logger,
+		},
+	}
+
+	closeChannels := func() {
+		close(outChan)
+		close(errTaskChan)
+		close(errChan)
+	}
+
+	go func() {
+		defer closeChannels()
+		var wg sync.WaitGroup
+		for _, task := range tasks {
+			wg.Add(1)
+			go TaskWG(ctx, clientEngine, task, &wg, errChan)
+		}
+
+		wg.Wait()
+	}()
+
+	detachedTasks, err := func() ([]*model.Task, error) {
+		var result []*model.Task
+		for _, task := range tasks {
+			taskModel, err := mapTask(elk.Tasks[task])
+			if err != nil {
+				return nil, err
+			}
+			taskModel.Name = task
+			result = append(result, taskModel)
+		}
+
+		return result, nil
+	}()
+	if err != nil {
+		return nil, err
+	}
+
+	response := model.DetachedTask{
+		ID:       id,
+		Tasks:    detachedTasks,
+		Outputs:  outputs,
+		Status:   "running",
+		Duration: 0,
+		StartAt:  time.Now(),
+	}
+
+	detachedTasksMap[id] = &response
+
+	go func() {
+		for {
+			select {
+			case out, ok := <-outChan:
+				if !ok {
+					outChan = nil
+				} else {
+					for taskName, value := range out {
+						if len(value) > 1 {
+							output := outputMap[taskName]
+							output.Out = append(output.Out, value)
+							outputMap[taskName] = output
+						}
+					}
+				}
+			case err, ok := <-errTaskChan:
+				if !ok {
+					errTaskChan = nil
+				} else {
+					for taskName, value := range err {
+						if len(value) > 1 {
+							output := outputMap[taskName]
+							output.Error = append(output.Error, value)
+							outputMap[taskName] = output
+						}
+					}
+				}
+			case err, ok := <-errChan:
+				if !ok {
+					errChan = nil
+				} else {
+					for taskName, taskError := range err {
+						message := taskError.Error()
+						response.Status = "error"
+
+						output := outputMap[taskName]
+						output.Error = append(output.Error, message)
+						outputMap[taskName] = output
+					}
+					break
+				}
+			}
+
+			if outChan == nil && errTaskChan == nil {
+				if response.Status != "error" {
+					response.Status = "success"
+				}
+				endAt := time.Now()
+				response.EndAt = &endAt
+				response.Duration = int(response.EndAt.Sub(response.StartAt) * time.Millisecond)
+				break
+			}
+		}
+	}()
+
+	result := response
+	return &result, nil
 }
 
 func (r *queryResolver) Elk(_ context.Context) (*model.Elk, error) {
@@ -195,6 +297,18 @@ func (r *queryResolver) Task(_ context.Context, name string) (*model.Task, error
 	return getTask(name)
 }
 
+func (r *queryResolver) DetachedTask(_ context.Context, id string) (*model.DetachedTask, error) {
+	return detachedTasksMap[id], nil
+}
+
+func (r *queryResolver) DetachedTasks(_ context.Context) ([]*model.DetachedTask, error) {
+	var detachedTasks []*model.DetachedTask
+	for _, v := range detachedTasksMap {
+		detachedTasks = append(detachedTasks, v)
+	}
+	return detachedTasks, nil
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
@@ -203,10 +317,3 @@ func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.

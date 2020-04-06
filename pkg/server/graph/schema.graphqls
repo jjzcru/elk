@@ -2,6 +2,7 @@
 #
 # https://gqlgen.com/getting-started/
 scalar Map
+scalar Time
 
 type Elk {
     version: String!
@@ -36,10 +37,23 @@ type Log {
     error: String!
 }
 
+type DetachedTask {
+    id: ID!
+    tasks: [Task!]
+    Outputs: [Output!]
+    status: String!
+    startAt: Time!
+    # Amount of time that taked to complete the detached task
+    duration: Int!
+    endAt: Time
+}
+
 type Query {
     elk: Elk!
     tasks: [Task]!
     task(name: String!): Task
+    detachedTask(id: ID!): DetachedTask
+    detachedTasks: [DetachedTask!]!
 }
 
 input TaskProperties {
@@ -50,9 +64,8 @@ input TaskProperties {
 
 type Mutation {
     run(tasks: [String!]!, properties: TaskProperties): [Output]
+    runDetached(tasks: [String!]!, properties: TaskProperties): DetachedTask
 }
-
-
 
 type Output {
     task: String!

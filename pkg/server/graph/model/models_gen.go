@@ -2,9 +2,23 @@
 
 package model
 
+import (
+	"time"
+)
+
 type Dep struct {
 	Name     string `json:"name"`
 	Detached bool   `json:"detached"`
+}
+
+type DetachedTask struct {
+	ID       string     `json:"id"`
+	Tasks    []*Task    `json:"tasks"`
+	Outputs  []*Output  `json:"Outputs"`
+	Status   string     `json:"status"`
+	StartAt  time.Time  `json:"startAt"`
+	Duration int        `json:"duration"`
+	EndAt    *time.Time `json:"endAt"`
 }
 
 type Elk struct {
