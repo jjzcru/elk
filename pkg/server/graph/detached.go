@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"github.com/jjzcru/elk/pkg/server/graph/model"
+	"sync"
 	"time"
 )
 
@@ -13,8 +14,9 @@ type detachedContext struct {
 	cancel context.CancelFunc
 }
 
-var detachedTasksMap = make(map[string]*model.DetachedTask)
-var detachedContextMap = make(map[string]*detachedContext)
+var ServerCtx context.Context
+var DetachedTasksMap = make(map[string]*model.DetachedTask)
+var DetachedCtxMap = make(map[string]*detachedContext)
 
 func getDetachedTaskID() string {
 	hash := md5.New()
@@ -22,10 +24,38 @@ func getDetachedTaskID() string {
 	var id string
 	for {
 		id = hex.EncodeToString(hash.Sum(nil))
-		if _, ok := detachedTasksMap[id]; !ok {
+		if _, ok := DetachedTasksMap[id]; !ok {
 			break
 		}
 	}
 
 	return id
+}
+
+// CancelDetachedTasks call cancel on all the context
+func CancelDetachedTasks() {
+	var wg sync.WaitGroup
+	for k := range DetachedCtxMap {
+		detachedTask := DetachedTasksMap[k]
+		if detachedTask == nil {
+			continue
+		}
+
+		switch detachedTask.Status {
+		case "running":
+			break
+		default:
+			continue
+		}
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			detachedCtx := DetachedCtxMap[k]
+			if detachedCtx != nil {
+				detachedCtx.cancel()
+			}
+		}()
+	}
+	wg.Wait()
 }

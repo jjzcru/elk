@@ -121,7 +121,7 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *
 }
 
 func (r *mutationResolver) RunDetached(ctx context.Context, tasks []string, properties *model.TaskProperties) (*model.DetachedTask, error) {
-	ctx = context.Background()
+	ctx = ServerCtx
 	ctx, cancel := context.WithCancel(ctx)
 	id := getDetachedTaskID()
 	elk, err := utils.GetElk(os.Getenv("ELK_FILE"), true)
@@ -206,14 +206,14 @@ func (r *mutationResolver) RunDetached(ctx context.Context, tasks []string, prop
 		StartAt:  time.Now(),
 	}
 
-	detachedTasksMap[id] = &response
+	DetachedTasksMap[id] = &response
 
 	contextMap := detachedContext{
 		ctx:    ctx,
 		cancel: cancel,
 	}
 
-	detachedContextMap[id] = &contextMap
+	DetachedCtxMap[id] = &contextMap
 
 	go func() {
 		for {
@@ -225,8 +225,10 @@ func (r *mutationResolver) RunDetached(ctx context.Context, tasks []string, prop
 					for taskName, value := range out {
 						if len(value) > 1 {
 							output := outputMap[taskName]
-							output.Out = append(output.Out, value)
-							outputMap[taskName] = output
+							if output != nil {
+								output.Out = append(output.Out, value)
+								outputMap[taskName] = output
+							}
 						}
 					}
 				}
@@ -280,8 +282,8 @@ func (r *mutationResolver) RunDetached(ctx context.Context, tasks []string, prop
 }
 
 func (r *mutationResolver) Kill(_ context.Context, id string) (*model.DetachedTask, error) {
-	if detachedTask, ok := detachedTasksMap[id]; ok {
-		contextMap := detachedContextMap[id]
+	if detachedTask, ok := DetachedTasksMap[id]; ok {
+		contextMap := DetachedCtxMap[id]
 		if contextMap.ctx.Err() != nil {
 			return detachedTask, nil
 		}
@@ -294,7 +296,7 @@ func (r *mutationResolver) Kill(_ context.Context, id string) (*model.DetachedTa
 		detachedTask.Duration = int(duration)
 
 		contextMap.cancel()
-		detachedTasksMap[id] = detachedTask
+		DetachedTasksMap[id] = detachedTask
 		return detachedTask, nil
 	}
 	return nil, nil
@@ -334,12 +336,12 @@ func (r *queryResolver) Task(_ context.Context, name string) (*model.Task, error
 }
 
 func (r *queryResolver) DetachedTask(_ context.Context, id string) (*model.DetachedTask, error) {
-	return detachedTasksMap[id], nil
+	return DetachedTasksMap[id], nil
 }
 
 func (r *queryResolver) DetachedTasks(_ context.Context) ([]*model.DetachedTask, error) {
 	var detachedTasks []*model.DetachedTask
-	for _, v := range detachedTasksMap {
+	for _, v := range DetachedTasksMap {
 		detachedTasks = append(detachedTasks, v)
 	}
 	return detachedTasks, nil

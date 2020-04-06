@@ -1,9 +1,12 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -23,6 +26,19 @@ func Start(port string) error {
 	if err != nil {
 		return err
 	}*/
+
+	graph.ServerCtx = context.Background()
+
+	// Detect an interrupt signal and cancel all the detached tasks
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		select {
+		case <-c:
+			graph.CancelDetachedTasks()
+			os.Exit(1)
+		}
+	}()
 
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
 
