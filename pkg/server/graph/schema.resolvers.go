@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"math"
 	"os"
 	"sync"
 	"time"
@@ -121,6 +122,7 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *
 
 func (r *mutationResolver) RunDetached(ctx context.Context, tasks []string, properties *model.TaskProperties) (*model.DetachedTask, error) {
 	ctx = context.Background()
+	ctx, cancel := context.WithCancel(ctx)
 	id := getDetachedTaskID()
 	elk, err := utils.GetElk(os.Getenv("ELK_FILE"), true)
 	if err != nil {
@@ -206,6 +208,13 @@ func (r *mutationResolver) RunDetached(ctx context.Context, tasks []string, prop
 
 	detachedTasksMap[id] = &response
 
+	contextMap := detachedContext{
+		ctx:    ctx,
+		cancel: cancel,
+	}
+
+	detachedContextMap[id] = &contextMap
+
 	go func() {
 		for {
 			select {
@@ -221,6 +230,11 @@ func (r *mutationResolver) RunDetached(ctx context.Context, tasks []string, prop
 						}
 					}
 				}
+			case <-ctx.Done():
+				outChan = nil
+				errTaskChan = nil
+				response.Status = "killed"
+				break
 			case err, ok := <-errTaskChan:
 				if !ok {
 					errTaskChan = nil
@@ -245,17 +259,17 @@ func (r *mutationResolver) RunDetached(ctx context.Context, tasks []string, prop
 						output.Error = append(output.Error, message)
 						outputMap[taskName] = output
 					}
-					break
 				}
 			}
 
 			if outChan == nil && errTaskChan == nil {
-				if response.Status != "error" {
+				if response.Status == "running" {
 					response.Status = "success"
 				}
 				endAt := time.Now()
 				response.EndAt = &endAt
-				response.Duration = int(response.EndAt.Sub(response.StartAt) * time.Millisecond)
+				duration := float64(response.EndAt.Sub(response.StartAt)*time.Millisecond) / math.Pow(10, 12)
+				response.Duration = int(duration)
 				break
 			}
 		}
@@ -263,6 +277,28 @@ func (r *mutationResolver) RunDetached(ctx context.Context, tasks []string, prop
 
 	result := response
 	return &result, nil
+}
+
+func (r *mutationResolver) Kill(_ context.Context, id string) (*model.DetachedTask, error) {
+	if detachedTask, ok := detachedTasksMap[id]; ok {
+		contextMap := detachedContextMap[id]
+		if contextMap.ctx.Err() != nil {
+			return detachedTask, nil
+		}
+
+		endAt := time.Now()
+		detachedTask.EndAt = &endAt
+		detachedTask.Status = "killed"
+
+		duration := float64(detachedTask.EndAt.Sub(detachedTask.StartAt)*time.Millisecond) / math.Pow(10, 12)
+		detachedTask.Duration = int(duration)
+
+		contextMap.cancel()
+		detachedTasksMap[id] = detachedTask
+		return detachedTask, nil
+	}
+	return nil, nil
+
 }
 
 func (r *queryResolver) Elk(_ context.Context) (*model.Elk, error) {

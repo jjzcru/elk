@@ -1,13 +1,20 @@
 package graph
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"github.com/jjzcru/elk/pkg/server/graph/model"
 	"time"
 )
 
+type detachedContext struct {
+	ctx    context.Context
+	cancel context.CancelFunc
+}
+
 var detachedTasksMap = make(map[string]*model.DetachedTask)
+var detachedContextMap = make(map[string]*detachedContext)
 
 func getDetachedTaskID() string {
 	hash := md5.New()

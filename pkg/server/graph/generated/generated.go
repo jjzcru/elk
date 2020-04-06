@@ -74,6 +74,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		Kill        func(childComplexity int, id string) int
 		Run         func(childComplexity int, tasks []string, properties *model.TaskProperties) int
 		RunDetached func(childComplexity int, tasks []string, properties *model.TaskProperties) int
 	}
@@ -110,6 +111,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	Run(ctx context.Context, tasks []string, properties *model.TaskProperties) ([]*model.Output, error)
 	RunDetached(ctx context.Context, tasks []string, properties *model.TaskProperties) (*model.DetachedTask, error)
+	Kill(ctx context.Context, id string) (*model.DetachedTask, error)
 }
 type QueryResolver interface {
 	Elk(ctx context.Context) (*model.Elk, error)
@@ -252,6 +254,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Log.Out(childComplexity), true
+
+	case "Mutation.kill":
+		if e.complexity.Mutation.Kill == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_kill_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Kill(childComplexity, args["id"].(string)), true
 
 	case "Mutation.run":
 		if e.complexity.Mutation.Run == nil {
@@ -551,6 +565,7 @@ input TaskProperties {
 type Mutation {
     run(tasks: [String!]!, properties: TaskProperties): [Output]
     runDetached(tasks: [String!]!, properties: TaskProperties): DetachedTask
+    kill(id: ID!): DetachedTask
 }
 
 type Output {
@@ -564,6 +579,20 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_kill_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_runDetached_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -1313,6 +1342,44 @@ func (ec *executionContext) _Mutation_runDetached(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().RunDetached(rctx, args["tasks"].([]string), args["properties"].(*model.TaskProperties))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.DetachedTask)
+	fc.Result = res
+	return ec.marshalODetachedTask2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedTask(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_kill(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_kill_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Kill(rctx, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3307,6 +3374,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_run(ctx, field)
 		case "runDetached":
 			out.Values[i] = ec._Mutation_runDetached(ctx, field)
+		case "kill":
+			out.Values[i] = ec._Mutation_kill(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

@@ -65,6 +65,7 @@ input TaskProperties {
 type Mutation {
     run(tasks: [String!]!, properties: TaskProperties): [Output]
     runDetached(tasks: [String!]!, properties: TaskProperties): DetachedTask
+    kill(id: ID!): DetachedTask
 }
 
 type Output {
