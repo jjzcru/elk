@@ -5,6 +5,7 @@ scalar Map
 scalar Time
 scalar Timestamp
 scalar Duration
+scalar FilePath
 
 type Elk {
     version: String!
@@ -61,7 +62,8 @@ type Query {
 input TaskProperties {
     vars: Map
     env: Map
-    ignore_error: Boolean
+    envFile: FilePath!
+    ignoreError: Boolean
 }
 
 input RunConfig {

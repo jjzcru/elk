@@ -23,6 +23,10 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *
 		return nil, err
 	}
 
+	if len(properties.EnvFile) > 0 {
+		elk.EnvFile = properties.EnvFile
+	}
+
 	err = elk.Build()
 	if err != nil {
 		return nil, err

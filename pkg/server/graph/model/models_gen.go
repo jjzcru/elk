@@ -65,5 +65,6 @@ type Task struct {
 type TaskProperties struct {
 	Vars        map[string]interface{} `json:"vars"`
 	Env         map[string]interface{} `json:"env"`
-	IgnoreError *bool                  `json:"ignore_error"`
+	EnvFile     string                 `json:"envFile"`
+	IgnoreError *bool                  `json:"ignoreError"`
 }

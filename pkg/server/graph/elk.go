@@ -67,7 +67,9 @@ func loadTaskProperties(elk *ox.Elk, properties *model.TaskProperties) {
 				}
 			}
 
-			task.IgnoreError = *properties.IgnoreError
+			if properties.IgnoreError != nil {
+				task.IgnoreError = *properties.IgnoreError
+			}
 
 			elk.Tasks[name] = task
 		}

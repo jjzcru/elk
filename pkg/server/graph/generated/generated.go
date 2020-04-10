@@ -506,6 +506,7 @@ scalar Map
 scalar Time
 scalar Timestamp
 scalar Duration
+scalar FilePath
 
 type Elk {
     version: String!
@@ -562,7 +563,8 @@ type Query {
 input TaskProperties {
     vars: Map
     env: Map
-    ignore_error: Boolean
+    envFile: FilePath!
+    ignoreError: Boolean
 }
 
 input RunConfig {
@@ -3231,7 +3233,13 @@ func (ec *executionContext) unmarshalInputTaskProperties(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-		case "ignore_error":
+		case "envFile":
+			var err error
+			it.EnvFile, err = ec.unmarshalNFilePath2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "ignoreError":
 			var err error
 			it.IgnoreError, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -3996,6 +4004,20 @@ func (ec *executionContext) marshalNElk2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋs
 		return graphql.Null
 	}
 	return ec._Elk(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNFilePath2string(ctx context.Context, v interface{}) (string, error) {
+	return graphql.UnmarshalString(v)
+}
+
+func (ec *executionContext) marshalNFilePath2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	res := graphql.MarshalString(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
