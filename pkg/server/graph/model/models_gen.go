@@ -41,6 +41,13 @@ type Output struct {
 	Error []string `json:"error"`
 }
 
+type RunConfig struct {
+	Start    *time.Time     `json:"start"`
+	Deadline *time.Time     `json:"deadline"`
+	Timeout  *time.Duration `json:"timeout"`
+	Delay    *time.Duration `json:"delay"`
+}
+
 type Task struct {
 	Name        string                 `json:"name"`
 	Cmds        []*string              `json:"cmds"`

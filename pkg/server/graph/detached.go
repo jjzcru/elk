@@ -59,3 +59,36 @@ func CancelDetachedTasks() {
 	}
 	wg.Wait()
 }
+
+func delayStart(delay *time.Duration, start *time.Time) {
+	var startDuration time.Duration
+	var delayDuration time.Duration
+	var sleepDuration time.Duration
+
+	if start != nil {
+		now := time.Now()
+		startTime := *start
+
+		startDuration = startTime.Sub(now)
+	}
+
+	if delay != nil {
+		delayDuration = *delay
+	}
+
+	if startDuration > 0 && delayDuration > 0 {
+		if startDuration > delayDuration {
+			sleepDuration = startDuration
+		} else {
+			sleepDuration = delayDuration
+		}
+	} else if startDuration > 0 {
+		sleepDuration = startDuration
+	} else if delayDuration > 0 {
+		sleepDuration = delayDuration
+	}
+
+	if sleepDuration > 0 {
+		time.Sleep(sleepDuration)
+	}
+}

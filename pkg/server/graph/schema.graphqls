@@ -3,6 +3,8 @@
 # https://gqlgen.com/getting-started/
 scalar Map
 scalar Time
+scalar Timestamp
+scalar Duration
 
 type Elk {
     version: String!
@@ -62,9 +64,16 @@ input TaskProperties {
     ignore_error: Boolean
 }
 
+input RunConfig {
+    start: Timestamp
+    deadline: Timestamp
+    timeout: Duration
+    delay: Duration
+}
+
 type Mutation {
     run(tasks: [String!]!, properties: TaskProperties): [Output]
-    runDetached(tasks: [String!]!, properties: TaskProperties): DetachedTask
+    runDetached(tasks: [String!]!, properties: TaskProperties, config: RunConfig): DetachedTask
     kill(id: ID!): DetachedTask
 }
 

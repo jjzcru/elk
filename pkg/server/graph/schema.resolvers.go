@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"os"
 	"sync"
@@ -120,7 +121,7 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *
 	return response, nil
 }
 
-func (r *mutationResolver) RunDetached(ctx context.Context, tasks []string, properties *model.TaskProperties) (*model.DetachedTask, error) {
+func (r *mutationResolver) RunDetached(ctx context.Context, tasks []string, properties *model.TaskProperties, config *model.RunConfig) (*model.DetachedTask, error) {
 	ctx = ServerCtx
 	ctx, cancel := context.WithCancel(ctx)
 	id := getDetachedTaskID()
@@ -129,7 +130,26 @@ func (r *mutationResolver) RunDetached(ctx context.Context, tasks []string, prop
 		return nil, err
 	}
 
+	var start *time.Time
+	var delay *time.Duration
+
 	loadTaskProperties(elk, properties)
+
+	if config != nil {
+		start = config.Start
+		delay = config.Delay
+
+		if config.Timeout != nil {
+			ctx, _ = context.WithTimeout(ctx, *config.Timeout)
+			fmt.Println(config.Delay)
+		}
+
+		if config.Deadline != nil {
+			ctx, _ = context.WithDeadline(ctx, *config.Deadline)
+			fmt.Println(config.Deadline)
+		}
+
+	}
 
 	err = elk.Build()
 	if err != nil {
@@ -172,6 +192,7 @@ func (r *mutationResolver) RunDetached(ctx context.Context, tasks []string, prop
 	go func() {
 		defer closeChannels()
 		var wg sync.WaitGroup
+		delayStart(delay, start)
 		for _, task := range tasks {
 			wg.Add(1)
 			go TaskWG(ctx, clientEngine, task, &wg, errChan)
@@ -281,7 +302,7 @@ func (r *mutationResolver) RunDetached(ctx context.Context, tasks []string, prop
 	return &result, nil
 }
 
-func (r *mutationResolver) Kill(_ context.Context, id string) (*model.DetachedTask, error) {
+func (r *mutationResolver) Kill(ctx context.Context, id string) (*model.DetachedTask, error) {
 	if detachedTask, ok := DetachedTasksMap[id]; ok {
 		contextMap := DetachedCtxMap[id]
 		if contextMap.ctx.Err() != nil {
@@ -300,10 +321,9 @@ func (r *mutationResolver) Kill(_ context.Context, id string) (*model.DetachedTa
 		return detachedTask, nil
 	}
 	return nil, nil
-
 }
 
-func (r *queryResolver) Elk(_ context.Context) (*model.Elk, error) {
+func (r *queryResolver) Elk(ctx context.Context) (*model.Elk, error) {
 	elk, err := utils.GetElk(os.Getenv("ELK_FILE"), true)
 	if err != nil {
 		return nil, err
@@ -317,7 +337,7 @@ func (r *queryResolver) Elk(_ context.Context) (*model.Elk, error) {
 	return elkModel, nil
 }
 
-func (r *queryResolver) Tasks(_ context.Context) ([]*model.Task, error) {
+func (r *queryResolver) Tasks(ctx context.Context) ([]*model.Task, error) {
 	elk, err := utils.GetElk(os.Getenv("ELK_FILE"), true)
 	if err != nil {
 		return nil, err
@@ -331,15 +351,15 @@ func (r *queryResolver) Tasks(_ context.Context) ([]*model.Task, error) {
 	return elkModel.Tasks, nil
 }
 
-func (r *queryResolver) Task(_ context.Context, name string) (*model.Task, error) {
+func (r *queryResolver) Task(ctx context.Context, name string) (*model.Task, error) {
 	return getTask(name)
 }
 
-func (r *queryResolver) DetachedTask(_ context.Context, id string) (*model.DetachedTask, error) {
+func (r *queryResolver) DetachedTask(ctx context.Context, id string) (*model.DetachedTask, error) {
 	return DetachedTasksMap[id], nil
 }
 
-func (r *queryResolver) DetachedTasks(_ context.Context) ([]*model.DetachedTask, error) {
+func (r *queryResolver) DetachedTasks(ctx context.Context) ([]*model.DetachedTask, error) {
 	var detachedTasks []*model.DetachedTask
 	for _, v := range DetachedTasksMap {
 		detachedTasks = append(detachedTasks, v)

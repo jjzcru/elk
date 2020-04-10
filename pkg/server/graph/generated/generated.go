@@ -14,6 +14,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/jjzcru/elk/pkg/server/graph/model"
+	model1 "github.com/jjzcru/elk/pkg/server/graph/scalars/model"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -76,7 +77,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		Kill        func(childComplexity int, id string) int
 		Run         func(childComplexity int, tasks []string, properties *model.TaskProperties) int
-		RunDetached func(childComplexity int, tasks []string, properties *model.TaskProperties) int
+		RunDetached func(childComplexity int, tasks []string, properties *model.TaskProperties, config *model.RunConfig) int
 	}
 
 	Output struct {
@@ -110,7 +111,7 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	Run(ctx context.Context, tasks []string, properties *model.TaskProperties) ([]*model.Output, error)
-	RunDetached(ctx context.Context, tasks []string, properties *model.TaskProperties) (*model.DetachedTask, error)
+	RunDetached(ctx context.Context, tasks []string, properties *model.TaskProperties, config *model.RunConfig) (*model.DetachedTask, error)
 	Kill(ctx context.Context, id string) (*model.DetachedTask, error)
 }
 type QueryResolver interface {
@@ -289,7 +290,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RunDetached(childComplexity, args["tasks"].([]string), args["properties"].(*model.TaskProperties)), true
+		return e.complexity.Mutation.RunDetached(childComplexity, args["tasks"].([]string), args["properties"].(*model.TaskProperties), args["config"].(*model.RunConfig)), true
 
 	case "Output.error":
 		if e.complexity.Output.Error == nil {
@@ -503,6 +504,8 @@ var sources = []*ast.Source{
 # https://gqlgen.com/getting-started/
 scalar Map
 scalar Time
+scalar Timestamp
+scalar Duration
 
 type Elk {
     version: String!
@@ -562,9 +565,16 @@ input TaskProperties {
     ignore_error: Boolean
 }
 
+input RunConfig {
+    start: Timestamp
+    deadline: Timestamp
+    timeout: Duration
+    delay: Duration
+}
+
 type Mutation {
     run(tasks: [String!]!, properties: TaskProperties): [Output]
-    runDetached(tasks: [String!]!, properties: TaskProperties): DetachedTask
+    runDetached(tasks: [String!]!, properties: TaskProperties, config: RunConfig): DetachedTask
     kill(id: ID!): DetachedTask
 }
 
@@ -613,6 +623,14 @@ func (ec *executionContext) field_Mutation_runDetached_args(ctx context.Context,
 		}
 	}
 	args["properties"] = arg1
+	var arg2 *model.RunConfig
+	if tmp, ok := rawArgs["config"]; ok {
+		arg2, err = ec.unmarshalORunConfig2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐRunConfig(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["config"] = arg2
 	return args, nil
 }
 
@@ -1341,7 +1359,7 @@ func (ec *executionContext) _Mutation_runDetached(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().RunDetached(rctx, args["tasks"].([]string), args["properties"].(*model.TaskProperties))
+		return ec.resolvers.Mutation().RunDetached(rctx, args["tasks"].([]string), args["properties"].(*model.TaskProperties), args["config"].(*model.RunConfig))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3159,6 +3177,42 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputRunConfig(ctx context.Context, obj interface{}) (model.RunConfig, error) {
+	var it model.RunConfig
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "start":
+			var err error
+			it.Start, err = ec.unmarshalOTimestamp2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "deadline":
+			var err error
+			it.Deadline, err = ec.unmarshalOTimestamp2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "timeout":
+			var err error
+			it.Timeout, err = ec.unmarshalODuration2ᚖtimeᚐDuration(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "delay":
+			var err error
+			it.Delay, err = ec.unmarshalODuration2ᚖtimeᚐDuration(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputTaskProperties(ctx context.Context, obj interface{}) (model.TaskProperties, error) {
 	var it model.TaskProperties
 	var asMap = obj.(map[string]interface{})
@@ -4394,6 +4448,29 @@ func (ec *executionContext) marshalODetachedTask2ᚖgithubᚗcomᚋjjzcruᚋelk�
 	return ec._DetachedTask(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalODuration2timeᚐDuration(ctx context.Context, v interface{}) (time.Duration, error) {
+	return model1.UnmarshalDuration(v)
+}
+
+func (ec *executionContext) marshalODuration2timeᚐDuration(ctx context.Context, sel ast.SelectionSet, v time.Duration) graphql.Marshaler {
+	return model1.MarshalDuration(v)
+}
+
+func (ec *executionContext) unmarshalODuration2ᚖtimeᚐDuration(ctx context.Context, v interface{}) (*time.Duration, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalODuration2timeᚐDuration(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalODuration2ᚖtimeᚐDuration(ctx context.Context, sel ast.SelectionSet, v *time.Duration) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalODuration2timeᚐDuration(ctx, sel, *v)
+}
+
 func (ec *executionContext) marshalOLog2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐLog(ctx context.Context, sel ast.SelectionSet, v model.Log) graphql.Marshaler {
 	return ec._Log(ctx, sel, &v)
 }
@@ -4510,6 +4587,18 @@ func (ec *executionContext) marshalOOutput2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkg�
 	return ec._Output(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalORunConfig2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐRunConfig(ctx context.Context, v interface{}) (model.RunConfig, error) {
+	return ec.unmarshalInputRunConfig(ctx, v)
+}
+
+func (ec *executionContext) unmarshalORunConfig2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐRunConfig(ctx context.Context, v interface{}) (*model.RunConfig, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalORunConfig2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐRunConfig(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
 	return graphql.UnmarshalString(v)
 }
@@ -4617,6 +4706,29 @@ func (ec *executionContext) marshalOTime2ᚖtimeᚐTime(ctx context.Context, sel
 		return graphql.Null
 	}
 	return ec.marshalOTime2timeᚐTime(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOTimestamp2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
+	return model1.UnmarshalTimestamp(v)
+}
+
+func (ec *executionContext) marshalOTimestamp2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
+	return model1.MarshalTimestamp(v)
+}
+
+func (ec *executionContext) unmarshalOTimestamp2ᚖtimeᚐTime(ctx context.Context, v interface{}) (*time.Time, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOTimestamp2timeᚐTime(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOTimestamp2ᚖtimeᚐTime(ctx context.Context, sel ast.SelectionSet, v *time.Time) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOTimestamp2timeᚐTime(ctx, sel, *v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

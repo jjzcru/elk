@@ -54,3 +54,9 @@ models:
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
+
+  Timestamp:
+    model: github.com/jjzcru/elk/pkg/server/graph/scalars/model.Timestamp
+
+  Duration:
+    model: github.com/jjzcru/elk/pkg/server/graph/scalars/model.Duration
