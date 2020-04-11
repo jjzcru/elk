@@ -53,6 +53,43 @@ type TimeStampWriter struct {
 	TimeStamp func() string
 }
 
+func (t TimeStampWriter) GetDateFormat(format string) (string, error) {
+	switch format {
+	case "ANSIC":
+		fallthrough
+	case "ansic":
+		return time.ANSIC, nil
+	case "UnixDate":
+		fallthrough
+	case "unixdate":
+		return time.UnixDate, nil
+	case "rubydate":
+		fallthrough
+	case "RubyDate":
+		return time.RubyDate, nil
+	case "RFC822":
+		return time.RFC822, nil
+	case "RFC822Z":
+		return time.RFC822Z, nil
+	case "RFC850":
+		return time.RFC850, nil
+	case "RFC1123":
+		return time.RFC1123, nil
+	case "RFC1123Z":
+		return time.RFC1123Z, nil
+	case "RFC3339":
+		return time.RFC3339, nil
+	case "RFC3339Nano":
+		return time.RFC3339Nano, nil
+	case "kitchen":
+		fallthrough
+	case "Kitchen":
+		return time.Kitchen, nil
+	default:
+		return "", fmt.Errorf("%s is an invalid timestamp format", format)
+	}
+}
+
 // Writes timestamp to a writer
 func (t TimeStampWriter) Write(p []byte) (int, error) {
 	var err error

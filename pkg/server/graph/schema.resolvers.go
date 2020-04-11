@@ -22,8 +22,10 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *
 		return nil, err
 	}
 
-	if len(properties.EnvFile) > 0 {
-		elk.EnvFile = properties.EnvFile
+	if properties != nil {
+		if len(properties.EnvFile) > 0 {
+			elk.EnvFile = properties.EnvFile
+		}
 	}
 
 	err = elk.Build()
@@ -40,7 +42,7 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *
 		}
 	}
 
-	logger, outChan, errTaskChan, err := GraphQLLogger(elk.Tasks)
+	logger, outChan, errTaskChan, err := gqlLogger(elk.Tasks)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +174,7 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 		outputs = append(outputs, outputMap[task])
 	}
 
-	logger, outChan, errTaskChan, err := GraphQLLogger(elk.Tasks)
+	logger, outChan, errTaskChan, err := gqlLogger(elk.Tasks)
 	if err != nil {
 		return nil, err
 	}
