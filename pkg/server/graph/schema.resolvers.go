@@ -341,7 +341,7 @@ func (r *queryResolver) Elk(ctx context.Context) (*model.Elk, error) {
 	return elkModel, nil
 }
 
-func (r *queryResolver) Tasks(ctx context.Context) ([]*model.Task, error) {
+func (r *queryResolver) Tasks(ctx context.Context, name *string) ([]*model.Task, error) {
 	elk, err := utils.GetElk(os.Getenv("ELK_FILE"), true)
 	if err != nil {
 		return nil, err
@@ -352,11 +352,18 @@ func (r *queryResolver) Tasks(ctx context.Context) ([]*model.Task, error) {
 		return nil, err
 	}
 
-	return elkModel.Tasks, nil
-}
+	var tasks []*model.Task
+	if name != nil {
+		for _, task := range elkModel.Tasks {
+			if task != nil && task.Name == *name {
+				tasks = append(tasks, task)
+			}
+		}
+	} else {
+		tasks = elkModel.Tasks
+	}
 
-func (r *queryResolver) Task(ctx context.Context, name string) (*model.Task, error) {
-	return getTask(name)
+	return tasks, nil
 }
 
 func (r *queryResolver) Detached(ctx context.Context, id *string) ([]*model.DetachedTask, error) {

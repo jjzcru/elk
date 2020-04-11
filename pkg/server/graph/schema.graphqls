@@ -1,6 +1,3 @@
-# GraphQL schema example
-#
-# https://gqlgen.com/getting-started/
 scalar Map
 scalar Time
 scalar Timestamp
@@ -10,9 +7,9 @@ scalar FilePath
 type Elk {
     version: String!
     env: Map
-    env_file: String!
+    envFile: String!
     vars: Map
-    tasks: [Task]!
+    tasks: [Task!]!
 }
 
 type Task {
@@ -20,13 +17,13 @@ type Task {
     cmds: [String]!
     env: Map
     vars: Map
-    env_file: String!
+    envFile: String!
     description: String!
     dir: String!
     log: Log
     sources: String
     deps: [Dep]!
-    ignore_error: Boolean!
+    ignoreError: Boolean!
 }
 
 type Dep {
@@ -42,8 +39,8 @@ type Log {
 
 type DetachedTask {
     id: ID!
-    tasks: [Task!]
-    Outputs: [Output!]
+    tasks: [Task!]!
+    outputs: [Output!]
     status: String!
     startAt: Time!
     # Amount of time that taked to complete the detached task
@@ -53,8 +50,7 @@ type DetachedTask {
 
 type Query {
     elk: Elk!
-    tasks: [Task]!
-    task(name: String!): Task
+    tasks(name: String): [Task!]!
     detached(id: ID): [DetachedTask!]!
 }
 

@@ -89,8 +89,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Detached func(childComplexity int, id *string) int
 		Elk      func(childComplexity int) int
-		Task     func(childComplexity int, name string) int
-		Tasks    func(childComplexity int) int
+		Tasks    func(childComplexity int, name *string) int
 	}
 
 	Task struct {
@@ -115,8 +114,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	Elk(ctx context.Context) (*model.Elk, error)
-	Tasks(ctx context.Context) ([]*model.Task, error)
-	Task(ctx context.Context, name string) (*model.Task, error)
+	Tasks(ctx context.Context, name *string) ([]*model.Task, error)
 	Detached(ctx context.Context, id *string) ([]*model.DetachedTask, error)
 }
 
@@ -170,7 +168,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DetachedTask.ID(childComplexity), true
 
-	case "DetachedTask.Outputs":
+	case "DetachedTask.outputs":
 		if e.complexity.DetachedTask.Outputs == nil {
 			break
 		}
@@ -205,7 +203,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Elk.Env(childComplexity), true
 
-	case "Elk.env_file":
+	case "Elk.envFile":
 		if e.complexity.Elk.EnvFile == nil {
 			break
 		}
@@ -330,24 +328,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Elk(childComplexity), true
 
-	case "Query.task":
-		if e.complexity.Query.Task == nil {
-			break
-		}
-
-		args, err := ec.field_Query_task_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Task(childComplexity, args["name"].(string)), true
-
 	case "Query.tasks":
 		if e.complexity.Query.Tasks == nil {
 			break
 		}
 
-		return e.complexity.Query.Tasks(childComplexity), true
+		args, err := ec.field_Query_tasks_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Tasks(childComplexity, args["name"].(*string)), true
 
 	case "Task.cmds":
 		if e.complexity.Task.Cmds == nil {
@@ -384,14 +375,14 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.Env(childComplexity), true
 
-	case "Task.env_file":
+	case "Task.envFile":
 		if e.complexity.Task.EnvFile == nil {
 			break
 		}
 
 		return e.complexity.Task.EnvFile(childComplexity), true
 
-	case "Task.ignore_error":
+	case "Task.ignoreError":
 		if e.complexity.Task.IgnoreError == nil {
 			break
 		}
@@ -490,10 +481,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	&ast.Source{Name: "graph/schema.graphqls", Input: `# GraphQL schema example
-#
-# https://gqlgen.com/getting-started/
-scalar Map
+	&ast.Source{Name: "graph/schema.graphqls", Input: `scalar Map
 scalar Time
 scalar Timestamp
 scalar Duration
@@ -502,9 +490,9 @@ scalar FilePath
 type Elk {
     version: String!
     env: Map
-    env_file: String!
+    envFile: String!
     vars: Map
-    tasks: [Task]!
+    tasks: [Task!]!
 }
 
 type Task {
@@ -512,13 +500,13 @@ type Task {
     cmds: [String]!
     env: Map
     vars: Map
-    env_file: String!
+    envFile: String!
     description: String!
     dir: String!
     log: Log
     sources: String
     deps: [Dep]!
-    ignore_error: Boolean!
+    ignoreError: Boolean!
 }
 
 type Dep {
@@ -534,8 +522,8 @@ type Log {
 
 type DetachedTask {
     id: ID!
-    tasks: [Task!]
-    Outputs: [Output!]
+    tasks: [Task!]!
+    outputs: [Output!]
     status: String!
     startAt: Time!
     # Amount of time that taked to complete the detached task
@@ -545,8 +533,7 @@ type DetachedTask {
 
 type Query {
     elk: Elk!
-    tasks: [Task]!
-    task(name: String!): Task
+    tasks(name: String): [Task!]!
     detached(id: ID): [DetachedTask!]!
 }
 
@@ -676,12 +663,12 @@ func (ec *executionContext) field_Query_detached_args(ctx context.Context, rawAr
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_task_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_tasks_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
+	var arg0 *string
 	if tmp, ok := rawArgs["name"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -852,14 +839,17 @@ func (ec *executionContext) _DetachedTask_tasks(ctx context.Context, field graph
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]*model.Task)
 	fc.Result = res
-	return ec.marshalOTask2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskᚄ(ctx, field.Selections, res)
+	return ec.marshalNTask2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DetachedTask_Outputs(ctx context.Context, field graphql.CollectedField, obj *model.DetachedTask) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetachedTask_outputs(ctx context.Context, field graphql.CollectedField, obj *model.DetachedTask) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1088,7 +1078,7 @@ func (ec *executionContext) _Elk_env(ctx context.Context, field graphql.Collecte
 	return ec.marshalOMap2map(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Elk_env_file(ctx context.Context, field graphql.CollectedField, obj *model.Elk) (ret graphql.Marshaler) {
+func (ec *executionContext) _Elk_envFile(ctx context.Context, field graphql.CollectedField, obj *model.Elk) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1184,7 +1174,7 @@ func (ec *executionContext) _Elk_tasks(ctx context.Context, field graphql.Collec
 	}
 	res := resTmp.([]*model.Task)
 	fc.Result = res
-	return ec.marshalNTask2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTask(ctx, field.Selections, res)
+	return ec.marshalNTask2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Log_out(ctx context.Context, field graphql.CollectedField, obj *model.Log) (ret graphql.Marshaler) {
@@ -1554,9 +1544,16 @@ func (ec *executionContext) _Query_tasks(ctx context.Context, field graphql.Coll
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_tasks_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Tasks(rctx)
+		return ec.resolvers.Query().Tasks(rctx, args["name"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1570,45 +1567,7 @@ func (ec *executionContext) _Query_tasks(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.([]*model.Task)
 	fc.Result = res
-	return ec.marshalNTask2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTask(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_task(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_task_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Task(rctx, args["name"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.Task)
-	fc.Result = res
-	return ec.marshalOTask2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTask(ctx, field.Selections, res)
+	return ec.marshalNTask2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_detached(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1851,7 +1810,7 @@ func (ec *executionContext) _Task_vars(ctx context.Context, field graphql.Collec
 	return ec.marshalOMap2map(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Task_env_file(ctx context.Context, field graphql.CollectedField, obj *model.Task) (ret graphql.Marshaler) {
+func (ec *executionContext) _Task_envFile(ctx context.Context, field graphql.CollectedField, obj *model.Task) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2049,7 +2008,7 @@ func (ec *executionContext) _Task_deps(ctx context.Context, field graphql.Collec
 	return ec.marshalNDep2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDep(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Task_ignore_error(ctx context.Context, field graphql.CollectedField, obj *model.Task) (ret graphql.Marshaler) {
+func (ec *executionContext) _Task_ignoreError(ctx context.Context, field graphql.CollectedField, obj *model.Task) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3268,8 +3227,11 @@ func (ec *executionContext) _DetachedTask(ctx context.Context, sel ast.Selection
 			}
 		case "tasks":
 			out.Values[i] = ec._DetachedTask_tasks(ctx, field, obj)
-		case "Outputs":
-			out.Values[i] = ec._DetachedTask_Outputs(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "outputs":
+			out.Values[i] = ec._DetachedTask_outputs(ctx, field, obj)
 		case "status":
 			out.Values[i] = ec._DetachedTask_status(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -3316,8 +3278,8 @@ func (ec *executionContext) _Elk(ctx context.Context, sel ast.SelectionSet, obj 
 			}
 		case "env":
 			out.Values[i] = ec._Elk_env(ctx, field, obj)
-		case "env_file":
-			out.Values[i] = ec._Elk_env_file(ctx, field, obj)
+		case "envFile":
+			out.Values[i] = ec._Elk_envFile(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -3488,17 +3450,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
-		case "task":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_task(ctx, field)
-				return res
-			})
 		case "detached":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -3553,8 +3504,8 @@ func (ec *executionContext) _Task(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._Task_env(ctx, field, obj)
 		case "vars":
 			out.Values[i] = ec._Task_vars(ctx, field, obj)
-		case "env_file":
-			out.Values[i] = ec._Task_env_file(ctx, field, obj)
+		case "envFile":
+			out.Values[i] = ec._Task_envFile(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -3577,8 +3528,8 @@ func (ec *executionContext) _Task(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "ignore_error":
-			out.Values[i] = ec._Task_ignore_error(ctx, field, obj)
+		case "ignoreError":
+			out.Values[i] = ec._Task_ignoreError(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4086,7 +4037,7 @@ func (ec *executionContext) marshalNTask2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋser
 	return ec._Task(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNTask2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTask(ctx context.Context, sel ast.SelectionSet, v []*model.Task) graphql.Marshaler {
+func (ec *executionContext) marshalNTask2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Task) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -4110,7 +4061,7 @@ func (ec *executionContext) marshalNTask2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkg
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOTask2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTask(ctx, sel, v[i])
+			ret[i] = ec.marshalNTask2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTask(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -4613,57 +4564,6 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 		return graphql.Null
 	}
 	return ec.marshalOString2string(ctx, sel, *v)
-}
-
-func (ec *executionContext) marshalOTask2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTask(ctx context.Context, sel ast.SelectionSet, v model.Task) graphql.Marshaler {
-	return ec._Task(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOTask2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Task) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNTask2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTask(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalOTask2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTask(ctx context.Context, sel ast.SelectionSet, v *model.Task) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Task(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOTaskProperties2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskProperties(ctx context.Context, v interface{}) (model.TaskProperties, error) {

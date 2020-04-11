@@ -14,7 +14,7 @@ type Dep struct {
 type DetachedTask struct {
 	ID       string        `json:"id"`
 	Tasks    []*Task       `json:"tasks"`
-	Outputs  []*Output     `json:"Outputs"`
+	Outputs  []*Output     `json:"outputs"`
 	Status   string        `json:"status"`
 	StartAt  time.Time     `json:"startAt"`
 	Duration time.Duration `json:"duration"`
@@ -24,7 +24,7 @@ type DetachedTask struct {
 type Elk struct {
 	Version string                 `json:"version"`
 	Env     map[string]interface{} `json:"env"`
-	EnvFile string                 `json:"env_file"`
+	EnvFile string                 `json:"envFile"`
 	Vars    map[string]interface{} `json:"vars"`
 	Tasks   []*Task                `json:"tasks"`
 }
@@ -53,13 +53,13 @@ type Task struct {
 	Cmds        []*string              `json:"cmds"`
 	Env         map[string]interface{} `json:"env"`
 	Vars        map[string]interface{} `json:"vars"`
-	EnvFile     string                 `json:"env_file"`
+	EnvFile     string                 `json:"envFile"`
 	Description string                 `json:"description"`
 	Dir         string                 `json:"dir"`
 	Log         *Log                   `json:"log"`
 	Sources     *string                `json:"sources"`
 	Deps        []*Dep                 `json:"deps"`
-	IgnoreError bool                   `json:"ignore_error"`
+	IgnoreError bool                   `json:"ignoreError"`
 }
 
 type TaskProperties struct {
