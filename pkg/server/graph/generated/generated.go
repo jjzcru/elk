@@ -548,7 +548,7 @@ type DetachedTask {
     status: String!
     startAt: Time!
     # Amount of time that taked to complete the detached task
-    duration: Int!
+    duration: Duration!
     endAt: Time
 }
 
@@ -997,9 +997,9 @@ func (ec *executionContext) _DetachedTask_duration(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(time.Duration)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNDuration2timeᚐDuration(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DetachedTask_endAt(ctx context.Context, field graphql.CollectedField, obj *model.DetachedTask) (ret graphql.Marshaler) {
@@ -3992,6 +3992,20 @@ func (ec *executionContext) marshalNDetachedTask2ᚖgithubᚗcomᚋjjzcruᚋelk�
 	return ec._DetachedTask(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNDuration2timeᚐDuration(ctx context.Context, v interface{}) (time.Duration, error) {
+	return model1.UnmarshalDuration(v)
+}
+
+func (ec *executionContext) marshalNDuration2timeᚐDuration(ctx context.Context, sel ast.SelectionSet, v time.Duration) graphql.Marshaler {
+	res := model1.MarshalDuration(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) marshalNElk2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐElk(ctx context.Context, sel ast.SelectionSet, v model.Elk) graphql.Marshaler {
 	return ec._Elk(ctx, sel, &v)
 }
@@ -4026,20 +4040,6 @@ func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface
 
 func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	res := graphql.MarshalID(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
-func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
-	return graphql.UnmarshalInt(v)
-}
-
-func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
-	res := graphql.MarshalInt(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")

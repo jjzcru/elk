@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"fmt"
 	"github.com/99designs/gqlgen/graphql"
 	"io"
 	"time"
@@ -11,7 +12,7 @@ import (
 // onto any existing go type.
 func MarshalDuration(d time.Duration) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
-		io.WriteString(w, d.String())
+		io.WriteString(w, fmt.Sprintf("\"%s\"", d.String()))
 	})
 }
 

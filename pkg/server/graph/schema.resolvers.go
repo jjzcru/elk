@@ -6,7 +6,6 @@ package graph
 import (
 	"context"
 	"fmt"
-	"math"
 	"os"
 	"sync"
 	"time"
@@ -295,8 +294,9 @@ func (r *mutationResolver) RunDetached(ctx context.Context, tasks []string, prop
 				}
 				endAt := time.Now()
 				response.EndAt = &endAt
-				duration := float64(response.EndAt.Sub(response.StartAt)*time.Millisecond) / math.Pow(10, 12)
-				response.Duration = int(duration)
+				duration := endAt.Sub(response.StartAt)
+				response.Duration = duration
+
 				break
 			}
 		}
@@ -317,8 +317,8 @@ func (r *mutationResolver) Kill(ctx context.Context, id string) (*model.Detached
 		detachedTask.EndAt = &endAt
 		detachedTask.Status = "killed"
 
-		duration := float64(detachedTask.EndAt.Sub(detachedTask.StartAt)*time.Millisecond) / math.Pow(10, 12)
-		detachedTask.Duration = int(duration)
+		duration := endAt.Sub(detachedTask.StartAt)
+		detachedTask.Duration = duration
 
 		contextMap.cancel()
 		DetachedTasksMap[id] = detachedTask
@@ -360,12 +360,26 @@ func (r *queryResolver) Task(ctx context.Context, name string) (*model.Task, err
 }
 
 func (r *queryResolver) DetachedTask(ctx context.Context, id string) (*model.DetachedTask, error) {
-	return DetachedTasksMap[id], nil
+	if v, ok := DetachedTasksMap[id]; ok {
+		if v.Status == "running" {
+			endAt := time.Now()
+			duration := endAt.Sub(v.StartAt)
+			v.Duration = duration
+		}
+
+		return v, nil
+	}
+	return nil, nil
 }
 
 func (r *queryResolver) DetachedTasks(ctx context.Context) ([]*model.DetachedTask, error) {
 	var detachedTasks []*model.DetachedTask
 	for _, v := range DetachedTasksMap {
+		if v.Status == "running" {
+			endAt := time.Now()
+			duration := endAt.Sub(v.StartAt)
+			v.Duration = duration
+		}
 		detachedTasks = append(detachedTasks, v)
 	}
 	return detachedTasks, nil

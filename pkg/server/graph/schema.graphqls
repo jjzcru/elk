@@ -47,7 +47,7 @@ type DetachedTask {
     status: String!
     startAt: Time!
     # Amount of time that taked to complete the detached task
-    duration: Int!
+    duration: Duration!
     endAt: Time
 }
 
