@@ -55,8 +55,7 @@ type Query {
     elk: Elk!
     tasks: [Task]!
     task(name: String!): Task
-    detachedTask(id: ID!): DetachedTask
-    detachedTasks: [DetachedTask!]!
+    detached(id: ID): [DetachedTask!]!
 }
 
 input TaskProperties {
@@ -75,7 +74,7 @@ input RunConfig {
 
 type Mutation {
     run(tasks: [String!]!, properties: TaskProperties): [Output]
-    runDetached(tasks: [String!]!, properties: TaskProperties, config: RunConfig): DetachedTask
+    detached(tasks: [String!]!, properties: TaskProperties, config: RunConfig): DetachedTask
     kill(id: ID!): DetachedTask
 }
 

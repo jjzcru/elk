@@ -124,7 +124,7 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *
 	return response, nil
 }
 
-func (r *mutationResolver) RunDetached(ctx context.Context, tasks []string, properties *model.TaskProperties, config *model.RunConfig) (*model.DetachedTask, error) {
+func (r *mutationResolver) Detached(ctx context.Context, tasks []string, properties *model.TaskProperties, config *model.RunConfig) (*model.DetachedTask, error) {
 	ctx = ServerCtx
 	ctx, cancel := context.WithCancel(ctx)
 	id := getDetachedTaskID()
@@ -359,29 +359,29 @@ func (r *queryResolver) Task(ctx context.Context, name string) (*model.Task, err
 	return getTask(name)
 }
 
-func (r *queryResolver) DetachedTask(ctx context.Context, id string) (*model.DetachedTask, error) {
-	if v, ok := DetachedTasksMap[id]; ok {
-		if v.Status == "running" {
-			endAt := time.Now()
-			duration := endAt.Sub(v.StartAt)
-			v.Duration = duration
-		}
-
-		return v, nil
-	}
-	return nil, nil
-}
-
-func (r *queryResolver) DetachedTasks(ctx context.Context) ([]*model.DetachedTask, error) {
+func (r *queryResolver) Detached(ctx context.Context, id *string) ([]*model.DetachedTask, error) {
 	var detachedTasks []*model.DetachedTask
-	for _, v := range DetachedTasksMap {
-		if v.Status == "running" {
+
+	setDuration := func(task *model.DetachedTask) {
+		if task.Status == "running" {
 			endAt := time.Now()
-			duration := endAt.Sub(v.StartAt)
-			v.Duration = duration
+			duration := endAt.Sub(task.StartAt)
+			task.Duration = duration
 		}
-		detachedTasks = append(detachedTasks, v)
 	}
+
+	if id != nil {
+		if v, ok := DetachedTasksMap[*id]; ok {
+			setDuration(v)
+			detachedTasks = append(detachedTasks, v)
+		}
+	} else {
+		for _, v := range DetachedTasksMap {
+			setDuration(v)
+			detachedTasks = append(detachedTasks, v)
+		}
+	}
+
 	return detachedTasks, nil
 }
 
