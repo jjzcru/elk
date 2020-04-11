@@ -18,8 +18,8 @@ type data struct {
 
 var version data
 
-// NewVersionCommand returns a cobra command for `version` sub command
-func NewVersionCommand() *cobra.Command {
+// Command returns a cobra command for `version` sub command
+func Command() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Display version number",

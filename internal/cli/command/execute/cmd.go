@@ -33,8 +33,8 @@ Flags:
   -i, --interval           Set a duration for an interval 
 `
 
-// NewExecCommand returns a cobra command for `exec` sub command
-func NewExecCommand() *cobra.Command {
+// Command returns a cobra command for `exec` sub command
+func Command() *cobra.Command {
 	var envs []string
 	var vars []string
 	var cmd = &cobra.Command{

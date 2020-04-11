@@ -35,8 +35,8 @@ Flags:
       --start               Set a date/datetime to a task to run
 `
 
-// NewRunCommand returns a cobra command for `run` sub command
-func NewCronCommand() *cobra.Command {
+// Command returns a cobra command for `run` sub command
+func Command() *cobra.Command {
 	var envs []string
 	var vars []string
 	var cmd = &cobra.Command{

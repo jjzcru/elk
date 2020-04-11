@@ -8,24 +8,28 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/logrusorgru/aurora"
+
 	"github.com/99designs/gqlgen/graphql/playground"
+
+	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/jjzcru/elk/pkg/server/graph"
 	"github.com/jjzcru/elk/pkg/server/graph/generated"
 )
 
-const defaultPort = "8080"
+const defaultPort = 8080
 
-func Start(port string) error {
-	if port == "" {
+// Start graphql server
+func Start(port int, filePath string, isQueryEnable bool) error {
+	if port == 0 {
 		port = defaultPort
 	}
 
 	// We use env variable to set the file path
-	/*err := os.Setenv("ELK_FILE", "")
+	err := os.Setenv("ELK_FILE", filePath)
 	if err != nil {
 		return err
-	}*/
+	}
 
 	graph.ServerCtx = context.Background()
 
@@ -44,11 +48,24 @@ func Start(port string) error {
 
 	endpoint := fmt.Sprintf("/%s", "graphql")
 
-	http.Handle("/", playground.Handler("GraphQL playground", endpoint))
+	if isQueryEnable {
+		http.Handle("/", playground.Handler("GraphQL playground", endpoint))
+	}
 	http.Handle(endpoint, srv)
 
-	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	var content string
+
+	if isQueryEnable {
+		content = aurora.Bold(aurora.Cyan(fmt.Sprintf("http://localhost:%d/", port))).String()
+		fmt.Println(fmt.Sprintf("GraphQL playground: %s", content))
+	}
+
+	intro := aurora.Bold("Application running on port ").String()
+	content = aurora.Bold(aurora.Green(fmt.Sprintf("%d 🚀", port))).String()
+
+	fmt.Println(intro + content)
+
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 
 	return nil
 }

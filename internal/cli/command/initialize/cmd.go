@@ -14,8 +14,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewInitializeCommand returns a cobra command for `init` sub command
-func NewInitializeCommand() *cobra.Command {
+// Command returns a cobra command for `init` sub command
+func Command() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Creates an ox.yml file in the current directory",
