@@ -42,7 +42,7 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *
 		}
 	}
 
-	logger, outChan, errTaskChan, err := gqlLogger(elk.Tasks)
+	logger, outChan, errTaskChan, err := gqlLogger(elk.Tasks, tasks)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 		outputs = append(outputs, outputMap[task])
 	}
 
-	logger, outChan, errTaskChan, err := gqlLogger(elk.Tasks)
+	logger, outChan, errTaskChan, err := gqlLogger(elk.Tasks, tasks)
 	if err != nil {
 		return nil, err
 	}
