@@ -80,6 +80,8 @@ To learn about some use cases for `elk` go to [Use Cases][use-cases] to figure o
 | [ls][ls]          | List tasks                                             | `elk ls [flags]`                     |
 | [run][run]        | Run one or more tasks 🤖                               | `elk run [tasks] [flags]`            |
 | [version][version]| Display version number                                 | `elk version [flags]`                |
+| [server][server]  | Start a graphql server ⚛️                               | `elk server [flags]`                 |
+
 
 ## Roadmap
 Each release has a particular idea in mind and the tasks inside that release are focusing on that main idea.
@@ -104,3 +106,4 @@ To learn more about the progress and what is being planned go to [Projects][proj
 [run]: docs/commands/run.md
 [version]: docs/commands/version.md
 [exec]: docs/commands/exec.md
+[server]: docs/commands/exec.md

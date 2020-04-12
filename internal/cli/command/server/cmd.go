@@ -12,7 +12,7 @@ var usageTemplate = `Usage:
 Flags:
   -d, --detached      Run the server in detached mode and returns the PGID
   -p, --port          Port where the server is going to run
-  -q, --query         Enables graphql playground
+  -q, --query         Enables graphql playground endpoint 🎮
   -f, --file string   Specify the file to used
   -g, --global        Use global file path
   -h, --help          help for logs
