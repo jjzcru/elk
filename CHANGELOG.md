@@ -1,3 +1,15 @@
+## [v0.6.0](https://github.com/jjzcru/elk/tree/v0.6.0) (2020-04-12)
+[Release](https://github.com/jjzcru/elk/releases/tag/v0.6.0)
+
+**Commands 🤖:**
+- **[server]** Create command
+
+**Documentation 📖:**
+- **[server]** Create documentation
+
+**Bug Fix 🐛:**
+- Fix issue where `logger` where being created to all the tasks instead of just the one that were being executed
+  
 ## [v0.5.0](https://github.com/jjzcru/elk/tree/v0.5.0) (2020-03-31)
 [Release](https://github.com/jjzcru/elk/releases/tag/v0.5.0)
 
