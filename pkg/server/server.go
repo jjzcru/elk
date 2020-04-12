@@ -27,10 +27,11 @@ func Start(port int, filePath string, isQueryEnable bool) error {
 
 	domain := "localhost"
 
-	// We use env variable to set the file path
-	err := os.Setenv("ELK_FILE", filePath)
-	if err != nil {
-		return err
+	addContext := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), "elk_file", filePath)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
 	}
 
 	graph.ServerCtx = context.Background()
@@ -46,7 +47,7 @@ func Start(port int, filePath string, isQueryEnable bool) error {
 		}
 	}()
 
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+	srv := addContext(handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}})))
 
 	endpoint := fmt.Sprintf("/%s", "graphql")
 	var content string

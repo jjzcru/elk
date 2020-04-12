@@ -6,7 +6,6 @@ package graph
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 	"time"
 
@@ -17,7 +16,8 @@ import (
 )
 
 func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *model.TaskProperties) ([]*model.Output, error) {
-	elk, err := utils.GetElk(os.Getenv("ELK_FILE"), true)
+	elkFilePath := ctx.Value("elk_file").(string)
+	elk, err := utils.GetElk(elkFilePath, true)
 	if err != nil {
 		return nil, err
 	}
@@ -127,10 +127,12 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *
 }
 
 func (r *mutationResolver) Detached(ctx context.Context, tasks []string, properties *model.TaskProperties, config *model.RunConfig) (*model.DetachedTask, error) {
+	elkFilePath := ctx.Value("elk_file").(string)
+
 	ctx = ServerCtx
 	ctx, cancel := context.WithCancel(ctx)
 	id := getDetachedTaskID()
-	elk, err := utils.GetElk(os.Getenv("ELK_FILE"), true)
+	elk, err := utils.GetElk(elkFilePath, true)
 	if err != nil {
 		return nil, err
 	}
@@ -308,7 +310,7 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 	return &result, nil
 }
 
-func (r *mutationResolver) Kill(ctx context.Context, id string) (*model.DetachedTask, error) {
+func (r *mutationResolver) Kill(_ context.Context, id string) (*model.DetachedTask, error) {
 	if detachedTask, ok := DetachedTasksMap[id]; ok {
 		contextMap := DetachedCtxMap[id]
 		if contextMap.ctx.Err() != nil {
@@ -330,7 +332,8 @@ func (r *mutationResolver) Kill(ctx context.Context, id string) (*model.Detached
 }
 
 func (r *queryResolver) Elk(ctx context.Context) (*model.Elk, error) {
-	elk, err := utils.GetElk(os.Getenv("ELK_FILE"), true)
+	elkFilePath := ctx.Value("elk_file").(string)
+	elk, err := utils.GetElk(elkFilePath, true)
 	if err != nil {
 		return nil, err
 	}
@@ -344,7 +347,8 @@ func (r *queryResolver) Elk(ctx context.Context) (*model.Elk, error) {
 }
 
 func (r *queryResolver) Tasks(ctx context.Context, name *string) ([]*model.Task, error) {
-	elk, err := utils.GetElk(os.Getenv("ELK_FILE"), true)
+	elkFilePath := ctx.Value("elk_file").(string)
+	elk, err := utils.GetElk(elkFilePath, true)
 	if err != nil {
 		return nil, err
 	}
@@ -368,7 +372,7 @@ func (r *queryResolver) Tasks(ctx context.Context, name *string) ([]*model.Task,
 	return tasks, nil
 }
 
-func (r *queryResolver) Detached(ctx context.Context, id *string) ([]*model.DetachedTask, error) {
+func (r *queryResolver) Detached(_ context.Context, id *string) ([]*model.DetachedTask, error) {
 	var detachedTasks []*model.DetachedTask
 
 	setDuration := func(task *model.DetachedTask) {
