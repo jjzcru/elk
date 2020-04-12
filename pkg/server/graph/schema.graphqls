@@ -57,7 +57,7 @@ type Query {
 input TaskProperties {
     vars: Map
     env: Map
-    envFile: FilePath!
+    envFile: FilePath
     ignoreError: Boolean
 }
 

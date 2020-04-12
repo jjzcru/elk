@@ -49,6 +49,7 @@ func Command() *cobra.Command {
 		},
 	}
 
+	cmd.Flags().Bool("ignore-log-format", false, "")
 	cmd.Flags().BoolP("detached", "d", false, "")
 	cmd.Flags().StringSliceVarP(&envs, "env", "e", []string{}, "")
 	cmd.Flags().String("env-file", "", "")
@@ -151,7 +152,7 @@ func Run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 		},
 	}
 
-	logger, err := run.Build(cmd, &elk)
+	logger, err := run.Build(cmd, &elk, []string{"elk"})
 	if err != nil {
 		return err
 	}

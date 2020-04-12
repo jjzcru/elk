@@ -540,7 +540,7 @@ type Query {
 input TaskProperties {
     vars: Map
     env: Map
-    envFile: FilePath!
+    envFile: FilePath
     ignoreError: Boolean
 }
 
@@ -3153,7 +3153,7 @@ func (ec *executionContext) unmarshalInputTaskProperties(ctx context.Context, ob
 			}
 		case "envFile":
 			var err error
-			it.EnvFile, err = ec.unmarshalNFilePath2string(ctx, v)
+			it.EnvFile, err = ec.unmarshalOFilePath2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3919,20 +3919,6 @@ func (ec *executionContext) marshalNElk2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋs
 	return ec._Elk(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNFilePath2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalString(v)
-}
-
-func (ec *executionContext) marshalNFilePath2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	res := graphql.MarshalString(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
 	return graphql.UnmarshalID(v)
 }
@@ -4390,6 +4376,29 @@ func (ec *executionContext) marshalODuration2ᚖtimeᚐDuration(ctx context.Cont
 		return graphql.Null
 	}
 	return ec.marshalODuration2timeᚐDuration(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOFilePath2string(ctx context.Context, v interface{}) (string, error) {
+	return graphql.UnmarshalString(v)
+}
+
+func (ec *executionContext) marshalOFilePath2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	return graphql.MarshalString(v)
+}
+
+func (ec *executionContext) unmarshalOFilePath2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOFilePath2string(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOFilePath2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOFilePath2string(ctx, sel, *v)
 }
 
 func (ec *executionContext) unmarshalOID2string(ctx context.Context, v interface{}) (string, error) {

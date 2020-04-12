@@ -119,7 +119,7 @@ func Run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 		return err
 	}
 
-	logger, err := run.Build(cmd, e)
+	logger, err := run.Build(cmd, e, args)
 	if err != nil {
 		return err
 	}

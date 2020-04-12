@@ -3,10 +3,10 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 
 	"github.com/logrusorgru/aurora"
 
@@ -24,6 +24,8 @@ func Start(port int, filePath string, isQueryEnable bool) error {
 	if port == 0 {
 		port = defaultPort
 	}
+
+	domain := "localhost"
 
 	// We use env variable to set the file path
 	err := os.Setenv("ELK_FILE", filePath)
@@ -47,25 +49,25 @@ func Start(port int, filePath string, isQueryEnable bool) error {
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
 
 	endpoint := fmt.Sprintf("/%s", "graphql")
-
-	if isQueryEnable {
-		http.Handle("/", playground.Handler("GraphQL playground", endpoint))
-	}
-	http.Handle(endpoint, srv)
-
 	var content string
 
 	if isQueryEnable {
-		content = aurora.Bold(aurora.Cyan(fmt.Sprintf("http://localhost:%d/", port))).String()
+		http.Handle("/playground", playground.Handler("GraphQL Playground", endpoint))
+		if port == 80 {
+			content = aurora.Bold(aurora.Cyan(fmt.Sprintf("http://%s/playground", domain))).String()
+		} else {
+			content = aurora.Bold(aurora.Cyan(fmt.Sprintf("http://%s:%d/playground", domain, port))).String()
+		}
+
 		fmt.Println(fmt.Sprintf("GraphQL playground: %s", content))
 	}
 
-	intro := aurora.Bold("Application running on port ").String()
-	content = aurora.Bold(aurora.Green(fmt.Sprintf("%d 🚀", port))).String()
+	http.Handle(endpoint, srv)
 
-	fmt.Println(intro + content)
+	fmt.Println(strings.Join([]string{
+		aurora.Bold("Server running on port").String(),
+		aurora.Bold(aurora.Green(fmt.Sprintf("%d 🚀", port))).String(),
+	}, " "))
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
-
-	return nil
+	return http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }

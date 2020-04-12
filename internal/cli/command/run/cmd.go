@@ -134,7 +134,7 @@ func run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 		return err
 	}
 
-	logger, err := Build(cmd, e)
+	logger, err := Build(cmd, e, args)
 	if err != nil {
 		return err
 	}
