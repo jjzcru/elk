@@ -13,7 +13,7 @@ import (
 )
 
 // Build loads ox object with the values
-func Build(cmd *cobra.Command, e *ox.Elk) (map[string]engine.Logger, error) {
+func Build(cmd *cobra.Command, e *ox.Elk, tasks []string) (map[string]engine.Logger, error) {
 	logger := make(map[string]engine.Logger)
 
 	ignoreLogFile, err := cmd.Flags().GetBool("ignore-log-file")
@@ -67,7 +67,16 @@ func Build(cmd *cobra.Command, e *ox.Elk) (map[string]engine.Logger, error) {
 		logFilePath = absolutePath
 	}
 
+	taskMaps := make(map[string]bool)
+	for _, task := range tasks {
+		taskMaps[task] = true
+	}
+
 	for name, task := range e.Tasks {
+		if _, ok := taskMaps[name]; !ok {
+			continue
+		}
+
 		taskLogger := engine.DefaultLogger()
 
 		if ignoreLogFile {

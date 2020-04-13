@@ -7,13 +7,22 @@ import (
 	"os"
 )
 
-func gqlLogger(tasks map[string]ox.Task) (map[string]engine.Logger, chan map[string]string, chan map[string]string, error) {
+func gqlLogger(elkTasks map[string]ox.Task, tasks []string) (map[string]engine.Logger, chan map[string]string, chan map[string]string, error) {
 	var err error
 	loggerMapper := make(map[string]engine.Logger)
 	outChan := make(chan map[string]string)
 	errChan := make(chan map[string]string)
 
-	for name, task := range tasks {
+	taskMaps := make(map[string]bool)
+	for _, task := range tasks {
+		taskMaps[task] = true
+	}
+
+	for name, task := range elkTasks {
+		if _, ok := taskMaps[name]; !ok {
+			continue
+		}
+
 		logger := engine.DefaultLogger()
 
 		var stdOutWriter io.Writer = GraphQLWriter{

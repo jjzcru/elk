@@ -3,6 +3,7 @@ package command
 import (
 	"github.com/jjzcru/elk/internal/cli/command/cron"
 	"github.com/jjzcru/elk/internal/cli/command/execute"
+	"github.com/jjzcru/elk/internal/cli/command/server"
 	"os"
 
 	initialize "github.com/jjzcru/elk/internal/cli/command/initialize"
@@ -26,13 +27,14 @@ func Execute() error {
 		},
 	}
 	rootCmd.AddCommand(
-		version.NewVersionCommand(),
-		initialize.NewInitializeCommand(),
-		ls.NewListCommand(),
-		run.NewRunCommand(),
-		execute.NewExecCommand(),
-		cron.NewCronCommand(),
-		logs.NewLogsCommand(),
+		version.Command(),
+		initialize.Command(),
+		ls.Command(),
+		run.Command(),
+		execute.Command(),
+		cron.Command(),
+		logs.Command(),
+		server.NewServerCommand(),
 	)
 
 	return rootCmd.Execute()

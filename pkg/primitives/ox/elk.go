@@ -12,11 +12,12 @@ import (
 
 // Elk is the structure of the application
 type Elk struct {
-	Version string
-	Env     map[string]string `yaml:"env"`
-	Vars    map[string]string `yaml:"vars"`
-	EnvFile string            `yaml:"env_file"`
-	Tasks   map[string]Task
+	filePath string
+	Version  string
+	Env      map[string]string `yaml:"env"`
+	Vars     map[string]string `yaml:"vars"`
+	EnvFile  string            `yaml:"env_file"`
+	Tasks    map[string]Task
 }
 
 // GetTask Get a task object by its name
@@ -36,6 +37,16 @@ func (e *Elk) HasTask(name string) bool {
 		return true
 	}
 	return false
+}
+
+// GetFilePath get path used to create the object
+func (e *Elk) GetFilePath() string {
+	return e.filePath
+}
+
+// SetFilePath set the path used to create the object
+func (e *Elk) SetFilePath(filepath string) {
+	e.filePath = filepath
 }
 
 // Build compiles the ox structure and validates its integrity

@@ -3,29 +3,36 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
+
+	"github.com/logrusorgru/aurora"
+
+	"github.com/99designs/gqlgen/graphql/playground"
 
 	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/jjzcru/elk/pkg/server/graph"
 	"github.com/jjzcru/elk/pkg/server/graph/generated"
 )
 
-const defaultPort = "8080"
+const defaultPort = 8080
 
-func Start(port string) error {
-	if port == "" {
+// Start graphql server
+func Start(port int, filePath string, isQueryEnable bool) error {
+	if port == 0 {
 		port = defaultPort
 	}
 
-	// We use env variable to set the file path
-	/*err := os.Setenv("ELK_FILE", "")
-	if err != nil {
-		return err
-	}*/
+	domain := "localhost"
+
+	addContext := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), "elk_file", filePath)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 
 	graph.ServerCtx = context.Background()
 
@@ -40,15 +47,28 @@ func Start(port string) error {
 		}
 	}()
 
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+	srv := addContext(handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}})))
 
 	endpoint := fmt.Sprintf("/%s", "graphql")
+	var content string
 
-	http.Handle("/", playground.Handler("GraphQL playground", endpoint))
+	if isQueryEnable {
+		http.Handle("/playground", playground.Handler("GraphQL Playground", endpoint))
+		if port == 80 {
+			content = aurora.Bold(aurora.Cyan(fmt.Sprintf("http://%s/playground", domain))).String()
+		} else {
+			content = aurora.Bold(aurora.Cyan(fmt.Sprintf("http://%s:%d/playground", domain, port))).String()
+		}
+
+		fmt.Println(fmt.Sprintf("GraphQL playground: %s", content))
+	}
+
 	http.Handle(endpoint, srv)
 
-	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	fmt.Println(strings.Join([]string{
+		aurora.Bold("Server running on port").String(),
+		aurora.Bold(aurora.Green(fmt.Sprintf("%d 🚀", port))).String(),
+	}, " "))
 
-	return nil
+	return http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }

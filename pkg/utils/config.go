@@ -24,7 +24,14 @@ func GetElk(filePath string, isGlobal bool) (*ox.Elk, error) {
 		}
 	}
 
-	return ox.FromFile(elkConfigPath)
+	response, err := ox.FromFile(elkConfigPath)
+	if err != nil {
+		return nil, err
+	}
+
+	response.SetFilePath(elkConfigPath)
+
+	return response, nil
 }
 
 func getElkFilePath(isGlobal bool) (string, error) {
