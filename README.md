@@ -106,4 +106,4 @@ To learn more about the progress and what is being planned go to [Projects][proj
 [run]: docs/commands/run.md
 [version]: docs/commands/version.md
 [exec]: docs/commands/exec.md
-[server]: docs/commands/exec.md
+[server]: docs/commands/server.md
