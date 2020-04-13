@@ -7,15 +7,15 @@ import (
 	"text/template"
 
 	"github.com/jjzcru/elk/internal/cli/templates"
-	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/primitives/ox"
+	"github.com/jjzcru/elk/pkg/utils"
 	"gopkg.in/yaml.v2"
 
 	"github.com/spf13/cobra"
 )
 
-// NewInitializeCommand returns a cobra command for `init` sub command
-func NewInitializeCommand() *cobra.Command {
+// Command returns a cobra command for `init` sub command
+func Command() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Creates an ox.yml file in the current directory",

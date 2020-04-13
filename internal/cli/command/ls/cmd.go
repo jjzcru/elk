@@ -2,8 +2,8 @@ package ls
 
 import (
 	"fmt"
-	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/primitives/ox"
+	"github.com/jjzcru/elk/pkg/utils"
 	"os"
 	"strings"
 	"text/tabwriter"
@@ -21,8 +21,8 @@ Flags:
   -h, --help          help for logs
 `
 
-// NewListCommand returns a cobra command for `ls` sub command
-func NewListCommand() *cobra.Command {
+// Command returns a cobra command for `ls` sub command
+func Command() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "ls",
 		Short: "List tasks",

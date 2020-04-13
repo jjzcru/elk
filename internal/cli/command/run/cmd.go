@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jjzcru/elk/internal/cli/utils"
+	"github.com/jjzcru/elk/pkg/utils"
 
 	"github.com/jjzcru/elk/pkg/engine"
 
@@ -38,8 +38,8 @@ Flags:
   -i, --interval            Set a duration for an interval
 `
 
-// NewRunCommand returns a cobra command for `run` sub command
-func NewRunCommand() *cobra.Command {
+// Command returns a cobra command for `run` sub command
+func Command() *cobra.Command {
 	var envs []string
 	var vars []string
 	var cmd = &cobra.Command{
@@ -134,7 +134,7 @@ func run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 		return err
 	}
 
-	logger, err := Build(cmd, e)
+	logger, err := Build(cmd, e, args)
 	if err != nil {
 		return err
 	}

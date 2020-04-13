@@ -4,7 +4,7 @@ package run
 
 import (
 	"fmt"
-	"github.com/jjzcru/elk/internal/cli/utils"
+	"github.com/jjzcru/elk/pkg/utils"
 	"os"
 	"os/exec"
 )

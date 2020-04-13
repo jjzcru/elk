@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/file"
+	"github.com/jjzcru/elk/pkg/utils"
 	"github.com/logrusorgru/aurora"
 	"github.com/spf13/cobra"
 )
@@ -26,8 +26,8 @@ Flags:
   -h, --help          Help for logs
 `
 
-// NewLogsCommand returns a cobra command for `logs` sub command
-func NewLogsCommand() *cobra.Command {
+// Command returns a cobra command for `logs` sub command
+func Command() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "logs",
 		Short: "Attach logs from a task to the terminal 📝",

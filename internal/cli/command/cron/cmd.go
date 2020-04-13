@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/jjzcru/elk/internal/cli/command/run"
-	"github.com/jjzcru/elk/internal/cli/utils"
 	"github.com/jjzcru/elk/pkg/engine"
+	"github.com/jjzcru/elk/pkg/utils"
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
 )
@@ -35,8 +35,8 @@ Flags:
       --start               Set a date/datetime to a task to run
 `
 
-// NewRunCommand returns a cobra command for `run` sub command
-func NewCronCommand() *cobra.Command {
+// Command returns a cobra command for `run` sub command
+func Command() *cobra.Command {
 	var envs []string
 	var vars []string
 	var cmd = &cobra.Command{
@@ -119,7 +119,7 @@ func Run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 		return err
 	}
 
-	logger, err := run.Build(cmd, e)
+	logger, err := run.Build(cmd, e, args)
 	if err != nil {
 		return err
 	}

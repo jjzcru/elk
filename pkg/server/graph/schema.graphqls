@@ -1,0 +1,109 @@
+scalar Map
+scalar Time
+scalar Timestamp
+scalar Duration
+scalar FilePath
+
+type Query {
+    # Show the current state of the configuration file
+    elk: Elk!
+
+    # Display a list of all the availables tasks
+    tasks(name: String): [Task!]!
+
+    # Returns a list of all the detached tasks, can also be filter by an id
+    detached(id: ID): [DetachedTask!]!
+}
+
+type Mutation {
+    # Runs a task in sync mode, do not use for long running task since the request could be dropped
+    run(tasks: [String!]!, properties: TaskProperties): [Output]
+
+    # Runs a task in detached mode and returns an object with the metadata of the task so can be fetch later
+    detached(tasks: [String!]!, properties: TaskProperties, config: RunConfig): DetachedTask
+    
+    # Kills a particular detached task by its id
+    kill(id: ID!): DetachedTask
+}
+
+# Object that represents the configuration object
+type Elk {
+    version: String!
+    env: Map
+    envFile: String!
+    vars: Map
+    tasks: [Task!]!
+}
+
+# Object that represent a task in elk
+type Task {
+    name: String!
+    cmds: [String]!
+    env: Map
+    vars: Map
+    envFile: String!
+    description: String!
+    dir: String!
+    log: Log
+    sources: String
+    deps: [Dep]!
+    ignoreError: Boolean!
+}
+
+type Dep {
+    name: String!
+    detached: Boolean!
+}
+
+type Log {
+    out: String!
+    format: String!
+    error: String!
+}
+
+# Object that represents tha detached task
+type DetachedTask {
+    # Id used to identify this particular task
+    id: ID!
+
+    # Tasks that were executed in this detached task
+    tasks: [Task!]!
+
+    # Output (stdout, stderr) of each of the tasks
+    outputs: [Output!]
+
+    # Current status of the application: running, success, error, killed
+    status: String!
+    
+    # Time when the detached task start running
+    startAt: Time!
+
+    # Amount of that has elapsed since the application started until the current status
+    duration: Duration!
+
+    # Time when the task achive a final state: success, error or killed
+    endAt: Time
+}
+
+# Overwrite properties to send to the task
+input TaskProperties {
+    vars: Map
+    env: Map
+    envFile: FilePath
+    ignoreError: Boolean
+}
+
+# Object that represents the running options for a detached task
+input RunConfig {
+    start: Timestamp
+    deadline: Timestamp
+    timeout: Duration
+    delay: Duration
+}
+
+# Object that represents the output from a task
+type Output {
+    task: String!
+    out: [String!]!
+    error: [String!]!
+}
