@@ -1,26 +1,26 @@
 package main
 
 import (
-	"os"
+	OS "os"
 
 	"github.com/jjzcru/elk/internal/cli/command"
 
-	"github.com/jjzcru/elk/internal/cli/command/version"
+	v "github.com/jjzcru/elk/internal/cli/command/version"
 	"github.com/jjzcru/elk/pkg/utils"
 )
 
-var v = ""
-var o = ""
+var version = ""
+var os = ""
 var arch = ""
 var commit = ""
 var date = ""
-var goVersion = ""
+var goversion = ""
 
 func main() {
-	version.SetVersion(v, o, arch, commit, date, goVersion)
+	v.SetVersion(version, os, arch, commit, date, goversion)
 	err := command.Execute()
 	if err != nil {
 		utils.PrintError(err)
-		os.Exit(1)
+		OS.Exit(1)
 	}
 }
