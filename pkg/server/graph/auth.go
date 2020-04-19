@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-func authenticate(ctx context.Context) error {
+func auth(ctx context.Context) error {
 	token := ctx.Value("token").(string)
 	authorization := ctx.Value("authorization").(string)
 

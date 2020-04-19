@@ -16,7 +16,7 @@ import (
 )
 
 func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *model.TaskProperties) ([]*model.Output, error) {
-	err := authenticate(ctx)
+	err := auth(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *
 }
 
 func (r *mutationResolver) Detached(ctx context.Context, tasks []string, properties *model.TaskProperties, config *model.RunConfig) (*model.DetachedTask, error) {
-	err := authenticate(ctx)
+	err := auth(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +321,7 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 }
 
 func (r *mutationResolver) Kill(ctx context.Context, id string) (*model.DetachedTask, error) {
-	err := authenticate(ctx)
+	err := auth(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -347,7 +347,7 @@ func (r *mutationResolver) Kill(ctx context.Context, id string) (*model.Detached
 }
 
 func (r *queryResolver) Elk(ctx context.Context) (*model.Elk, error) {
-	err := authenticate(ctx)
+	err := auth(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -367,7 +367,7 @@ func (r *queryResolver) Elk(ctx context.Context) (*model.Elk, error) {
 }
 
 func (r *queryResolver) Tasks(ctx context.Context, name *string) ([]*model.Task, error) {
-	err := authenticate(ctx)
+	err := auth(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -398,7 +398,7 @@ func (r *queryResolver) Tasks(ctx context.Context, name *string) ([]*model.Task,
 }
 
 func (r *queryResolver) Detached(ctx context.Context, id *string) ([]*model.DetachedTask, error) {
-	err := authenticate(ctx)
+	err := auth(ctx)
 	if err != nil {
 		return nil, err
 	}
