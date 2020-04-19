@@ -89,6 +89,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Detached func(childComplexity int, id *string) int
 		Elk      func(childComplexity int) int
+		Health   func(childComplexity int) int
 		Tasks    func(childComplexity int, name *string) int
 	}
 
@@ -115,6 +116,7 @@ type MutationResolver interface {
 	Kill(ctx context.Context, id string) (*model.DetachedTask, error)
 }
 type QueryResolver interface {
+	Health(ctx context.Context) (bool, error)
 	Elk(ctx context.Context) (*model.Elk, error)
 	Tasks(ctx context.Context, name *string) ([]*model.Task, error)
 	Detached(ctx context.Context, id *string) ([]*model.DetachedTask, error)
@@ -330,6 +332,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Elk(childComplexity), true
 
+	case "Query.health":
+		if e.complexity.Query.Health == nil {
+			break
+		}
+
+		return e.complexity.Query.Health(childComplexity), true
+
 	case "Query.tasks":
 		if e.complexity.Query.Tasks == nil {
 			break
@@ -504,6 +513,9 @@ scalar Duration
 scalar FilePath
 
 type Query {
+    # Health check
+    health: Boolean!
+
     # Show the current state of the configuration file
     elk: Elk!
 
@@ -1539,6 +1551,40 @@ func (ec *executionContext) _Output_error(ctx context.Context, field graphql.Col
 	res := resTmp.([]string)
 	fc.Result = res
 	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_health(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Health(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_elk(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3533,6 +3579,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "health":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_health(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "elk":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {

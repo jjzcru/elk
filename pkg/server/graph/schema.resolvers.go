@@ -346,6 +346,10 @@ func (r *mutationResolver) Kill(ctx context.Context, id string) (*model.Detached
 	return nil, nil
 }
 
+func (r *queryResolver) Health(_ context.Context) (bool, error) {
+	return true, nil
+}
+
 func (r *queryResolver) Elk(ctx context.Context) (*model.Elk, error) {
 	err := auth(ctx)
 	if err != nil {

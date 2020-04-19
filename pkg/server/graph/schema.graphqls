@@ -5,6 +5,9 @@ scalar Duration
 scalar FilePath
 
 type Query {
+    # Health check
+    health: Boolean!
+
     # Show the current state of the configuration file
     elk: Elk!
 
