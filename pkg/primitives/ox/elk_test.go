@@ -397,10 +397,24 @@ func TestFromFile(t *testing.T) {
 		t.Error(err)
 	}
 
+
+
 	for task := range elk.Tasks {
-		if !reflect.DeepEqual(e.Tasks[task], elk.Tasks[task]) {
-			t.Errorf("The data is different for the task '%s'", task)
-		}
+		taskFromMemory := e.Tasks[task]
+		taskFromFile := elk.Tasks[task]
+
+		compareEquality(t, "title", taskFromMemory.Title, taskFromFile.Title)
+		compareEquality(t, "tags", taskFromMemory.Tags, taskFromFile.Tags)
+		compareEquality(t,"cmds", taskFromMemory.Cmds, taskFromFile.Cmds)
+		compareEquality(t,"env", taskFromMemory.Env, taskFromFile.Env)
+		compareEquality(t,"vars", taskFromMemory.Vars, taskFromFile.Vars)
+		compareEquality(t,"envFile", taskFromMemory.EnvFile, taskFromFile.EnvFile)
+		compareEquality(t,"description", taskFromMemory.Description, taskFromFile.Description)
+		compareEquality(t,"dir", taskFromMemory.Dir, taskFromFile.Dir)
+		compareEquality(t,"log", taskFromMemory.Log, taskFromFile.Log)
+		compareEquality(t,"sources", taskFromMemory.Sources, taskFromFile.Sources)
+		compareEquality(t,"deps", taskFromMemory.Deps, taskFromFile.Deps)
+		compareEquality(t,"ignore_error", taskFromMemory.IgnoreError, taskFromFile.IgnoreError)
 	}
 
 	err = os.Remove(path)
@@ -467,4 +481,34 @@ func TestFromFileInvalidFileContent(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+}
+
+func compareEquality(t *testing.T, property string, shouldBeValue interface{}, isValue interface{}) {
+	if (shouldBeValue == nil) != (isValue == nil) {
+		t.Errorf("The property %s have different values", property)
+	}
+
+	switch shouldBeValue.(type) {
+	case string:
+		if shouldBeValue != isValue {
+			t.Errorf("The property %s should be '%s' but it was '%s' instead", property, shouldBeValue, isValue)
+		}
+	case []string:
+		shouldBeValueSlice := shouldBeValue.([]string)
+		isValueSlice := isValue.([]string)
+		if len(shouldBeValueSlice) != len(isValueSlice) {
+			t.Errorf("The property %s should have %d items but it has %d instead", property, len(shouldBeValue.([]string)), len(isValue.([]string)))
+		}
+
+		for i := range shouldBeValueSlice {
+			if shouldBeValueSlice[i] != isValueSlice[i] {
+				t.Errorf("The property %s do not have the item '%s'", property, shouldBeValueSlice[i])
+			}
+		}
+	default:
+		if !reflect.DeepEqual(shouldBeValue, isValue) {
+			t.Errorf("The property %s is not equal", property)
+		}
+	}
+
 }
