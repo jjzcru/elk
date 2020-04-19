@@ -31,7 +31,7 @@ func Start(port int, filePath string, isQueryEnable bool, token string) error {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), "elk_file", filePath)
 			ctx = context.WithValue(ctx, "token", token)
-			ctx = context.WithValue(ctx, "authorization", r.Header.Get("Authorization"))
+			ctx = context.WithValue(ctx, "authorization", r.Header.Get("auth-token"))
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
