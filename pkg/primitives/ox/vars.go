@@ -1,7 +1,6 @@
 package ox
 
 import (
-	"errors"
 	"html/template"
 )
 
@@ -19,10 +18,6 @@ func (v *Vars) Process(cmd string) (string, error) {
 	t, err := template.New("ox").Parse(cmd)
 	if err != nil {
 		return "", err
-	}
-
-	if t == nil {
-		return "", errors.New("error processing vars")
 	}
 
 	err = t.Execute(v, v.Map)
