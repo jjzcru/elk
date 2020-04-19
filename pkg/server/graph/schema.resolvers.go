@@ -310,7 +310,7 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 	return &result, nil
 }
 
-func (r *mutationResolver) Kill(_ context.Context, id string) (*model.DetachedTask, error) {
+func (r *mutationResolver) Kill(ctx context.Context, id string) (*model.DetachedTask, error) {
 	if detachedTask, ok := DetachedTasksMap[id]; ok {
 		contextMap := DetachedCtxMap[id]
 		if contextMap.ctx.Err() != nil {
@@ -372,7 +372,7 @@ func (r *queryResolver) Tasks(ctx context.Context, name *string) ([]*model.Task,
 	return tasks, nil
 }
 
-func (r *queryResolver) Detached(_ context.Context, id *string) ([]*model.DetachedTask, error) {
+func (r *queryResolver) Detached(ctx context.Context, id *string) ([]*model.DetachedTask, error) {
 	var detachedTasks []*model.DetachedTask
 
 	setDuration := func(task *model.DetachedTask) {

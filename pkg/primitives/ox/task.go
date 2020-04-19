@@ -7,6 +7,8 @@ import (
 
 // Task is the data structure for the task to run
 type Task struct {
+	Title       string            `yaml:"title"`
+	Tags        []string          `yaml:"tags"`
 	Cmds        []string          `yaml:"cmds"`
 	Env         map[string]string `yaml:"env,omitempty"`
 	Vars        map[string]string `yaml:"vars,omitempty"`

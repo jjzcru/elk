@@ -37,6 +37,8 @@ type Elk {
 
 # Object that represent a task in elk
 type Task {
+    title: String!
+    tags: [String!]
     name: String!
     cmds: [String]!
     env: Map

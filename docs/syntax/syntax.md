@@ -35,6 +35,14 @@ which task is going to perform.
 ### Task
 In the `task` level you can overwrite the values set at the `global` level to this particular task.
 
+`title`
+
+This properties defines what is the title of the task. If not set is going to use the `name` of the task as a default.
+
+`tags`
+
+This propertie is a list of tags that is used to group tasks.
+
 `env_file`
 
 This is a path to a file that declares the `env` variables as `ENV_NAME=ENV_VALUE` where each line is a different 

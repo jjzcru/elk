@@ -49,6 +49,8 @@ type RunConfig struct {
 }
 
 type Task struct {
+	Title       string                 `json:"title"`
+	Tags        []string               `json:"tags"`
 	Name        string                 `json:"name"`
 	Cmds        []*string              `json:"cmds"`
 	Env         map[string]interface{} `json:"env"`

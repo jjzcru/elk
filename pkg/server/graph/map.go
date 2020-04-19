@@ -27,6 +27,11 @@ func mapElk(elk *ox.Elk) (*model.Elk, error) {
 			return nil, err
 		}
 		task.Name = k
+
+		if len(task.Title) == 0 {
+			task.Title = task.Name
+		}
+
 		elkModel.Tasks = append(elkModel.Tasks, task)
 	}
 
@@ -35,6 +40,8 @@ func mapElk(elk *ox.Elk) (*model.Elk, error) {
 
 func mapTask(task ox.Task) (*model.Task, error) {
 	taskModel := model.Task{
+		Title:       task.Title,
+		Tags:        uniqueString(task.Tags),
 		Cmds:        []*string{},
 		Env:         map[string]interface{}{},
 		Vars:        map[string]interface{}{},
@@ -69,6 +76,18 @@ func mapTask(task ox.Task) (*model.Task, error) {
 	}
 
 	return &taskModel, nil
+}
+
+func uniqueString(stringSlice []string) []string {
+	keys := make(map[string]bool)
+	var list []string
+	for _, entry := range stringSlice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
 }
 
 func mapDep(dep ox.Dep) *model.Dep {
