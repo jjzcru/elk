@@ -22,8 +22,9 @@ type Task struct {
 }
 
 type Dep struct {
-	Name     string `yaml:"name"`
-	Detached bool   `yaml:"detached"`
+	Name        string `yaml:"name"`
+	Detached    bool   `yaml:"detached"`
+	IgnoreError bool   `yaml:"ignore_error,omitempty"`
 }
 
 type Log struct {

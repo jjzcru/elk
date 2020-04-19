@@ -35,27 +35,29 @@ func (e DefaultExecuter) Execute(ctx context.Context, elk *ox.Elk, name string) 
 		return pid, err
 	}
 
-	var detachedDeps []string
-	var deps []string
+	var detachedDeps []ox.Dep
+	var deps []ox.Dep
 
 	for _, dep := range task.Deps {
 		if dep.Detached {
-			detachedDeps = append(detachedDeps, dep.Name)
+			detachedDeps = append(detachedDeps, dep)
 		} else {
-			deps = append(deps, dep.Name)
+			deps = append(deps, dep)
 		}
 	}
 
 	if len(detachedDeps) > 0 {
 		for _, dep := range detachedDeps {
-			go e.ExecuteDetached(ctx, elk, dep)
+			go func(name string) {
+				_, _ = e.Execute(ctx, elk, name)
+			}(dep.Name)
 		}
 	}
 
 	if len(deps) > 0 {
 		for _, dep := range deps {
-			_, err := e.Execute(ctx, elk, dep)
-			if err != nil {
+			_, err := e.Execute(ctx, elk, dep.Name)
+			if err != nil && !dep.IgnoreError {
 				return pid, err
 			}
 		}
@@ -117,11 +119,6 @@ func (e DefaultExecuter) Execute(ctx context.Context, elk *ox.Elk, name string) 
 		}
 	}
 	return pid, nil
-}
-
-// ExecuteDetached do not keep track of the execution of the task
-func (e DefaultExecuter) ExecuteDetached(ctx context.Context, elk *ox.Elk, name string) {
-	_, _ = e.Execute(ctx, elk, name)
 }
 
 func getEnvs(envMap map[string]string) []string {
