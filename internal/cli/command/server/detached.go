@@ -1,26 +1,29 @@
-// +build !windows
-
 package server
 
 import (
 	"fmt"
+	"github.com/jjzcru/elk/pkg/utils"
 	"os"
 	"os/exec"
-	"syscall"
-
-	"github.com/jjzcru/elk/pkg/utils"
 )
 
-func detached() error {
+func detached(token string) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 
 	command := utils.RemoveDetachedFlag(os.Args)
-	cmd := exec.Command(command[0], command[1:]...)
-	pid := os.Getpid()
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true, Pgid: pid}
+	var commands []string
+	for _, c := range command[1:] {
+		commands = append(commands, c)
+	}
+
+	if len(token) > 0 {
+		commands = append(commands, []string{"--token", token}...)
+	}
+
+	cmd := exec.Command(command[0], commands...)
 	cmd.Dir = cwd
 
 	err = cmd.Start()
@@ -28,6 +31,13 @@ func detached() error {
 		return err
 	}
 
-	fmt.Println(pid)
+	pid := cmd.Process.Pid
+
+	if len(token) > 0 {
+		fmt.Printf("%d %s", pid, token)
+	} else {
+		fmt.Println(pid)
+	}
+
 	return nil
 }

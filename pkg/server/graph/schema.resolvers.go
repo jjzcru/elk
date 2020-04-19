@@ -16,6 +16,11 @@ import (
 )
 
 func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *model.TaskProperties) ([]*model.Output, error) {
+	err := authenticate(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	elkFilePath := ctx.Value("elk_file").(string)
 	elk, err := utils.GetElk(elkFilePath, true)
 	if err != nil {
@@ -127,6 +132,11 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *
 }
 
 func (r *mutationResolver) Detached(ctx context.Context, tasks []string, properties *model.TaskProperties, config *model.RunConfig) (*model.DetachedTask, error) {
+	err := authenticate(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	elkFilePath := ctx.Value("elk_file").(string)
 
 	ctx = ServerCtx
@@ -311,6 +321,11 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 }
 
 func (r *mutationResolver) Kill(ctx context.Context, id string) (*model.DetachedTask, error) {
+	err := authenticate(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	if detachedTask, ok := DetachedTasksMap[id]; ok {
 		contextMap := DetachedCtxMap[id]
 		if contextMap.ctx.Err() != nil {
@@ -332,6 +347,11 @@ func (r *mutationResolver) Kill(ctx context.Context, id string) (*model.Detached
 }
 
 func (r *queryResolver) Elk(ctx context.Context) (*model.Elk, error) {
+	err := authenticate(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	elkFilePath := ctx.Value("elk_file").(string)
 	elk, err := utils.GetElk(elkFilePath, true)
 	if err != nil {
@@ -347,6 +367,11 @@ func (r *queryResolver) Elk(ctx context.Context) (*model.Elk, error) {
 }
 
 func (r *queryResolver) Tasks(ctx context.Context, name *string) ([]*model.Task, error) {
+	err := authenticate(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	elkFilePath := ctx.Value("elk_file").(string)
 	elk, err := utils.GetElk(elkFilePath, true)
 	if err != nil {
@@ -373,6 +398,11 @@ func (r *queryResolver) Tasks(ctx context.Context, name *string) ([]*model.Task,
 }
 
 func (r *queryResolver) Detached(ctx context.Context, id *string) ([]*model.DetachedTask, error) {
+	err := authenticate(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	var detachedTasks []*model.DetachedTask
 
 	setDuration := func(task *model.DetachedTask) {

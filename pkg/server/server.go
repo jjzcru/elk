@@ -20,7 +20,7 @@ import (
 const defaultPort = 8080
 
 // Start graphql server
-func Start(port int, filePath string, isQueryEnable bool) error {
+func Start(port int, filePath string, isQueryEnable bool, token string) error {
 	if port == 0 {
 		port = defaultPort
 	}
@@ -30,6 +30,8 @@ func Start(port int, filePath string, isQueryEnable bool) error {
 	addContext := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), "elk_file", filePath)
+			ctx = context.WithValue(ctx, "token", token)
+			ctx = context.WithValue(ctx, "authorization", r.Header.Get("Authorization"))
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -64,6 +66,13 @@ func Start(port int, filePath string, isQueryEnable bool) error {
 	}
 
 	http.Handle(endpoint, srv)
+
+	if len(token) > 0 {
+		fmt.Println(strings.Join([]string{
+			aurora.Bold("Authorization token:").String(),
+			aurora.Bold(aurora.Cyan(token)).String(),
+		}, " "))
+	}
 
 	fmt.Println(strings.Join([]string{
 		aurora.Bold("Server running on port").String(),
