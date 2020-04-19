@@ -15,9 +15,7 @@ func detached(token string) error {
 
 	command := utils.RemoveDetachedFlag(os.Args)
 	var commands []string
-	for _, c := range command[1:] {
-		commands = append(commands, c)
-	}
+	commands = append(commands, command[1:]...)
 
 	if len(token) > 0 {
 		commands = append(commands, []string{"--token", token}...)

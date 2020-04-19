@@ -136,7 +136,7 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 		return nil, err
 	}
 
-	elkFilePath := ctx.Value("elk_file").(string)
+	elkFilePath := ctx.Value(ElkFileKey).(string)
 
 	id := getDetachedTaskID()
 	elk, err := utils.GetElk(elkFilePath, true)
@@ -344,7 +344,7 @@ func (r *queryResolver) Elk(ctx context.Context) (*model.Elk, error) {
 		return nil, err
 	}
 
-	elkFilePath := ctx.Value("elk_file").(string)
+	elkFilePath := ctx.Value(ElkFileKey).(string)
 	elk, err := utils.GetElk(elkFilePath, true)
 	if err != nil {
 		return nil, err
@@ -364,7 +364,7 @@ func (r *queryResolver) Tasks(ctx context.Context, name *string) ([]*model.Task,
 		return nil, err
 	}
 
-	elkFilePath := ctx.Value("elk_file").(string)
+	elkFilePath := ctx.Value(ElkFileKey).(string)
 	elk, err := utils.GetElk(elkFilePath, true)
 	if err != nil {
 		return nil, err

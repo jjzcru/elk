@@ -205,9 +205,13 @@ func Run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 	}
 
 	c.Start()
-	select {
+	/*select {
 	case <-ctx.Done():
 		c.Stop()
 		return nil
-	}
+	}*/
+
+	<-ctx.Done()
+	c.Stop()
+	return nil
 }

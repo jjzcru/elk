@@ -386,7 +386,11 @@ func TestFromFile(t *testing.T) {
 		t.Error(err)
 	}
 
-	path := fmt.Sprint("./ox.yml")
+	path, err := getTempPath()
+	if err != nil {
+		t.Error(err)
+	}
+
 	err = ioutil.WriteFile(path, content, 0644)
 	if err != nil {
 		t.Error(err)
@@ -431,7 +435,11 @@ func TestFromFileWithoutTasks(t *testing.T) {
 		t.Error(err)
 	}
 
-	path := fmt.Sprint("./ox.yml")
+	path, err := getTempPath()
+	if err != nil {
+		t.Error(err)
+	}
+
 	err = ioutil.WriteFile(path, content, 0644)
 	if err != nil {
 		t.Error(err)
@@ -457,7 +465,7 @@ func TestFromFileWithoutTasks(t *testing.T) {
 }
 
 func TestFromFileNotExist(t *testing.T) {
-	path := fmt.Sprint("./ox.yml")
+	path := "./ox.yml"
 
 	_, err := FromFile(path)
 	if err == nil {
@@ -466,8 +474,12 @@ func TestFromFileNotExist(t *testing.T) {
 }
 
 func TestFromFileInvalidFileContent(t *testing.T) {
-	path := fmt.Sprint("./ox.yml")
-	err := ioutil.WriteFile(path, []byte("FOO=BAR"), 0644)
+	path, err := getTempPath()
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = ioutil.WriteFile(path, []byte("FOO=BAR"), 0644)
 	if err != nil {
 		t.Error(err)
 	}
@@ -481,6 +493,15 @@ func TestFromFileInvalidFileContent(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+}
+
+func getTempPath() (string, error) {
+	file, err := ioutil.TempFile(os.TempDir(), "ox.*.yml")
+	if err != nil {
+		return "", err
+	}
+
+	return file.Name(), nil
 }
 
 func compareEquality(t *testing.T, property string, shouldBeValue interface{}, isValue interface{}) {

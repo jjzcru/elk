@@ -48,7 +48,7 @@ func (e DefaultExecuter) Execute(ctx context.Context, elk *ox.Elk, name string) 
 
 	if len(detachedDeps) > 0 {
 		for _, dep := range detachedDeps {
-			go e.Execute(ctx, elk, dep)
+			go e.ExecuteDetached(ctx, elk, dep)
 		}
 	}
 
@@ -117,6 +117,11 @@ func (e DefaultExecuter) Execute(ctx context.Context, elk *ox.Elk, name string) 
 		}
 	}
 	return pid, nil
+}
+
+// ExecuteDetached do not keep track of the execution of the task
+func (e DefaultExecuter) ExecuteDetached(ctx context.Context, elk *ox.Elk, name string) {
+	_, _ = e.Execute(ctx, elk, name)
 }
 
 func getEnvs(envMap map[string]string) []string {

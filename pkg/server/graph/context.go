@@ -5,6 +5,14 @@ import (
 	"github.com/jjzcru/elk/pkg/server/graph/model"
 )
 
+type ContextKey int
+
+const (
+	ElkFileKey ContextKey = iota
+	TokenKey ContextKey = iota
+	AuthorizationKey ContextKey = iota
+)
+
 func getConfigContext(parentContext context.Context, config *model.RunConfig) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(parentContext)
 

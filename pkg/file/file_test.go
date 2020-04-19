@@ -57,6 +57,9 @@ func TestGetEnvFDir(t *testing.T) {
 	randomNumber := rand.Intn(100)
 	path := fmt.Sprintf("./%d", randomNumber)
 	err := os.MkdirAll(path, os.ModePerm)
+	if err != nil {
+		t.Error(err)
+	}
 
 	_, err = GetEnvFromFile(path)
 	if err == nil {

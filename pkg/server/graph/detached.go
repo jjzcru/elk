@@ -20,7 +20,7 @@ var DetachedCtxMap = make(map[string]*detachedContext)
 
 func getDetachedTaskID() string {
 	hash := md5.New()
-	hash.Write([]byte(time.Now().Format(time.RFC3339)))
+	_, _ = hash.Write([]byte(time.Now().Format(time.RFC3339)))
 	var id string
 	for {
 		id = hex.EncodeToString(hash.Sum(nil))

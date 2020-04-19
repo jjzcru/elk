@@ -106,6 +106,6 @@ func run(cmd *cobra.Command, _ []string) error {
 
 func getAuthToken() string {
 	hasher := md5.New()
-	hasher.Write([]byte(time.Now().Format(time.RFC3339)))
+	_, _ = hasher.Write([]byte(time.Now().Format(time.RFC3339)))
 	return hex.EncodeToString(hasher.Sum(nil))[0:22]
 }
