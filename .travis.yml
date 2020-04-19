@@ -1,0 +1,8 @@
+matrix:
+  include:
+    - language: go
+      go: 1.13.x
+
+notifications:
+  email:
+    - jjzcru@gmail.com
