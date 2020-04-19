@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -139,8 +138,6 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 
 	elkFilePath := ctx.Value("elk_file").(string)
 
-	ctx = ServerCtx
-	ctx, cancel := context.WithCancel(ctx)
 	id := getDetachedTaskID()
 	elk, err := utils.GetElk(elkFilePath, true)
 	if err != nil {
@@ -152,25 +149,14 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 
 	loadTaskProperties(elk, properties)
 
-	if config != nil {
-		start = config.Start
-		delay = config.Delay
-
-		if config.Timeout != nil {
-			ctx, _ = context.WithTimeout(ctx, *config.Timeout)
-			fmt.Println(config.Delay)
-		}
-
-		if config.Deadline != nil {
-			ctx, _ = context.WithDeadline(ctx, *config.Deadline)
-			fmt.Println(config.Deadline)
-		}
-
-	}
-
 	err = elk.Build()
 	if err != nil {
 		return nil, err
+	}
+
+	if config != nil {
+		start = config.Start
+		delay = config.Delay
 	}
 
 	outputMap := make(map[string]*model.Output)
@@ -206,7 +192,16 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 		close(errChan)
 	}
 
+	ctx, cancel := getConfigContext(ServerCtx, config)
+
 	go func() {
+		contextMap := detachedContext{
+			ctx:    ctx,
+			cancel: cancel,
+		}
+
+		DetachedCtxMap[id] = &contextMap
+
 		defer closeChannels()
 		var wg sync.WaitGroup
 		delayStart(delay, start)
@@ -245,13 +240,6 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 	}
 
 	DetachedTasksMap[id] = &response
-
-	contextMap := detachedContext{
-		ctx:    ctx,
-		cancel: cancel,
-	}
-
-	DetachedCtxMap[id] = &contextMap
 
 	go func() {
 		for {

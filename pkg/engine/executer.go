@@ -25,7 +25,9 @@ type DefaultExecuter struct {
 
 // Execute task and returns a PID
 func (e DefaultExecuter) Execute(ctx context.Context, elk *ox.Elk, name string) (int, error) {
-	ctx, _ = context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	pid := os.Getpid()
 
 	task, err := elk.GetTask(name)
@@ -46,15 +48,13 @@ func (e DefaultExecuter) Execute(ctx context.Context, elk *ox.Elk, name string) 
 
 	if len(detachedDeps) > 0 {
 		for _, dep := range detachedDeps {
-			depCtx, _ := context.WithCancel(ctx)
-			go e.Execute(depCtx, elk, dep)
+			go e.Execute(ctx, elk, dep)
 		}
 	}
 
 	if len(deps) > 0 {
 		for _, dep := range deps {
-			depCtx, _ := context.WithCancel(ctx)
-			_, err := e.Execute(depCtx, elk, dep)
+			_, err := e.Execute(ctx, elk, dep)
 			if err != nil {
 				return pid, err
 			}

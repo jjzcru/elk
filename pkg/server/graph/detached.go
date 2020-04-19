@@ -35,8 +35,8 @@ func getDetachedTaskID() string {
 // CancelDetachedTasks call cancel on all the context
 func CancelDetachedTasks() {
 	var wg sync.WaitGroup
-	for k := range DetachedCtxMap {
-		detachedTask := DetachedTasksMap[k]
+	for id := range DetachedCtxMap {
+		detachedTask := DetachedTasksMap[id]
 		if detachedTask == nil {
 			continue
 		}
@@ -49,13 +49,13 @@ func CancelDetachedTasks() {
 		}
 
 		wg.Add(1)
-		go func() {
+		go func(id string) {
 			defer wg.Done()
-			detachedCtx := DetachedCtxMap[k]
+			detachedCtx := DetachedCtxMap[id]
 			if detachedCtx != nil {
 				detachedCtx.cancel()
 			}
-		}()
+		}(id)
 	}
 	wg.Wait()
 }

@@ -153,6 +153,7 @@ func Run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 	}
 
 	ctx := context.Background()
+	var cancel context.CancelFunc
 
 	if len(start) > 0 {
 		startTime, err := run.GetTimeFromString(start)
@@ -167,7 +168,7 @@ func Run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 	}
 
 	if timeout > 0 {
-		ctx, _ = context.WithTimeout(ctx, timeout)
+		ctx, cancel = context.WithTimeout(ctx, timeout)
 	}
 
 	if len(deadline) > 0 {
@@ -176,7 +177,11 @@ func Run(cmd *cobra.Command, args []string, envs []string, vars []string) error 
 			return err
 		}
 
-		ctx, _ = context.WithDeadline(ctx, deadlineTime)
+		ctx, cancel = context.WithDeadline(ctx, deadlineTime)
+	}
+
+	if cancel != nil {
+		defer cancel()
 	}
 
 	cronTab := args[0]

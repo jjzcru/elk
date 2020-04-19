@@ -14,9 +14,10 @@ before_script:
   - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $GOPATH/bin v1.23.1
   - go get golang.org/x/tools/cmd/cover
   - go get github.com/mattn/goveralls
+  - go vet ./...
 
 script:
-  - go test -v -covermode=count -coverprofile=coverage.out ./...
+  - go test -v -race -covermode=count -coverprofile=coverage.out ./...
   - $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
 
 notifications:
