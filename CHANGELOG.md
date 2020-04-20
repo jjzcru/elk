@@ -6,6 +6,7 @@
 
 **Misc 👾:**
 - Installation from terminal with `Go Binaries`
+- Move `main.go` to root directory
 
 ## [v0.7.0](https://github.com/jjzcru/elk/tree/v0.7.0) (2020-04-19)
 [Release](https://github.com/jjzcru/elk/releases/tag/v0.7.0)
