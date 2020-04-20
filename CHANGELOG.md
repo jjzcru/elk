@@ -1,3 +1,31 @@
+## [v0.7.0](https://github.com/jjzcru/elk/tree/v0.7.0) (2020-04-19)
+[Release](https://github.com/jjzcru/elk/releases/tag/v0.7.0)
+
+**Server ⚛️:**
+- **[health]** Add health check endpoint
+
+**Commands 🤖:**
+- **[server]** Enable authorization
+
+**Documentation 📖:**
+- **[deps]** Update documentation to enable `ignore_error` at `deps` level
+- **[task]** Update documentation to enable `title` and `tags` at `task` level
+
+**Flags 🚩:**
+- **--auth** Add flag to **[server]** command
+- **--token** Add flag to **[server]** command
+
+**Syntax:**
+- **task** Add property `title` and `tags`
+- **deps** Add property `ignore_error`
+
+**Misc 👾:**
+- Integration with `Travis-CI`
+- Integration with `Coverall`
+- Integration with `Go Release`
+- Add support for `golangci-lint`
+- Add `go vet` to build pipeline
+
 ## [v0.6.0](https://github.com/jjzcru/elk/tree/v0.6.0) (2020-04-12)
 [Release](https://github.com/jjzcru/elk/releases/tag/v0.6.0)
 

@@ -1,5 +1,5 @@
-[![Travis CI](https://travis-ci.com/jjzcru/elk.svg?branch=develop)](https://travis-ci.com/jjzcru/elk)
-[![Coverage Status](https://coveralls.io/repos/github/jjzcru/elk/badge.svg?branch=develop)](https://coveralls.io/github/jjzcru/elk?branch=develop)
+[![Travis CI](https://travis-ci.com/jjzcru/elk.svg?branch=master)](https://travis-ci.com/jjzcru/elk)
+[![Coverage Status](https://coveralls.io/repos/github/jjzcru/elk/badge.svg?branch=master)](https://coveralls.io/github/jjzcru/elk?branch=master)
 [![Build Status](https://github.com/jjzcru/elk/workflows/Build%20Status/badge.svg?branch=master)](https://github.com/jjzcru/elk/workflows/Build%20Status/badge.svg?branch=master)
 
 Elk
