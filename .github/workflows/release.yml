@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+      -
+        name: Unshallow
+        run: git fetch --prune --unshallow
+      -
+        name: Set up Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13.x
+
+      - 
+        name: Get Built Information
+        shell: bash
+        id: built
+        run: |
+          day=$(date +'%a')
+          month=$(date +'%b')
+          fill_date=$(date +'%d_%T_%Y')
+          DATE="${day^}_${month^}_${fill_date}"
+          echo "##[set-output name=date;]$DATE"
+          echo "##[set-output name=go_version;]$(go version | awk '{print $3}')"
+
+      -
+        name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v1
+        with:
+          version: latest
+          args: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DATE: ${{steps.built.outputs.date}}
+          COMMIT: ${{steps.built.outputs.commit}}
+          VERSION: ${{steps.built.outputs.version}}
+          GOVERSION: ${{steps.built.outputs.go_version}}

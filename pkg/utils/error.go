@@ -10,7 +10,7 @@ import (
 func PrintError(err error) {
 	if err.Error() != "context canceled" && err.Error() != "context deadline exceeded" {
 		fmt.Print(aurora.Bold(aurora.Red("ERROR: ")))
-		_, _ = fmt.Fprintf(os.Stderr, err.Error())
+		_, _ = fmt.Fprint(os.Stderr, err.Error())
 		fmt.Println()
 	}
 }

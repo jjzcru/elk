@@ -7,6 +7,8 @@ import (
 
 // Task is the data structure for the task to run
 type Task struct {
+	Title       string            `yaml:"title"`
+	Tags        []string          `yaml:"tags"`
 	Cmds        []string          `yaml:"cmds"`
 	Env         map[string]string `yaml:"env,omitempty"`
 	Vars        map[string]string `yaml:"vars,omitempty"`
@@ -20,8 +22,9 @@ type Task struct {
 }
 
 type Dep struct {
-	Name     string `yaml:"name"`
-	Detached bool   `yaml:"detached"`
+	Name        string `yaml:"name"`
+	Detached    bool   `yaml:"detached"`
+	IgnoreError bool   `yaml:"ignore_error,omitempty"`
 }
 
 type Log struct {

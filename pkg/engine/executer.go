@@ -26,7 +26,9 @@ type DefaultExecuter struct {
 
 // Execute task and returns a PID
 func (e DefaultExecuter) Execute(ctx context.Context, elk *ox.Elk, name string) (int, error) {
-	ctx, _ = context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	pid := os.Getpid()
 
 	task, err := elk.GetTask(name)
@@ -34,29 +36,29 @@ func (e DefaultExecuter) Execute(ctx context.Context, elk *ox.Elk, name string) 
 		return pid, err
 	}
 
-	var detachedDeps []string
-	var deps []string
+	var detachedDeps []ox.Dep
+	var deps []ox.Dep
 
 	for _, dep := range task.Deps {
 		if dep.Detached {
-			detachedDeps = append(detachedDeps, dep.Name)
+			detachedDeps = append(detachedDeps, dep)
 		} else {
-			deps = append(deps, dep.Name)
+			deps = append(deps, dep)
 		}
 	}
 
 	if len(detachedDeps) > 0 {
 		for _, dep := range detachedDeps {
-			depCtx, _ := context.WithCancel(ctx)
-			go e.Execute(depCtx, elk, dep)
+			go func(name string) {
+				_, _ = e.Execute(ctx, elk, name)
+			}(dep.Name)
 		}
 	}
 
 	if len(deps) > 0 {
 		for _, dep := range deps {
-			depCtx, _ := context.WithCancel(ctx)
-			_, err := e.Execute(depCtx, elk, dep)
-			if err != nil {
+			_, err := e.Execute(ctx, elk, dep.Name)
+			if err != nil && !dep.IgnoreError {
 				return pid, err
 			}
 		}

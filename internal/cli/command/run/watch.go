@@ -84,9 +84,10 @@ func getWatcherFiles(reg string, dir string) ([]string, error) {
 	re := regexp.MustCompile(reg)
 	var files []string
 	walk := func(fn string, fi os.FileInfo, err error) error {
-		if re.MatchString(fn) == false {
+		if !re.MatchString(fn) {
 			return nil
 		}
+
 		if !fi.IsDir() {
 			files = append(files, fn)
 		}

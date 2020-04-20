@@ -55,7 +55,7 @@ func CreateElkFile(elkFilePath string) error {
 	elkFile, _ := os.Create(elkFilePath)
 	defer elkFile.Close()
 
-	response, err = template.New("ox").Parse(templates.Elk)
+	_, err = template.New("ox").Parse(templates.Elk)
 	if err != nil {
 		return err
 	}

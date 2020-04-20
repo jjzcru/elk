@@ -11,7 +11,7 @@ import (
 // onto any existing go type.
 func MarshalTimestamp(t time.Time) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
-		io.WriteString(w, t.Format(time.RFC3339))
+		_, _ = io.WriteString(w, t.Format(time.RFC3339))
 	})
 }
 

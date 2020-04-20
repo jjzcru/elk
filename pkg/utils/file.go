@@ -8,11 +8,7 @@ import (
 // IsFileExist returns a bool depending if a file exist or not
 func IsPathExist(path string) bool {
 	_, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		return false
-	}
-
-	return true
+	return !os.IsNotExist(err)
 }
 
 // IsPathADir returns a bool depending if a path is a dir and an error if the file do not exist

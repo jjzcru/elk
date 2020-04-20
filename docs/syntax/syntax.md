@@ -35,6 +35,14 @@ which task is going to perform.
 ### Task
 In the `task` level you can overwrite the values set at the `global` level to this particular task.
 
+`title`
+
+This properties defines what is the title of the task. If not set is going to use the `name` of the task as a default.
+
+`tags`
+
+This propertie is a list of tags that is used to group tasks.
+
 `env_file`
 
 This is a path to a file that declares the `env` variables as `ENV_NAME=ENV_VALUE` where each line is a different 
@@ -113,7 +121,11 @@ This is a list of all the dependencies that the task requires to run. The `dep` 
 
 - `name` **Required**: It takes a `string` which is the name of the task that you which to run as a dependency.
 
-- `detached` *optional*: It takes a `boolean` which tells if the dependency should run in `detached` mode, is `false` as default.
+- `detached` *optional*: It takes a `boolean` which tells if the dependency should run in `detached` mode, is `false` 
+as default.
+
+- `ignore_error` *optional*: It takes a `boolean` which tells if the program should keep running if an error happens in
+the dependency.
 
 Example: 
 ```yml

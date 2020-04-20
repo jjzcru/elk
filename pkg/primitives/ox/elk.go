@@ -160,7 +160,7 @@ func (e *Elk) getDependencyGraph(task *Task) (map[string][]string, error) {
 	for _, dep := range deps {
 		// Validate that the dependency is a valid task
 		t, exists := e.Tasks[dep.Name]
-		if exists == false {
+		if !exists {
 			return dependencyGraph, ErrTaskNotFound
 		}
 

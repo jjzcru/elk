@@ -5,6 +5,9 @@ scalar Duration
 scalar FilePath
 
 type Query {
+    # Health check
+    health: Boolean!
+
     # Show the current state of the configuration file
     elk: Elk!
 
@@ -37,6 +40,8 @@ type Elk {
 
 # Object that represent a task in elk
 type Task {
+    title: String!
+    tags: [String!]
     name: String!
     cmds: [String]!
     env: Map

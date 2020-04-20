@@ -89,6 +89,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Detached func(childComplexity int, id *string) int
 		Elk      func(childComplexity int) int
+		Health   func(childComplexity int) int
 		Tasks    func(childComplexity int, name *string) int
 	}
 
@@ -103,6 +104,8 @@ type ComplexityRoot struct {
 		Log         func(childComplexity int) int
 		Name        func(childComplexity int) int
 		Sources     func(childComplexity int) int
+		Tags        func(childComplexity int) int
+		Title       func(childComplexity int) int
 		Vars        func(childComplexity int) int
 	}
 }
@@ -113,6 +116,7 @@ type MutationResolver interface {
 	Kill(ctx context.Context, id string) (*model.DetachedTask, error)
 }
 type QueryResolver interface {
+	Health(ctx context.Context) (bool, error)
 	Elk(ctx context.Context) (*model.Elk, error)
 	Tasks(ctx context.Context, name *string) ([]*model.Task, error)
 	Detached(ctx context.Context, id *string) ([]*model.DetachedTask, error)
@@ -328,6 +332,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Elk(childComplexity), true
 
+	case "Query.health":
+		if e.complexity.Query.Health == nil {
+			break
+		}
+
+		return e.complexity.Query.Health(childComplexity), true
+
 	case "Query.tasks":
 		if e.complexity.Query.Tasks == nil {
 			break
@@ -410,6 +421,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.Sources(childComplexity), true
 
+	case "Task.tags":
+		if e.complexity.Task.Tags == nil {
+			break
+		}
+
+		return e.complexity.Task.Tags(childComplexity), true
+
+	case "Task.title":
+		if e.complexity.Task.Title == nil {
+			break
+		}
+
+		return e.complexity.Task.Title(childComplexity), true
+
 	case "Task.vars":
 		if e.complexity.Task.Vars == nil {
 			break
@@ -487,6 +512,32 @@ scalar Timestamp
 scalar Duration
 scalar FilePath
 
+type Query {
+    # Health check
+    health: Boolean!
+
+    # Show the current state of the configuration file
+    elk: Elk!
+
+    # Display a list of all the availables tasks
+    tasks(name: String): [Task!]!
+
+    # Returns a list of all the detached tasks, can also be filter by an id
+    detached(id: ID): [DetachedTask!]!
+}
+
+type Mutation {
+    # Runs a task in sync mode, do not use for long running task since the request could be dropped
+    run(tasks: [String!]!, properties: TaskProperties): [Output]
+
+    # Runs a task in detached mode and returns an object with the metadata of the task so can be fetch later
+    detached(tasks: [String!]!, properties: TaskProperties, config: RunConfig): DetachedTask
+    
+    # Kills a particular detached task by its id
+    kill(id: ID!): DetachedTask
+}
+
+# Object that represents the configuration object
 type Elk {
     version: String!
     env: Map
@@ -495,7 +546,10 @@ type Elk {
     tasks: [Task!]!
 }
 
+# Object that represent a task in elk
 type Task {
+    title: String!
+    tags: [String!]
     name: String!
     cmds: [String]!
     env: Map
@@ -520,23 +574,31 @@ type Log {
     error: String!
 }
 
+# Object that represents tha detached task
 type DetachedTask {
+    # Id used to identify this particular task
     id: ID!
+
+    # Tasks that were executed in this detached task
     tasks: [Task!]!
+
+    # Output (stdout, stderr) of each of the tasks
     outputs: [Output!]
+
+    # Current status of the application: running, success, error, killed
     status: String!
+    
+    # Time when the detached task start running
     startAt: Time!
-    # Amount of time that taked to complete the detached task
+
+    # Amount of that has elapsed since the application started until the current status
     duration: Duration!
+
+    # Time when the task achive a final state: success, error or killed
     endAt: Time
 }
 
-type Query {
-    elk: Elk!
-    tasks(name: String): [Task!]!
-    detached(id: ID): [DetachedTask!]!
-}
-
+# Overwrite properties to send to the task
 input TaskProperties {
     vars: Map
     env: Map
@@ -544,6 +606,7 @@ input TaskProperties {
     ignoreError: Boolean
 }
 
+# Object that represents the running options for a detached task
 input RunConfig {
     start: Timestamp
     deadline: Timestamp
@@ -551,12 +614,7 @@ input RunConfig {
     delay: Duration
 }
 
-type Mutation {
-    run(tasks: [String!]!, properties: TaskProperties): [Output]
-    detached(tasks: [String!]!, properties: TaskProperties, config: RunConfig): DetachedTask
-    kill(id: ID!): DetachedTask
-}
-
+# Object that represents the output from a task
 type Output {
     task: String!
     out: [String!]!
@@ -1495,6 +1553,40 @@ func (ec *executionContext) _Output_error(ctx context.Context, field graphql.Col
 	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_health(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Health(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_elk(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1678,6 +1770,71 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Task_title(ctx context.Context, field graphql.CollectedField, obj *model.Task) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Task",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Title, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Task_tags(ctx context.Context, field graphql.CollectedField, obj *model.Task) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Task",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tags, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Task_name(ctx context.Context, field graphql.CollectedField, obj *model.Task) (ret graphql.Marshaler) {
@@ -3422,6 +3579,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "health":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_health(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "elk":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -3490,6 +3661,13 @@ func (ec *executionContext) _Task(ctx context.Context, sel ast.SelectionSet, obj
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Task")
+		case "title":
+			out.Values[i] = ec._Task_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "tags":
+			out.Values[i] = ec._Task_tags(ctx, field, obj)
 		case "name":
 			out.Values[i] = ec._Task_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -4558,6 +4736,38 @@ func (ec *executionContext) unmarshalOString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	return graphql.MarshalString(v)
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
