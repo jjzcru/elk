@@ -2,7 +2,7 @@
 
 BASE_PATH=$(pwd)
 BUILD_PATH=$(pwd)/bin
-MODULE_PATH=$(pwd)/cmd/elk
+MODULE_PATH=$(pwd)
 
 COMMIT=$(git rev-parse --short HEAD)
 VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))

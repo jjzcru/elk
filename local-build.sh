@@ -7,4 +7,4 @@ fill_date=$(date +'%d_%T_%Y')
 
 DATE="${day}_${month}_${fill_date}"
 
-go build -ldflags "-X main.v=$VERSION -X main.o=$GOOS -X main.arch=$GOARCH -X main.commit=$COMMIT -X main.date=$DATE" -o ./bin ./cmd/elk
+go build -ldflags "-X main.v=$VERSION -X main.o=$GOOS -X main.arch=$GOARCH -X main.commit=$COMMIT -X main.date=$DATE" -o ./bin .
