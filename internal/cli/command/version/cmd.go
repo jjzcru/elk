@@ -25,13 +25,26 @@ func Command() *cobra.Command {
 		Short: "Display version number",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			// fmt.Println("Elk version " + version)
 			fmt.Print("Elk 🦌\n")
-			fmt.Printf("  Version:    \t %s\n", version.version)
-			fmt.Printf("  Git Commit: \t %s\n", version.commit)
-			fmt.Printf("  Built:      \t %s\n", strings.Replace(version.date, "_", " ", -1))
-			fmt.Printf("  OS/Arch:    \t %s/%s\n", version.os, version.arch)
-			fmt.Printf("  Go Version: \t %s\n", version.goVersion)
+			if len(version.version) > 0 {
+				fmt.Printf("  Version:    \t %s\n", version.version)
+			}
+
+			if len(version.commit) > 0 {
+				fmt.Printf("  Git Commit: \t %s\n", version.commit)
+			}
+
+			if len(version.date) > 0 {
+				fmt.Printf("  Built:      \t %s\n", strings.Replace(version.date, "_", " ", -1))
+			}
+
+			if (len(version.os) + len(version.arch)) > 0 {
+				fmt.Printf("  OS/Arch:    \t %s/%s\n", version.os, version.arch)
+			}
+
+			if len(version.goVersion) > 0 {
+				fmt.Printf("  Go Version: \t %s\n", version.goVersion)
+			}
 		},
 	}
 

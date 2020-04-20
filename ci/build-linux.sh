@@ -1,7 +1,7 @@
 #!/bin/bash
 
 BUILD_PATH=$(pwd)/bin
-MODULE_PATH=$(pwd)/cmd/elk
+MODULE_PATH=$(pwd)
 
 day=$(date +'%a')
 month=$(date +'%b')

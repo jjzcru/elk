@@ -1,6 +1,6 @@
-[![Travis CI](https://travis-ci.com/jjzcru/elk.svg?branch=master)](https://travis-ci.com/jjzcru/elk)
-[![Coverage Status](https://coveralls.io/repos/github/jjzcru/elk/badge.svg?branch=master)](https://coveralls.io/github/jjzcru/elk?branch=master)
-[![Build Status](https://github.com/jjzcru/elk/workflows/Build%20Status/badge.svg?branch=master)](https://github.com/jjzcru/elk/workflows/Build%20Status/badge.svg?branch=master)
+![Travis CI](https://travis-ci.com/jjzcru/elk.svg?branch=master)
+![Coverage Status](https://coveralls.io/repos/github/jjzcru/elk/badge.svg?branch=master)
+![Release](https://github.com/jjzcru/elk/workflows/Release/badge.svg?branch=master)
 
 Elk
 ==========
@@ -35,6 +35,14 @@ found it will use the `global` file.
 This enables the user to have multiples `ox.yml` one per project while also having one for the system itself.
 
 ### Installation
+
+#### Bash
+Installation with `cURL` and `sh` thanks to the project [Go Binaries][gobinaries].
+```
+curl -sf https://gobinaries.com/jjzcru/elk | sh
+```
+
+#### Download 
 1. Grab the latest binary of your platform from the [Releases](https://github.com/jjzcru/elk/releases) page.
 2. If you are running on `macOS` or `Linux`, run `chmod +x elk` to give `executable` permissions to the binary. If you
 are on `windows` you can ignore this step.
@@ -93,6 +101,7 @@ To learn more about the progress and what is being planned go to [Projects][proj
 [go]: https://golang.org/
 [yaml]: https://yaml.org/
 [sh]: https://github.com/mvdan/sh
+[gobinaries]: https://github.com/tj/gobinaries
 
 [releases]: https://github.com/jjzcru/elk/releases
 [changelog]: https://github.com/jjzcru/elk/blob/master/CHANGELOG.md
