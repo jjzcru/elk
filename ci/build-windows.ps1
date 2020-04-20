@@ -4,7 +4,7 @@ $VERSION = $env:VERSION
 $GOVERSION = $env:GOVERSION
 
 $BUILD_PATH = "$((Get-Item -Path ".\").FullName)\bin"
-$MODULE_PATH = "$((Get-Item -Path ".\").FullName)\cmd\elk"
+$MODULE_PATH = "$((Get-Item -Path ".\").FullName)"
 
 $env:GOOS = "windows"
 $GOOS = "windows"
