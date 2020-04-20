@@ -2,11 +2,12 @@ package engine
 
 import (
 	"fmt"
-	"github.com/jjzcru/elk/pkg/file"
 	"io"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/jjzcru/elk/pkg/file"
 )
 
 // Logger is used by the engine to store the output
@@ -53,6 +54,7 @@ type TimeStampWriter struct {
 	TimeStamp func() string
 }
 
+// GetDateFormat returns a time format from a string
 func (t TimeStampWriter) GetDateFormat(format string) (string, error) {
 	switch format {
 	case "ANSIC":

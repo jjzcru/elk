@@ -3,10 +3,11 @@ package engine
 import (
 	"context"
 	"fmt"
-	"github.com/jjzcru/elk/pkg/primitives/ox"
 	"io"
 	"os"
 	"strings"
+
+	"github.com/jjzcru/elk/pkg/primitives/ox"
 
 	"mvdan.cc/sh/expand"
 	"mvdan.cc/sh/interp"
