@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - release/*
 
 jobs:
   goreleaser:
@@ -27,6 +26,11 @@ jobs:
         shell: bash
         id: built
         run: |
+          day=$(date +'%a')
+          month=$(date +'%b')
+          fill_date=$(date +'%d_%T_%Y')
+          DATE="${day^}_${month^}_${fill_date}"
+          echo "##[set-output name=date;]$DATE"
           echo "##[set-output name=go_version;]$(go version | awk '{print $3}')"
 
       -
@@ -34,9 +38,10 @@ jobs:
         uses: goreleaser/goreleaser-action@v1
         with:
           version: latest
-          args: release --rm-dist
+          args: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DATE: ${{steps.built.outputs.date}}
           COMMIT: ${{steps.built.outputs.commit}}
           VERSION: ${{steps.built.outputs.version}}
           GOVERSION: ${{steps.built.outputs.go_version}}

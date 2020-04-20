@@ -13,7 +13,7 @@ builds:
     - linux
     - darwin
   ldflags:
-    - -s -w -X main.version={{.Version}} -X main.os={{.Os}} -X main.arch={{.Arch}} -X main.commit={{.ShortCommit}} -X main.date={{.Date}} -X "main.goversion={{.Env.GOVERSION}}"
+    - -s -w -X main.version={{.Version}} -X main.os={{.Os}} -X main.arch={{.Arch}} -X main.commit={{.ShortCommit}} -X main.date={{.Env.DATE}} -X "main.goversion={{.Env.GOVERSION}}"
 
 archives:
 - replacements:
