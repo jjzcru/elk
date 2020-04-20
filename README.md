@@ -36,18 +36,18 @@ This enables the user to have multiples `ox.yml` one per project while also havi
 
 ### Installation
 
+#### Bash
+Installation with `cURL` and `sh` thanks to the project [Go Binaries][gobinaries].
+```
+curl -sf https://gobinaries.com/jjzcru/elk | sh
+```
+
 #### Download 
 1. Grab the latest binary of your platform from the [Releases](https://github.com/jjzcru/elk/releases) page.
 2. If you are running on `macOS` or `Linux`, run `chmod +x elk` to give `executable` permissions to the binary. If you
 are on `windows` you can ignore this step.
 3. Add the binary to `$PATH`.
 4. Run `elk version` to make sure that the binary is installed.
-
-#### Bash
-Installation with `cURL` and `sh` thanks to the project [Go Binaries][gobinaries].
-```
-curl -sf https://gobinaries.com/jjzcru/elk | sh
-```
 
 ## Syntax
 The syntax consists on two main section one is `global` which sets defaults for all the tasks and the other is `tasks` 
