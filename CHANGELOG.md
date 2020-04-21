@@ -1,3 +1,9 @@
+## [v0.7.2](https://github.com/jjzcru/elk/tree/v0.7.2) (2020-04-20)
+[Release](https://github.com/jjzcru/elk/releases/tag/v0.7.2)
+
+**Bug Fix 🐛:**
+- Fix issue in `server` where the the elk file from the request was using the old syntax
+
 ## [v0.7.1](https://github.com/jjzcru/elk/tree/v0.7.1) (2020-04-19)
 [Release](https://github.com/jjzcru/elk/releases/tag/v0.7.1)
 
