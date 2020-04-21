@@ -20,7 +20,7 @@ func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *
 		return nil, err
 	}
 
-	elkFilePath := ctx.Value("elk_file").(string)
+	elkFilePath := ctx.Value(ElkFileKey).(string)
 	elk, err := utils.GetElk(elkFilePath, true)
 	if err != nil {
 		return nil, err
