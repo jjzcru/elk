@@ -3,12 +3,9 @@
 package run
 
 import (
-	"fmt"
+	"github.com/jjzcru/elk/pkg/utils"
 	"os"
 	"os/exec"
-	"syscall"
-
-	"github.com/jjzcru/elk/pkg/utils"
 )
 
 // Detached runs ox in detached mode
@@ -20,8 +17,8 @@ func Detached() error {
 
 	command := utils.RemoveDetachedFlag(os.Args)
 	cmd := exec.Command(command[0], command[1:]...)
-	pid := os.Getpid()
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true, Pgid: pid}
+	/*pid := os.Getpid()
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true, Pgid: pid, GidMappingsEnableSetgroups: true}*/
 	cmd.Dir = cwd
 
 	err = cmd.Start()
@@ -29,6 +26,6 @@ func Detached() error {
 		return err
 	}
 
-	fmt.Println(pid)
+	// fmt.Println(pid)
 	return nil
 }
