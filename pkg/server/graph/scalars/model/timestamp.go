@@ -38,7 +38,12 @@ func UnmarshalTimestamp(v interface{}) (time.Time, error) {
 		}
 
 		for _, layout := range validTimeFormats {
-			if layout == time.Kitchen {
+			switch layout {
+			case time.Kitchen:
+				fallthrough
+			case time.RFC3339:
+				fallthrough
+			case time.RFC3339Nano:
 				tmpStr = strings.Replace(tmpStr, " ", "", -1)
 			}
 			deadlineTime, err := time.Parse(layout, tmpStr)
