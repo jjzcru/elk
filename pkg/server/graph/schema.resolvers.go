@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -416,7 +417,7 @@ func (r *queryResolver) Tasks(ctx context.Context, name *string) ([]*model.Task,
 	return tasks, nil
 }
 
-func (r *queryResolver) Detached(ctx context.Context, id *string, status []model.DetachedTaskStatus) ([]*model.DetachedTask, error) {
+func (r *queryResolver) Detached(ctx context.Context, ids []string, status []model.DetachedTaskStatus) ([]*model.DetachedTask, error) {
 	err := auth(ctx)
 	if err != nil {
 		return nil, err
@@ -430,8 +431,8 @@ func (r *queryResolver) Detached(ctx context.Context, id *string, status []model
 	}
 
 	// Filter by id
-	if id != nil {
-		detachedTaskIDs = getDetachedTasksByID(*id, detachedTaskIDs)
+	if ids != nil {
+		detachedTaskIDs = getDetachedTasksByID(ids, detachedTaskIDs)
 	}
 
 	return getDetachedTaskFromIDs(detachedTaskIDs), nil
@@ -449,18 +450,27 @@ func getDetachedTasksByStatus(status []model.DetachedTaskStatus) []string {
 
 	return response
 }
-
-func getDetachedTasksByID(id string, detachedTaskIDs []string) []string {
+func getDetachedTasksByID(ids []string, detachedTaskIDs []string) []string {
 	var response []string
-	for _, detachedTaskID := range detachedTaskIDs {
-		match, _ := regexp.MatchString(fmt.Sprintf("%s.*", id), detachedTaskID)
-		if match {
-			response = append(response, detachedTaskID)
+
+	if len(ids) == 0 {
+		return detachedTaskIDs
+	}
+
+	fmt.Printf("IDS: %s\n", strings.Join(detachedTaskIDs, ","))
+
+	for _, id := range ids {
+		for _, detachedTaskID := range detachedTaskIDs {
+			match, _ := regexp.MatchString(fmt.Sprintf("%s.*", id), detachedTaskID)
+			if match {
+				fmt.Printf("ID '%s' match with '%s'", id, detachedTaskID)
+				response = append(response, detachedTaskID)
+			}
 		}
 	}
+
 	return response
 }
-
 func getDetachedTaskFromIDs(detachedTaskIDs []string) []*model.DetachedTask {
 	var detachedTasks []*model.DetachedTask
 	detachedTaskMap := make(map[string]*model.DetachedTask)
@@ -484,7 +494,6 @@ func getDetachedTaskFromIDs(detachedTaskIDs []string) []*model.DetachedTask {
 
 	return detachedTasks
 }
-
 func getDetachedTaskIDs() []string {
 	var detachedTaskIDs []string
 	for id := range DetachedTasksMap {

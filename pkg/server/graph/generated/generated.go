@@ -87,7 +87,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Detached func(childComplexity int, id *string, status []model.DetachedTaskStatus) int
+		Detached func(childComplexity int, ids []string, status []model.DetachedTaskStatus) int
 		Elk      func(childComplexity int) int
 		Health   func(childComplexity int) int
 		Tasks    func(childComplexity int, name *string) int
@@ -119,7 +119,7 @@ type QueryResolver interface {
 	Health(ctx context.Context) (bool, error)
 	Elk(ctx context.Context) (*model.Elk, error)
 	Tasks(ctx context.Context, name *string) ([]*model.Task, error)
-	Detached(ctx context.Context, id *string, status []model.DetachedTaskStatus) ([]*model.DetachedTask, error)
+	Detached(ctx context.Context, ids []string, status []model.DetachedTaskStatus) ([]*model.DetachedTask, error)
 }
 
 type executableSchema struct {
@@ -323,7 +323,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Detached(childComplexity, args["id"].(*string), args["status"].([]model.DetachedTaskStatus)), true
+		return e.complexity.Query.Detached(childComplexity, args["ids"].([]string), args["status"].([]model.DetachedTaskStatus)), true
 
 	case "Query.elk":
 		if e.complexity.Query.Elk == nil {
@@ -523,7 +523,7 @@ type Query {
     tasks(name: String): [Task!]!
 
     # Returns a list of all the detached tasks, can also be filter by an id
-    detached(id: ID, status: [DetachedTaskStatus!]): [DetachedTask!]!
+    detached(ids: [ID!], status: [DetachedTaskStatus!]): [DetachedTask!]!
 }
 
 type Mutation {
@@ -717,14 +717,14 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 func (ec *executionContext) field_Query_detached_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+	var arg0 []string
+	if tmp, ok := rawArgs["ids"]; ok {
+		arg0, err = ec.unmarshalOID2ᚕstringᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["id"] = arg0
+	args["ids"] = arg0
 	var arg1 []model.DetachedTaskStatus
 	if tmp, ok := rawArgs["status"]; ok {
 		arg1, err = ec.unmarshalODetachedTaskStatus2ᚕgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedTaskStatusᚄ(ctx, tmp)
@@ -1701,7 +1701,7 @@ func (ec *executionContext) _Query_detached(ctx context.Context, field graphql.C
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Detached(rctx, args["id"].(*string), args["status"].([]model.DetachedTaskStatus))
+		return ec.resolvers.Query().Detached(rctx, args["ids"].([]string), args["status"].([]model.DetachedTaskStatus))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4663,27 +4663,36 @@ func (ec *executionContext) marshalOFilePath2ᚖstring(ctx context.Context, sel 
 	return ec.marshalOFilePath2string(ctx, sel, *v)
 }
 
-func (ec *executionContext) unmarshalOID2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalID(v)
-}
-
-func (ec *executionContext) marshalOID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	return graphql.MarshalID(v)
-}
-
-func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
-	if v == nil {
-		return nil, nil
+func (ec *executionContext) unmarshalOID2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
 	}
-	res, err := ec.unmarshalOID2string(ctx, v)
-	return &res, err
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNID2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
-func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+func (ec *executionContext) marshalOID2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec.marshalOID2string(ctx, sel, *v)
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNID2string(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOLog2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐLog(ctx context.Context, sel ast.SelectionSet, v model.Log) graphql.Marshaler {

@@ -15,7 +15,7 @@ type Query {
     tasks(name: String): [Task!]!
 
     # Returns a list of all the detached tasks, can also be filter by an id
-    detached(id: ID, status: [DetachedTaskStatus!]): [DetachedTask!]!
+    detached(ids: [ID!], status: [DetachedTaskStatus!]): [DetachedTask!]!
 }
 
 type Mutation {
