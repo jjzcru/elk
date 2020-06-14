@@ -426,7 +426,7 @@ func (r *queryResolver) Detached(ctx context.Context, ids []string, status []mod
 	detachedTaskIDs := getDetachedTaskIDs()
 
 	// First filter by status
-	if status != nil && len(status) > 0 {
+	if len(status) > 0 {
 		detachedTaskIDs = getDetachedTasksByStatus(status)
 	}
 
