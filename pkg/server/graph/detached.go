@@ -38,6 +38,14 @@ func getDetachedTaskID() string {
 	return id
 }
 
+func getResponseFromDetached(id string) *model.DetachedTask {
+	return DetachedTasksMap[id]
+}
+
+func updateDetachedTask(id string, task *model.DetachedTask) {
+	DetachedTasksMap[id] = task
+}
+
 // CancelDetachedTasks call cancel on all the context
 func CancelDetachedTasks() {
 	var wg sync.WaitGroup
@@ -67,14 +75,29 @@ func CancelDetachedTasks() {
 }
 
 func delayStart(delay *time.Duration, start *time.Time) {
+	sleepDuration := getDelayDuration(delay, start)
+	if sleepDuration > 0 {
+		time.Sleep(sleepDuration)
+	}
+}
+
+func getDelayDuration(delay *time.Duration, start *time.Time) time.Duration {
 	var startDuration time.Duration
 	var delayDuration time.Duration
-	var sleepDuration time.Duration
 
 	if start != nil {
 		now := time.Now()
-		startTime := *start
+		var startTime time.Time
 
+		if start.Before(now) {
+			startTime = time.Date(now.Year(), now.Month(), now.Day(),
+				start.Hour(), start.Minute(), start.Second(),
+				start.Nanosecond(), start.Location())
+
+			startTime.Add(24 * time.Hour)
+		} else {
+			startTime = *start
+		}
 		startDuration = startTime.Sub(now)
 	}
 
@@ -84,17 +107,14 @@ func delayStart(delay *time.Duration, start *time.Time) {
 
 	if startDuration > 0 && delayDuration > 0 {
 		if startDuration > delayDuration {
-			sleepDuration = startDuration
-		} else {
-			sleepDuration = delayDuration
+			return startDuration
 		}
+		return delayDuration
 	} else if startDuration > 0 {
-		sleepDuration = startDuration
+		return startDuration
 	} else if delayDuration > 0 {
-		sleepDuration = delayDuration
+		return delayDuration
 	}
 
-	if sleepDuration > 0 {
-		time.Sleep(sleepDuration)
-	}
+	return 0
 }

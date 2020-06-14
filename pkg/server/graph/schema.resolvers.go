@@ -156,9 +156,17 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 		return nil, err
 	}
 
+	isInFuture := func(start *time.Time) bool {
+		now := time.Now()
+		return start.After(now)
+	}
+
 	if config != nil {
-		start = config.Start
 		delay = config.Delay
+
+		if isInFuture(config.Start) {
+			start = config.Start
+		}
 	}
 
 	outputMap := make(map[string]*model.Output)
@@ -196,7 +204,7 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 
 	ctx, cancel := getConfigContext(ServerCtx, config)
 
-	go func() {
+	go func(id string) {
 		contextMap := detachedContext{
 			ctx:    ctx,
 			cancel: cancel,
@@ -207,13 +215,18 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 		defer closeChannels()
 		var wg sync.WaitGroup
 		delayStart(delay, start)
+
+		resp := getResponseFromDetached(id)
+		resp.Status = "running"
+		updateDetachedTask(id, resp)
+
 		for _, task := range tasks {
 			wg.Add(1)
 			go TaskWG(ctx, clientEngine, task, &wg, errChan)
 		}
 
 		wg.Wait()
-	}()
+	}(id)
 
 	detachedTasks, err := func() ([]*model.Task, error) {
 		var result []*model.Task
@@ -232,18 +245,25 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 		return nil, err
 	}
 
+	delayDuration := getDelayDuration(delay, start)
+
+	status := "running"
+	if delayDuration > 0 {
+		status = "waiting"
+	}
+
 	response := model.DetachedTask{
 		ID:       id,
 		Tasks:    detachedTasks,
 		Outputs:  outputs,
-		Status:   "running",
+		Status:   status,
 		Duration: 0,
-		StartAt:  time.Now(),
+		StartAt:  time.Now().Add(delayDuration),
 	}
 
 	DetachedTasksMap[id] = &response
 
-	go func() {
+	go func(id string) {
 		for {
 			select {
 			case out, ok := <-outChan:
@@ -263,7 +283,9 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 			case <-ctx.Done():
 				outChan = nil
 				errTaskChan = nil
-				response.Status = "killed"
+				resp := getResponseFromDetached(id)
+				resp.Status = "killed"
+				updateDetachedTask(id, resp)
 				break
 			case err, ok := <-errTaskChan:
 				if !ok {
@@ -283,7 +305,9 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 				} else {
 					for taskName, taskError := range err {
 						message := taskError.Error()
-						response.Status = "error"
+						resp := getResponseFromDetached(id)
+						resp.Status = "error"
+						updateDetachedTask(id, resp)
 
 						output := outputMap[taskName]
 						output.Error = append(output.Error, message)
@@ -293,18 +317,19 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 			}
 
 			if outChan == nil && errTaskChan == nil {
-				if response.Status == "running" {
-					response.Status = "success"
+				resp := getResponseFromDetached(id)
+				if resp.Status == "running" {
+					resp.Status = "success"
 				}
 				endAt := time.Now()
-				response.EndAt = &endAt
+				resp.EndAt = &endAt
 				duration := endAt.Sub(response.StartAt)
-				response.Duration = duration
-
+				resp.Duration = duration
+				updateDetachedTask(id, resp)
 				break
 			}
 		}
-	}()
+	}(id)
 
 	result := response
 	return &result, nil
