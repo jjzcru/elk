@@ -15,7 +15,7 @@ type Query {
     tasks(name: String): [Task!]!
 
     # Returns a list of all the detached tasks, can also be filter by an id
-    detached(id: ID): [DetachedTask!]!
+    detached(id: ID, status: [DetachedTaskStatus!]): [DetachedTask!]!
 }
 
 type Mutation {
@@ -27,6 +27,13 @@ type Mutation {
     
     # Kills a particular detached task by its id
     kill(id: ID!): DetachedTask
+}
+
+enum DetachedTaskStatus {
+    waiting
+    running
+    success
+    error
 }
 
 # Object that represents the configuration object

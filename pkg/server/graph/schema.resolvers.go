@@ -361,7 +361,7 @@ func (r *mutationResolver) Kill(ctx context.Context, id string) (*model.Detached
 	return nil, nil
 }
 
-func (r *queryResolver) Health(_ context.Context) (bool, error) {
+func (r *queryResolver) Health(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
@@ -416,13 +416,54 @@ func (r *queryResolver) Tasks(ctx context.Context, name *string) ([]*model.Task,
 	return tasks, nil
 }
 
-func (r *queryResolver) Detached(ctx context.Context, id *string) ([]*model.DetachedTask, error) {
+func (r *queryResolver) Detached(ctx context.Context, id *string, status []model.DetachedTaskStatus) ([]*model.DetachedTask, error) {
 	err := auth(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	detachedTaskIDs := getDetachedTaskIDs()
+
+	// First filter by status
+	if status != nil && len(status) > 0 {
+		detachedTaskIDs = getDetachedTasksByStatus(status)
+	}
+
+	// Filter by id
+	if id != nil {
+		detachedTaskIDs = getDetachedTasksByID(*id, detachedTaskIDs)
+	}
+
+	return getDetachedTaskFromIDs(detachedTaskIDs), nil
+}
+
+func getDetachedTasksByStatus(status []model.DetachedTaskStatus) []string {
+	var response []string
+	for id, task := range DetachedTasksMap {
+		for _, s := range status {
+			if task.Status == s.String() {
+				response = append(response, id)
+			}
+		}
+	}
+
+	return response
+}
+
+func getDetachedTasksByID(id string, detachedTaskIDs []string) []string {
+	var response []string
+	for _, detachedTaskID := range detachedTaskIDs {
+		match, _ := regexp.MatchString(fmt.Sprintf("%s.*", id), detachedTaskID)
+		if match {
+			response = append(response, detachedTaskID)
+		}
+	}
+	return response
+}
+
+func getDetachedTaskFromIDs(detachedTaskIDs []string) []*model.DetachedTask {
 	var detachedTasks []*model.DetachedTask
+	detachedTaskMap := make(map[string]*model.DetachedTask)
 
 	setDuration := func(task *model.DetachedTask) {
 		if task.Status == "running" {
@@ -432,23 +473,25 @@ func (r *queryResolver) Detached(ctx context.Context, id *string) ([]*model.Deta
 		}
 	}
 
-	for k, v := range DetachedTasksMap {
-		if id != nil {
-			if *id != "" {
-				match, _ := regexp.MatchString(fmt.Sprintf("%s.*", *id), k)
-				if match {
-					setDuration(v)
-					detachedTasks = append(detachedTasks, v)
-				}
-			}
-		} else {
-			setDuration(v)
-			detachedTasks = append(detachedTasks, v)
-		}
-
+	for _, id := range detachedTaskIDs {
+		detachedTaskMap[id] = DetachedTasksMap[id]
 	}
 
-	return detachedTasks, nil
+	for _, task := range detachedTaskMap {
+		setDuration(task)
+		detachedTasks = append(detachedTasks, task)
+	}
+
+	return detachedTasks
+}
+
+func getDetachedTaskIDs() []string {
+	var detachedTaskIDs []string
+	for id := range DetachedTasksMap {
+		detachedTaskIDs = append(detachedTaskIDs, id)
+	}
+
+	return detachedTaskIDs
 }
 
 // Mutation returns generated.MutationResolver implementation.

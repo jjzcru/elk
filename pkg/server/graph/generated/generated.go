@@ -87,7 +87,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Detached func(childComplexity int, id *string) int
+		Detached func(childComplexity int, id *string, status []model.DetachedTaskStatus) int
 		Elk      func(childComplexity int) int
 		Health   func(childComplexity int) int
 		Tasks    func(childComplexity int, name *string) int
@@ -119,7 +119,7 @@ type QueryResolver interface {
 	Health(ctx context.Context) (bool, error)
 	Elk(ctx context.Context) (*model.Elk, error)
 	Tasks(ctx context.Context, name *string) ([]*model.Task, error)
-	Detached(ctx context.Context, id *string) ([]*model.DetachedTask, error)
+	Detached(ctx context.Context, id *string, status []model.DetachedTaskStatus) ([]*model.DetachedTask, error)
 }
 
 type executableSchema struct {
@@ -323,7 +323,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Detached(childComplexity, args["id"].(*string)), true
+		return e.complexity.Query.Detached(childComplexity, args["id"].(*string), args["status"].([]model.DetachedTaskStatus)), true
 
 	case "Query.elk":
 		if e.complexity.Query.Elk == nil {
@@ -523,7 +523,7 @@ type Query {
     tasks(name: String): [Task!]!
 
     # Returns a list of all the detached tasks, can also be filter by an id
-    detached(id: ID): [DetachedTask!]!
+    detached(id: ID, status: [DetachedTaskStatus!]): [DetachedTask!]!
 }
 
 type Mutation {
@@ -535,6 +535,13 @@ type Mutation {
     
     # Kills a particular detached task by its id
     kill(id: ID!): DetachedTask
+}
+
+enum DetachedTaskStatus {
+    waiting
+    running
+    success
+    error
 }
 
 # Object that represents the configuration object
@@ -718,6 +725,14 @@ func (ec *executionContext) field_Query_detached_args(ctx context.Context, rawAr
 		}
 	}
 	args["id"] = arg0
+	var arg1 []model.DetachedTaskStatus
+	if tmp, ok := rawArgs["status"]; ok {
+		arg1, err = ec.unmarshalODetachedTaskStatus2ᚕgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedTaskStatusᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["status"] = arg1
 	return args, nil
 }
 
@@ -1686,7 +1701,7 @@ func (ec *executionContext) _Query_detached(ctx context.Context, field graphql.C
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Detached(rctx, args["id"].(*string))
+		return ec.resolvers.Query().Detached(rctx, args["id"].(*string), args["status"].([]model.DetachedTaskStatus))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4069,6 +4084,15 @@ func (ec *executionContext) marshalNDetachedTask2ᚖgithubᚗcomᚋjjzcruᚋelk�
 	return ec._DetachedTask(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNDetachedTaskStatus2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedTaskStatus(ctx context.Context, v interface{}) (model.DetachedTaskStatus, error) {
+	var res model.DetachedTaskStatus
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNDetachedTaskStatus2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedTaskStatus(ctx context.Context, sel ast.SelectionSet, v model.DetachedTaskStatus) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNDuration2timeᚐDuration(ctx context.Context, v interface{}) (time.Duration, error) {
 	return model1.UnmarshalDuration(v)
 }
@@ -4531,6 +4555,66 @@ func (ec *executionContext) marshalODetachedTask2ᚖgithubᚗcomᚋjjzcruᚋelk�
 		return graphql.Null
 	}
 	return ec._DetachedTask(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalODetachedTaskStatus2ᚕgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedTaskStatusᚄ(ctx context.Context, v interface{}) ([]model.DetachedTaskStatus, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]model.DetachedTaskStatus, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNDetachedTaskStatus2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedTaskStatus(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalODetachedTaskStatus2ᚕgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedTaskStatusᚄ(ctx context.Context, sel ast.SelectionSet, v []model.DetachedTaskStatus) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNDetachedTaskStatus2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedTaskStatus(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) unmarshalODuration2timeᚐDuration(ctx context.Context, v interface{}) (time.Duration, error) {
