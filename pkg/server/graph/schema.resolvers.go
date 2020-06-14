@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"strings"
 	"sync"
 	"time"
 
@@ -457,13 +456,10 @@ func getDetachedTasksByID(ids []string, detachedTaskIDs []string) []string {
 		return detachedTaskIDs
 	}
 
-	fmt.Printf("IDS: %s\n", strings.Join(detachedTaskIDs, ","))
-
 	for _, id := range ids {
 		for _, detachedTaskID := range detachedTaskIDs {
 			match, _ := regexp.MatchString(fmt.Sprintf("%s.*", id), detachedTaskID)
 			if match {
-				fmt.Printf("ID '%s' match with '%s'", id, detachedTaskID)
 				response = append(response, detachedTaskID)
 			}
 		}
