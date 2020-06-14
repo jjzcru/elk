@@ -3,6 +3,9 @@
 package model
 
 import (
+	"fmt"
+	"io"
+	"strconv"
 	"time"
 )
 
@@ -69,4 +72,49 @@ type TaskProperties struct {
 	Env         map[string]interface{} `json:"env"`
 	EnvFile     *string                `json:"envFile"`
 	IgnoreError *bool                  `json:"ignoreError"`
+}
+
+type DetachedTaskStatus string
+
+const (
+	DetachedTaskStatusWaiting DetachedTaskStatus = "waiting"
+	DetachedTaskStatusRunning DetachedTaskStatus = "running"
+	DetachedTaskStatusSuccess DetachedTaskStatus = "success"
+	DetachedTaskStatusError   DetachedTaskStatus = "error"
+)
+
+var AllDetachedTaskStatus = []DetachedTaskStatus{
+	DetachedTaskStatusWaiting,
+	DetachedTaskStatusRunning,
+	DetachedTaskStatusSuccess,
+	DetachedTaskStatusError,
+}
+
+func (e DetachedTaskStatus) IsValid() bool {
+	switch e {
+	case DetachedTaskStatusWaiting, DetachedTaskStatusRunning, DetachedTaskStatusSuccess, DetachedTaskStatusError:
+		return true
+	}
+	return false
+}
+
+func (e DetachedTaskStatus) String() string {
+	return string(e)
+}
+
+func (e *DetachedTaskStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DetachedTaskStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DetachedTaskStatus", str)
+	}
+	return nil
+}
+
+func (e DetachedTaskStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }

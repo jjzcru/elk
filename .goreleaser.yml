@@ -7,21 +7,35 @@ before:
 builds:
 - env:
   - CGO_ENABLED=0
+  
   main: ./main.go
+  
   goos:
     - windows
     - linux
     - darwin
+
+  goarch:
+    - amd64
+    - arm
+    - arm64
+    - 386
+
+  goarm:
+    - 6
+    - 7
+
   ldflags:
     - -s -w -X main.version={{.Version}} -X main.os={{.Os}} -X main.arch={{.Arch}} -X main.commit={{.ShortCommit}} -X main.date={{.Env.DATE}} -X "main.goversion={{.Env.GOVERSION}}"
 
 archives:
 - replacements:
-    darwin: Darwin
-    linux: Linux
-    windows: Windows
+    darwin: darwin
+    linux: linux
+    windows: windows
     386: i386
     amd64: x86_64
+
 checksum:
   name_template: 'checksums.txt'
 snapshot:

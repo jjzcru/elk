@@ -3,12 +3,14 @@ package graph
 import (
 	"context"
 	"fmt"
+	"sync"
+
 	"github.com/jjzcru/elk/pkg/engine"
 	"github.com/jjzcru/elk/pkg/primitives/ox"
 	"github.com/jjzcru/elk/pkg/server/graph/model"
-	"sync"
 )
 
+// TaskWG run a working group of tasks
 func TaskWG(ctx context.Context, cliEngine *engine.Engine, task string, wg *sync.WaitGroup, errChan chan map[string]error) {
 	if wg != nil {
 		defer wg.Done()

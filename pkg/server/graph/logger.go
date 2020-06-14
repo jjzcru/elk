@@ -1,10 +1,11 @@
 package graph
 
 import (
-	"github.com/jjzcru/elk/pkg/engine"
-	"github.com/jjzcru/elk/pkg/primitives/ox"
 	"io"
 	"os"
+
+	"github.com/jjzcru/elk/pkg/engine"
+	"github.com/jjzcru/elk/pkg/primitives/ox"
 )
 
 func gqlLogger(elkTasks map[string]ox.Task, tasks []string) (map[string]engine.Logger, chan map[string]string, chan map[string]string, error) {
@@ -25,12 +26,12 @@ func gqlLogger(elkTasks map[string]ox.Task, tasks []string) (map[string]engine.L
 
 		logger := engine.DefaultLogger()
 
-		var stdOutWriter io.Writer = GraphQLWriter{
+		var stdOutWriter io.Writer = QLWriter{
 			task:   name,
 			output: outChan,
 		}
 
-		var stdErrWriter io.Writer = GraphQLWriter{
+		var stdErrWriter io.Writer = QLWriter{
 			task:   name,
 			output: errChan,
 		}
@@ -91,12 +92,13 @@ func gqlLogger(elkTasks map[string]ox.Task, tasks []string) (map[string]engine.L
 	return loggerMapper, outChan, errChan, nil
 }
 
-type GraphQLWriter struct {
+// QLWriter writes the logs from a task to an specific output
+type QLWriter struct {
 	task   string
 	output chan map[string]string
 }
 
-func (w GraphQLWriter) Write(p []byte) (int, error) {
+func (w QLWriter) Write(p []byte) (int, error) {
 	w.output <- map[string]string{w.task: string(p)}
 	return len(p), nil
 }
