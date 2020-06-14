@@ -4,9 +4,10 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
-	"github.com/jjzcru/elk/pkg/server/graph/model"
 	"sync"
 	"time"
+
+	"github.com/jjzcru/elk/pkg/server/graph/model"
 )
 
 type detachedContext struct {

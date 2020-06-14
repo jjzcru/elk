@@ -5,6 +5,8 @@ package graph
 
 import (
 	"context"
+	"fmt"
+	"regexp"
 	"sync"
 	"time"
 
@@ -405,16 +407,20 @@ func (r *queryResolver) Detached(ctx context.Context, id *string) ([]*model.Deta
 		}
 	}
 
-	if id != nil {
-		if v, ok := DetachedTasksMap[*id]; ok {
+	for k, v := range DetachedTasksMap {
+		if id != nil {
+			if *id != "" {
+				match, _ := regexp.MatchString(fmt.Sprintf("%s.*", *id), k)
+				if match {
+					setDuration(v)
+					detachedTasks = append(detachedTasks, v)
+				}
+			}
+		} else {
 			setDuration(v)
 			detachedTasks = append(detachedTasks, v)
 		}
-	} else {
-		for _, v := range DetachedTasksMap {
-			setDuration(v)
-			detachedTasks = append(detachedTasks, v)
-		}
+
 	}
 
 	return detachedTasks, nil
