@@ -1,3 +1,15 @@
+## [v0.7.3](https://github.com/jjzcru/elk/tree/v0.7.3) (2020-06-14)
+[Release](https://github.com/jjzcru/elk/releases/tag/v0.7.3)
+
+**Server ⚛️:**
+- Search detached task in graphql by status
+- Search detached task in graphql by array of ids
+- Ignores task `start` property if the is set in the past
+- Search tasks `ids` using regex instead of complete `id`
+
+**Misc 👾:**
+- Add builds for `ARM`
+
 ## [v0.7.2](https://github.com/jjzcru/elk/tree/v0.7.2) (2020-04-20)
 [Release](https://github.com/jjzcru/elk/releases/tag/v0.7.2)
 

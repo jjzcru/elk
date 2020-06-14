@@ -2,21 +2,21 @@ package model
 
 import (
 	"errors"
-	"github.com/99designs/gqlgen/graphql"
 	"io"
+	"strings"
 	"time"
+
+	"github.com/99designs/gqlgen/graphql"
 )
 
-// if the type referenced in .gqlgen.yml is a function that returns a marshaller we can use it to encode and decode
-// onto any existing go type.
+// MarshalTimestamp marshall time stamp content as RFC3339
 func MarshalTimestamp(t time.Time) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		_, _ = io.WriteString(w, t.Format(time.RFC3339))
 	})
 }
 
-// Unmarshal{Typename} is only required if the scalars appears as an input. The raw values have already been decoded
-// from json into int/float64/bool/nil/map[string]interface/[]interface
+// UnmarshalTimestamp transform value to Timestamps
 func UnmarshalTimestamp(v interface{}) (time.Time, error) {
 	if tmpStr, ok := v.(int64); ok {
 		return time.Unix(tmpStr, 0), nil
@@ -38,6 +38,14 @@ func UnmarshalTimestamp(v interface{}) (time.Time, error) {
 		}
 
 		for _, layout := range validTimeFormats {
+			switch layout {
+			case time.Kitchen:
+				fallthrough
+			case time.RFC3339:
+				fallthrough
+			case time.RFC3339Nano:
+				tmpStr = strings.Replace(tmpStr, " ", "", -1)
+			}
 			deadlineTime, err := time.Parse(layout, tmpStr)
 			if err == nil {
 				if layout == time.Kitchen {

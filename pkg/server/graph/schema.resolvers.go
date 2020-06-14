@@ -5,6 +5,9 @@ package graph
 
 import (
 	"context"
+	"fmt"
+	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -154,9 +157,17 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 		return nil, err
 	}
 
+	isInFuture := func(start *time.Time) bool {
+		now := time.Now()
+		return start.After(now)
+	}
+
 	if config != nil {
-		start = config.Start
 		delay = config.Delay
+
+		if isInFuture(config.Start) {
+			start = config.Start
+		}
 	}
 
 	outputMap := make(map[string]*model.Output)
@@ -194,7 +205,7 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 
 	ctx, cancel := getConfigContext(ServerCtx, config)
 
-	go func() {
+	go func(id string) {
 		contextMap := detachedContext{
 			ctx:    ctx,
 			cancel: cancel,
@@ -205,13 +216,18 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 		defer closeChannels()
 		var wg sync.WaitGroup
 		delayStart(delay, start)
+
+		resp := getResponseFromDetached(id)
+		resp.Status = "running"
+		updateDetachedTask(id, resp)
+
 		for _, task := range tasks {
 			wg.Add(1)
 			go TaskWG(ctx, clientEngine, task, &wg, errChan)
 		}
 
 		wg.Wait()
-	}()
+	}(id)
 
 	detachedTasks, err := func() ([]*model.Task, error) {
 		var result []*model.Task
@@ -230,18 +246,25 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 		return nil, err
 	}
 
+	delayDuration := getDelayDuration(delay, start)
+
+	status := "running"
+	if delayDuration > 0 {
+		status = "waiting"
+	}
+
 	response := model.DetachedTask{
 		ID:       id,
 		Tasks:    detachedTasks,
 		Outputs:  outputs,
-		Status:   "running",
+		Status:   status,
 		Duration: 0,
-		StartAt:  time.Now(),
+		StartAt:  time.Now().Add(delayDuration),
 	}
 
 	DetachedTasksMap[id] = &response
 
-	go func() {
+	go func(id string) {
 		for {
 			select {
 			case out, ok := <-outChan:
@@ -261,7 +284,9 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 			case <-ctx.Done():
 				outChan = nil
 				errTaskChan = nil
-				response.Status = "killed"
+				resp := getResponseFromDetached(id)
+				resp.Status = "killed"
+				updateDetachedTask(id, resp)
 				break
 			case err, ok := <-errTaskChan:
 				if !ok {
@@ -281,7 +306,9 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 				} else {
 					for taskName, taskError := range err {
 						message := taskError.Error()
-						response.Status = "error"
+						resp := getResponseFromDetached(id)
+						resp.Status = "error"
+						updateDetachedTask(id, resp)
 
 						output := outputMap[taskName]
 						output.Error = append(output.Error, message)
@@ -291,18 +318,19 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 			}
 
 			if outChan == nil && errTaskChan == nil {
-				if response.Status == "running" {
-					response.Status = "success"
+				resp := getResponseFromDetached(id)
+				if resp.Status == "running" {
+					resp.Status = "success"
 				}
 				endAt := time.Now()
-				response.EndAt = &endAt
+				resp.EndAt = &endAt
 				duration := endAt.Sub(response.StartAt)
-				response.Duration = duration
-
+				resp.Duration = duration
+				updateDetachedTask(id, resp)
 				break
 			}
 		}
-	}()
+	}(id)
 
 	result := response
 	return &result, nil
@@ -334,7 +362,7 @@ func (r *mutationResolver) Kill(ctx context.Context, id string) (*model.Detached
 	return nil, nil
 }
 
-func (r *queryResolver) Health(_ context.Context) (bool, error) {
+func (r *queryResolver) Health(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
@@ -389,13 +417,63 @@ func (r *queryResolver) Tasks(ctx context.Context, name *string) ([]*model.Task,
 	return tasks, nil
 }
 
-func (r *queryResolver) Detached(ctx context.Context, id *string) ([]*model.DetachedTask, error) {
+func (r *queryResolver) Detached(ctx context.Context, ids []string, status []model.DetachedTaskStatus) ([]*model.DetachedTask, error) {
 	err := auth(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	detachedTaskIDs := getDetachedTaskIDs()
+
+	// First filter by status
+	if len(status) > 0 {
+		detachedTaskIDs = getDetachedTasksByStatus(status)
+	}
+
+	// Filter by id
+	if ids != nil {
+		detachedTaskIDs = getDetachedTasksByID(ids, detachedTaskIDs)
+	}
+
+	return getDetachedTaskFromIDs(detachedTaskIDs), nil
+}
+
+func getDetachedTasksByStatus(status []model.DetachedTaskStatus) []string {
+	var response []string
+	for id, task := range DetachedTasksMap {
+		for _, s := range status {
+			if task.Status == s.String() {
+				response = append(response, id)
+			}
+		}
+	}
+
+	return response
+}
+func getDetachedTasksByID(ids []string, detachedTaskIDs []string) []string {
+	var response []string
+
+	if len(ids) == 0 {
+		return detachedTaskIDs
+	}
+
+	fmt.Printf("IDS: %s\n", strings.Join(detachedTaskIDs, ","))
+
+	for _, id := range ids {
+		for _, detachedTaskID := range detachedTaskIDs {
+			match, _ := regexp.MatchString(fmt.Sprintf("%s.*", id), detachedTaskID)
+			if match {
+				fmt.Printf("ID '%s' match with '%s'", id, detachedTaskID)
+				response = append(response, detachedTaskID)
+			}
+		}
+	}
+
+	return response
+}
+func getDetachedTaskFromIDs(detachedTaskIDs []string) []*model.DetachedTask {
 	var detachedTasks []*model.DetachedTask
+	detachedTaskMap := make(map[string]*model.DetachedTask)
 
 	setDuration := func(task *model.DetachedTask) {
 		if task.Status == "running" {
@@ -405,19 +483,24 @@ func (r *queryResolver) Detached(ctx context.Context, id *string) ([]*model.Deta
 		}
 	}
 
-	if id != nil {
-		if v, ok := DetachedTasksMap[*id]; ok {
-			setDuration(v)
-			detachedTasks = append(detachedTasks, v)
-		}
-	} else {
-		for _, v := range DetachedTasksMap {
-			setDuration(v)
-			detachedTasks = append(detachedTasks, v)
-		}
+	for _, id := range detachedTaskIDs {
+		detachedTaskMap[id] = DetachedTasksMap[id]
 	}
 
-	return detachedTasks, nil
+	for _, task := range detachedTaskMap {
+		setDuration(task)
+		detachedTasks = append(detachedTasks, task)
+	}
+
+	return detachedTasks
+}
+func getDetachedTaskIDs() []string {
+	var detachedTaskIDs []string
+	for id := range DetachedTasksMap {
+		detachedTaskIDs = append(detachedTaskIDs, id)
+	}
+
+	return detachedTaskIDs
 }
 
 // Mutation returns generated.MutationResolver implementation.
