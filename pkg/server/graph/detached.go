@@ -15,8 +15,13 @@ type detachedContext struct {
 	cancel context.CancelFunc
 }
 
+// ServerCtx stores the context on which the server is running
 var ServerCtx context.Context
+
+// DetachedTasksMap links detached task with an id
 var DetachedTasksMap = make(map[string]*model.DetachedTask)
+
+// DetachedCtxMap stores the context of each task using an id
 var DetachedCtxMap = make(map[string]*detachedContext)
 
 func getDetachedTaskID() string {
