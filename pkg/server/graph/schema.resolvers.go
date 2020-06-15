@@ -404,7 +404,7 @@ func (r *mutationResolver) Put(ctx context.Context, task model.TaskInput) (*mode
 	t := mapTaskInput(task)
 
 	if _, exist := elk.Tasks[task.Name]; exist {
-
+		t = mergeTaskInput(task, t)
 	}
 
 	elk.Tasks[task.Name] = t

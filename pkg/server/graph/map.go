@@ -192,3 +192,87 @@ func mapTaskInput(task model.TaskInput) ox.Task {
 		Deps:        deps,
 	}
 }
+
+func mergeTaskInput(taskInput model.TaskInput, task ox.Task) ox.Task {
+	if taskInput.Title != nil {
+		task.Title = *taskInput.Title
+	}
+
+	if taskInput.Tags != nil {
+		task.Tags = taskInput.Tags
+	}
+
+	if taskInput.Cmds != nil {
+		task.Cmds = taskInput.Cmds
+	}
+
+	if taskInput.Env != nil {
+		env := make(map[string]string)
+		for k, v := range taskInput.Env {
+			env[k] = fmt.Sprintf("%v", v)
+		}
+		task.Env = env
+	}
+
+	if taskInput.Vars != nil {
+		vars := make(map[string]string)
+		for k, v := range taskInput.Vars {
+			vars[k] = fmt.Sprintf("%v", v)
+		}
+		task.Vars = vars
+	}
+
+	if taskInput.EnvFile != nil {
+		task.EnvFile = *taskInput.EnvFile
+	}
+
+	if taskInput.Description != nil {
+		task.Description = *taskInput.Description
+	}
+
+	if taskInput.Dir != nil {
+		task.Dir = *taskInput.Dir
+	}
+
+	if taskInput.Log != nil {
+		var log ox.Log
+
+		logFormat := ""
+
+		if taskInput.Log.Format != nil {
+			logFormat = taskInput.Log.Format.String()
+		}
+
+		log = ox.Log{
+			Out:    taskInput.Log.Out,
+			Err:    taskInput.Log.Error,
+			Format: logFormat,
+		}
+
+		task.Log = log
+	}
+
+	if taskInput.Sources != nil {
+		task.Sources = *taskInput.Sources
+	}
+
+	if taskInput.Deps != nil {
+		var deps []ox.Dep
+
+		for _, dep := range taskInput.Deps {
+			deps = append(deps, ox.Dep{
+				Name:        dep.Name,
+				Detached:    dep.Detached,
+				IgnoreError: dep.IgnoreError,
+			})
+		}
+
+		task.Deps = deps
+	}
+
+	if taskInput.IgnoreError != nil {
+		task.IgnoreError = *taskInput.IgnoreError
+	}
+
+	return task
+}
