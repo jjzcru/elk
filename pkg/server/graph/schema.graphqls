@@ -30,6 +30,51 @@ type Mutation {
 
     # Remove a task by its name
     remove(name: String!): Task
+
+    # Put a task in elk file
+    put(task: TaskInput!): Task
+}
+
+input TaskInput {
+    name: String!
+    title: String
+    tags: [String!]
+    cmds: [String!]
+    env: Map
+    vars: Map
+    envFile: String
+    description: String
+    dir: String
+    log: TaskLog
+    sources: String
+    deps: [TaskDep!]
+    ignoreError: Boolean
+}
+
+input TaskDep {
+    name: String!
+    detached: Boolean!
+    ignoreError: Boolean!
+}
+
+input TaskLog {
+    out: String!
+    error: String!
+    format: TaskLogFormat
+}
+
+enum TaskLogFormat {
+    ANSIC
+    UnixDate
+    RubyDate
+    RFC822
+    RFC822Z
+    RFC850
+    RFC1123
+    RFC1123Z
+    RFC3339
+    RFC3339Nano
+    Kitchen
 }
 
 enum DetachedTaskStatus {

@@ -388,6 +388,34 @@ func (r *mutationResolver) Remove(ctx context.Context, name string) (*model.Task
 	return taskModel, utils.SetElk(elk, elkFilePath)
 }
 
+func (r *mutationResolver) Put(ctx context.Context, task model.TaskInput) (*model.Task, error) {
+	err := auth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	elkFilePath := ctx.Value(ElkFileKey).(string)
+
+	elk, err := utils.GetElk(elkFilePath, true)
+	if err != nil {
+		return nil, err
+	}
+
+	t := mapTaskInput(task)
+
+	if _, exist := elk.Tasks[task.Name]; exist {
+
+	}
+
+	elk.Tasks[task.Name] = t
+	taskModel, err := mapTask(t, task.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return taskModel, utils.SetElk(elk, elkFilePath)
+}
+
 func (r *queryResolver) Health(ctx context.Context) (bool, error) {
 	return true, nil
 }

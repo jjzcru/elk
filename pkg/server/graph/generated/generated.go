@@ -77,6 +77,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		Detached func(childComplexity int, tasks []string, properties *model.TaskProperties, config *model.RunConfig) int
 		Kill     func(childComplexity int, id string) int
+		Put      func(childComplexity int, task model.TaskInput) int
 		Remove   func(childComplexity int, name string) int
 		Run      func(childComplexity int, tasks []string, properties *model.TaskProperties) int
 	}
@@ -116,6 +117,7 @@ type MutationResolver interface {
 	Detached(ctx context.Context, tasks []string, properties *model.TaskProperties, config *model.RunConfig) (*model.DetachedTask, error)
 	Kill(ctx context.Context, id string) (*model.DetachedTask, error)
 	Remove(ctx context.Context, name string) (*model.Task, error)
+	Put(ctx context.Context, task model.TaskInput) (*model.Task, error)
 }
 type QueryResolver interface {
 	Health(ctx context.Context) (bool, error)
@@ -281,6 +283,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.Kill(childComplexity, args["id"].(string)), true
+
+	case "Mutation.put":
+		if e.complexity.Mutation.Put == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_put_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Put(childComplexity, args["task"].(model.TaskInput)), true
 
 	case "Mutation.remove":
 		if e.complexity.Mutation.Remove == nil {
@@ -552,6 +566,51 @@ type Mutation {
 
     # Remove a task by its name
     remove(name: String!): Task
+
+    # Put a task in elk file
+    put(task: TaskInput!): Task
+}
+
+input TaskInput {
+    name: String!
+    title: String
+    tags: [String!]
+    cmds: [String!]
+    env: Map
+    vars: Map
+    envFile: String
+    description: String
+    dir: String
+    log: TaskLog
+    sources: String
+    deps: [TaskDep!]
+    ignoreError: Boolean
+}
+
+input TaskDep {
+    name: String!
+    detached: Boolean!
+    ignoreError: Boolean!
+}
+
+input TaskLog {
+    out: String!
+    error: String!
+    format: TaskLogFormat
+}
+
+enum TaskLogFormat {
+    ANSIC
+    UnixDate
+    RubyDate
+    RFC822
+    RFC822Z
+    RFC850
+    RFC1123
+    RFC1123Z
+    RFC3339
+    RFC3339Nano
+    Kitchen
 }
 
 enum DetachedTaskStatus {
@@ -692,6 +751,20 @@ func (ec *executionContext) field_Mutation_kill_args(ctx context.Context, rawArg
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_put_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.TaskInput
+	if tmp, ok := rawArgs["task"]; ok {
+		arg0, err = ec.unmarshalNTaskInput2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["task"] = arg0
 	return args, nil
 }
 
@@ -1522,6 +1595,44 @@ func (ec *executionContext) _Mutation_remove(ctx context.Context, field graphql.
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().Remove(rctx, args["name"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Task)
+	fc.Result = res
+	return ec.marshalOTask2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTask(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_put(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_put_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Put(rctx, args["task"].(model.TaskInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3374,6 +3485,156 @@ func (ec *executionContext) unmarshalInputRunConfig(ctx context.Context, obj int
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputTaskDep(ctx context.Context, obj interface{}) (model.TaskDep, error) {
+	var it model.TaskDep
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "detached":
+			var err error
+			it.Detached, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "ignoreError":
+			var err error
+			it.IgnoreError, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputTaskInput(ctx context.Context, obj interface{}) (model.TaskInput, error) {
+	var it model.TaskInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "title":
+			var err error
+			it.Title, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "tags":
+			var err error
+			it.Tags, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "cmds":
+			var err error
+			it.Cmds, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "env":
+			var err error
+			it.Env, err = ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "vars":
+			var err error
+			it.Vars, err = ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "envFile":
+			var err error
+			it.EnvFile, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "dir":
+			var err error
+			it.Dir, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "log":
+			var err error
+			it.Log, err = ec.unmarshalOTaskLog2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLog(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "sources":
+			var err error
+			it.Sources, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "deps":
+			var err error
+			it.Deps, err = ec.unmarshalOTaskDep2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskDepᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "ignoreError":
+			var err error
+			it.IgnoreError, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputTaskLog(ctx context.Context, obj interface{}) (model.TaskLog, error) {
+	var it model.TaskLog
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "out":
+			var err error
+			it.Out, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "error":
+			var err error
+			it.Error, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "format":
+			var err error
+			it.Format, err = ec.unmarshalOTaskLogFormat2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLogFormat(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputTaskProperties(ctx context.Context, obj interface{}) (model.TaskProperties, error) {
 	var it model.TaskProperties
 	var asMap = obj.(map[string]interface{})
@@ -3602,6 +3863,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_kill(ctx, field)
 		case "remove":
 			out.Values[i] = ec._Mutation_remove(ctx, field)
+		case "put":
+			out.Values[i] = ec._Mutation_put(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4343,6 +4606,22 @@ func (ec *executionContext) marshalNTask2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋ
 	return ec._Task(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNTaskDep2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskDep(ctx context.Context, v interface{}) (model.TaskDep, error) {
+	return ec.unmarshalInputTaskDep(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNTaskDep2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskDep(ctx context.Context, v interface{}) (*model.TaskDep, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNTaskDep2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskDep(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalNTaskInput2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskInput(ctx context.Context, v interface{}) (model.TaskInput, error) {
+	return ec.unmarshalInputTaskInput(ctx, v)
+}
+
 func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
 	return graphql.UnmarshalTime(v)
 }
@@ -4958,6 +5237,62 @@ func (ec *executionContext) marshalOTask2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋ
 		return graphql.Null
 	}
 	return ec._Task(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOTaskDep2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskDepᚄ(ctx context.Context, v interface{}) ([]*model.TaskDep, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.TaskDep, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNTaskDep2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskDep(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOTaskLog2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLog(ctx context.Context, v interface{}) (model.TaskLog, error) {
+	return ec.unmarshalInputTaskLog(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOTaskLog2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLog(ctx context.Context, v interface{}) (*model.TaskLog, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOTaskLog2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLog(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalOTaskLogFormat2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLogFormat(ctx context.Context, v interface{}) (model.TaskLogFormat, error) {
+	var res model.TaskLogFormat
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOTaskLogFormat2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLogFormat(ctx context.Context, sel ast.SelectionSet, v model.TaskLogFormat) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOTaskLogFormat2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLogFormat(ctx context.Context, v interface{}) (*model.TaskLogFormat, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOTaskLogFormat2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLogFormat(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOTaskLogFormat2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLogFormat(ctx context.Context, sel ast.SelectionSet, v *model.TaskLogFormat) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOTaskProperties2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskProperties(ctx context.Context, v interface{}) (model.TaskProperties, error) {

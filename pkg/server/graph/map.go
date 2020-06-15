@@ -1,6 +1,8 @@
 package graph
 
 import (
+	"fmt"
+
 	"github.com/jjzcru/elk/pkg/primitives/ox"
 	"github.com/jjzcru/elk/pkg/server/graph/model"
 )
@@ -98,4 +100,95 @@ func mapDep(dep ox.Dep) *model.Dep {
 	}
 
 	return &depModel
+}
+
+func mapTaskInput(task model.TaskInput) ox.Task {
+	env := make(map[string]string)
+	vars := make(map[string]string)
+
+	var deps []ox.Dep
+	var log ox.Log
+
+	title := ""
+	envFile := ""
+	description := ""
+	dir := ""
+	sources := ""
+
+	ignoreError := false
+
+	if task.Env != nil {
+		for k, v := range task.Env {
+			env[k] = fmt.Sprintf("%v", v)
+		}
+	}
+
+	if task.Vars != nil {
+		for k, v := range task.Vars {
+			vars[k] = fmt.Sprintf("%v", v)
+		}
+	}
+
+	if task.Title != nil {
+		title = *task.Title
+	}
+
+	if task.EnvFile != nil {
+		envFile = *task.EnvFile
+	}
+
+	if task.Description != nil {
+		description = *task.Description
+	}
+
+	if task.Dir != nil {
+		dir = *task.Description
+	}
+
+	if task.Sources != nil {
+		sources = *task.Sources
+	}
+
+	if task.IgnoreError != nil {
+		ignoreError = *task.IgnoreError
+	}
+
+	if task.Deps != nil {
+		for _, dep := range task.Deps {
+			deps = append(deps, ox.Dep{
+				Name:        dep.Name,
+				Detached:    dep.Detached,
+				IgnoreError: dep.IgnoreError,
+			})
+		}
+	}
+
+	if task.Log != nil {
+		logFormat := ""
+
+		if task.Log.Format != nil {
+			logFormat = task.Log.Format.String()
+		}
+
+		log = ox.Log{
+			Out:    task.Log.Out,
+			Err:    task.Log.Error,
+			Format: logFormat,
+		}
+	}
+
+	return ox.Task{
+		Title:       title,
+		Tags:        task.Tags,
+		Cmds:        task.Cmds,
+		Env:         env,
+		Vars:        vars,
+		EnvFile:     envFile,
+		Description: description,
+		Dir:         dir,
+		Sources:     sources,
+		IgnoreError: ignoreError,
+		Log:         log,
+		Deps:        deps,
+	}
 }

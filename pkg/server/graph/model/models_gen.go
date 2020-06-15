@@ -67,6 +67,34 @@ type Task struct {
 	IgnoreError bool                   `json:"ignoreError"`
 }
 
+type TaskDep struct {
+	Name        string `json:"name"`
+	Detached    bool   `json:"detached"`
+	IgnoreError bool   `json:"ignoreError"`
+}
+
+type TaskInput struct {
+	Name        string                 `json:"name"`
+	Title       *string                `json:"title"`
+	Tags        []string               `json:"tags"`
+	Cmds        []string               `json:"cmds"`
+	Env         map[string]interface{} `json:"env"`
+	Vars        map[string]interface{} `json:"vars"`
+	EnvFile     *string                `json:"envFile"`
+	Description *string                `json:"description"`
+	Dir         *string                `json:"dir"`
+	Log         *TaskLog               `json:"log"`
+	Sources     *string                `json:"sources"`
+	Deps        []*TaskDep             `json:"deps"`
+	IgnoreError *bool                  `json:"ignoreError"`
+}
+
+type TaskLog struct {
+	Out    string         `json:"out"`
+	Error  string         `json:"error"`
+	Format *TaskLogFormat `json:"format"`
+}
+
 type TaskProperties struct {
 	Vars        map[string]interface{} `json:"vars"`
 	Env         map[string]interface{} `json:"env"`
@@ -116,5 +144,64 @@ func (e *DetachedTaskStatus) UnmarshalGQL(v interface{}) error {
 }
 
 func (e DetachedTaskStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type TaskLogFormat string
+
+const (
+	TaskLogFormatAnsic       TaskLogFormat = "ANSIC"
+	TaskLogFormatUnixDate    TaskLogFormat = "UnixDate"
+	TaskLogFormatRubyDate    TaskLogFormat = "RubyDate"
+	TaskLogFormatRfc822      TaskLogFormat = "RFC822"
+	TaskLogFormatRfc822z     TaskLogFormat = "RFC822Z"
+	TaskLogFormatRfc850      TaskLogFormat = "RFC850"
+	TaskLogFormatRfc1123     TaskLogFormat = "RFC1123"
+	TaskLogFormatRfc1123z    TaskLogFormat = "RFC1123Z"
+	TaskLogFormatRfc3339     TaskLogFormat = "RFC3339"
+	TaskLogFormatRFC3339Nano TaskLogFormat = "RFC3339Nano"
+	TaskLogFormatKitchen     TaskLogFormat = "Kitchen"
+)
+
+var AllTaskLogFormat = []TaskLogFormat{
+	TaskLogFormatAnsic,
+	TaskLogFormatUnixDate,
+	TaskLogFormatRubyDate,
+	TaskLogFormatRfc822,
+	TaskLogFormatRfc822z,
+	TaskLogFormatRfc850,
+	TaskLogFormatRfc1123,
+	TaskLogFormatRfc1123z,
+	TaskLogFormatRfc3339,
+	TaskLogFormatRFC3339Nano,
+	TaskLogFormatKitchen,
+}
+
+func (e TaskLogFormat) IsValid() bool {
+	switch e {
+	case TaskLogFormatAnsic, TaskLogFormatUnixDate, TaskLogFormatRubyDate, TaskLogFormatRfc822, TaskLogFormatRfc822z, TaskLogFormatRfc850, TaskLogFormatRfc1123, TaskLogFormatRfc1123z, TaskLogFormatRfc3339, TaskLogFormatRFC3339Nano, TaskLogFormatKitchen:
+		return true
+	}
+	return false
+}
+
+func (e TaskLogFormat) String() string {
+	return string(e)
+}
+
+func (e *TaskLogFormat) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TaskLogFormat(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TaskLogFormat", str)
+	}
+	return nil
+}
+
+func (e TaskLogFormat) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
