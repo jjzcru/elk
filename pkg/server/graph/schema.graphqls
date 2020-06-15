@@ -35,6 +35,10 @@ type Mutation {
     put(task: TaskInput!): Task
 }
 
+type Subscription {
+  detached(id: ID!): DetachedLog!
+}
+
 input TaskInput {
     name: String!
     title: String
@@ -166,4 +170,14 @@ type Output {
     task: String!
     out: [String!]!
     error: [String!]!
+}
+
+type DetachedLog {
+    type: DetachedLogType
+    out: String!
+}
+
+enum DetachedLogType {
+    error
+    out
 }

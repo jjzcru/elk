@@ -14,6 +14,11 @@ type Dep struct {
 	Detached bool   `json:"detached"`
 }
 
+type DetachedLog struct {
+	Type *DetachedLogType `json:"type"`
+	Out  string           `json:"out"`
+}
+
 type DetachedTask struct {
 	ID       string        `json:"id"`
 	Tasks    []*Task       `json:"tasks"`
@@ -100,6 +105,47 @@ type TaskProperties struct {
 	Env         map[string]interface{} `json:"env"`
 	EnvFile     *string                `json:"envFile"`
 	IgnoreError *bool                  `json:"ignoreError"`
+}
+
+type DetachedLogType string
+
+const (
+	DetachedLogTypeError DetachedLogType = "error"
+	DetachedLogTypeOut   DetachedLogType = "out"
+)
+
+var AllDetachedLogType = []DetachedLogType{
+	DetachedLogTypeError,
+	DetachedLogTypeOut,
+}
+
+func (e DetachedLogType) IsValid() bool {
+	switch e {
+	case DetachedLogTypeError, DetachedLogTypeOut:
+		return true
+	}
+	return false
+}
+
+func (e DetachedLogType) String() string {
+	return string(e)
+}
+
+func (e *DetachedLogType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DetachedLogType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DetachedLogType", str)
+	}
+	return nil
+}
+
+func (e DetachedLogType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type DetachedTaskStatus string

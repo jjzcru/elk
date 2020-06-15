@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
@@ -260,6 +261,10 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 	}
 
 	DetachedTasksMap[id] = &response
+	DetachedLoggerMap[id] = &detachedLogger{
+		outChan: outChan,
+		errChan: errTaskChan,
+	}
 
 	go func(id string) {
 		for {
@@ -492,11 +497,63 @@ func (r *queryResolver) Detached(ctx context.Context, ids []string, status []mod
 	return getDetachedTaskFromIDs(detachedTaskIDs), nil
 }
 
+func (r *subscriptionResolver) Detached(ctx context.Context, id string) (<-chan *model.DetachedLog, error) {
+	response := make(chan *model.DetachedLog)
+
+	if _, exist := DetachedLoggerMap[id]; !exist {
+		return nil, errors.New("task not found")
+	}
+
+	go func(id string) {
+		logger := DetachedLoggerMap[id]
+		outChan := logger.outChan
+		errChan := logger.errChan
+
+		for {
+			select {
+			case out, ok := <-outChan:
+				if ok {
+					for _, value := range out {
+						if len(value) > 1 {
+							typeOut := model.DetachedLogTypeOut
+							output := model.DetachedLog{
+								Type: &typeOut,
+								Out:  value,
+							}
+							response <- &output
+						}
+					}
+				}
+			case err, ok := <-errChan:
+				if ok {
+					for _, value := range err {
+						if len(value) > 1 {
+							typeOut := model.DetachedLogTypeError
+							output := model.DetachedLog{
+								Type: &typeOut,
+								Out:  value,
+							}
+							response <- &output
+						}
+					}
+				}
+			}
+
+		}
+	}(id)
+
+	return response, nil
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+// Subscription returns generated.SubscriptionResolver implementation.
+func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subscriptionResolver{r} }
+
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type subscriptionResolver struct{ *Resolver }

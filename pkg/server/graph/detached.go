@@ -17,6 +17,11 @@ type detachedContext struct {
 	cancel context.CancelFunc
 }
 
+type detachedLogger struct {
+	outChan chan map[string]string
+	errChan chan map[string]string
+}
+
 // ServerCtx stores the context on which the server is running
 var ServerCtx context.Context
 
@@ -25,6 +30,9 @@ var DetachedTasksMap = make(map[string]*model.DetachedTask)
 
 // DetachedCtxMap stores the context of each task using an id
 var DetachedCtxMap = make(map[string]*detachedContext)
+
+// DetachedLoggerMap stores the output of each task using an id
+var DetachedLoggerMap = make(map[string]*detachedLogger)
 
 func getDetachedTaskID() string {
 	hash := md5.New()
