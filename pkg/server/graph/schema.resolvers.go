@@ -5,8 +5,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
-	"regexp"
 	"sync"
 	"time"
 
@@ -231,7 +229,7 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 	detachedTasks, err := func() ([]*model.Task, error) {
 		var result []*model.Task
 		for _, task := range tasks {
-			taskModel, err := mapTask(elk.Tasks[task])
+			taskModel, err := mapTask(elk.Tasks[task], task)
 			if err != nil {
 				return nil, err
 			}
@@ -361,6 +359,35 @@ func (r *mutationResolver) Kill(ctx context.Context, id string) (*model.Detached
 	return nil, nil
 }
 
+func (r *mutationResolver) Remove(ctx context.Context, name string) (*model.Task, error) {
+	err := auth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	elkFilePath := ctx.Value(ElkFileKey).(string)
+
+	elk, err := utils.GetElk(elkFilePath, true)
+	if err != nil {
+		return nil, err
+	}
+
+	task, err := elk.GetTask(name)
+	if err != nil {
+		return nil, err
+	}
+
+	task.Title = name
+	taskModel, err := mapTask(*task, name)
+	if err != nil {
+		return nil, err
+	}
+
+	delete(elk.Tasks, name)
+
+	return taskModel, utils.SetElk(elk, elkFilePath)
+}
+
 func (r *queryResolver) Health(ctx context.Context) (bool, error) {
 	return true, nil
 }
@@ -435,68 +462,6 @@ func (r *queryResolver) Detached(ctx context.Context, ids []string, status []mod
 	}
 
 	return getDetachedTaskFromIDs(detachedTaskIDs), nil
-}
-
-func getDetachedTasksByStatus(status []model.DetachedTaskStatus) []string {
-	var response []string
-	for id, task := range DetachedTasksMap {
-		for _, s := range status {
-			if task.Status == s.String() {
-				response = append(response, id)
-			}
-		}
-	}
-
-	return response
-}
-func getDetachedTasksByID(ids []string, detachedTaskIDs []string) []string {
-	var response []string
-
-	if len(ids) == 0 {
-		return detachedTaskIDs
-	}
-
-	for _, id := range ids {
-		for _, detachedTaskID := range detachedTaskIDs {
-			match, _ := regexp.MatchString(fmt.Sprintf("%s.*", id), detachedTaskID)
-			if match {
-				response = append(response, detachedTaskID)
-			}
-		}
-	}
-
-	return response
-}
-func getDetachedTaskFromIDs(detachedTaskIDs []string) []*model.DetachedTask {
-	var detachedTasks []*model.DetachedTask
-	detachedTaskMap := make(map[string]*model.DetachedTask)
-
-	setDuration := func(task *model.DetachedTask) {
-		if task.Status == "running" {
-			endAt := time.Now()
-			duration := endAt.Sub(task.StartAt)
-			task.Duration = duration
-		}
-	}
-
-	for _, id := range detachedTaskIDs {
-		detachedTaskMap[id] = DetachedTasksMap[id]
-	}
-
-	for _, task := range detachedTaskMap {
-		setDuration(task)
-		detachedTasks = append(detachedTasks, task)
-	}
-
-	return detachedTasks
-}
-func getDetachedTaskIDs() []string {
-	var detachedTaskIDs []string
-	for id := range DetachedTasksMap {
-		detachedTaskIDs = append(detachedTaskIDs, id)
-	}
-
-	return detachedTaskIDs
 }
 
 // Mutation returns generated.MutationResolver implementation.

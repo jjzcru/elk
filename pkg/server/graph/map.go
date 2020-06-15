@@ -22,7 +22,7 @@ func mapElk(elk *ox.Elk) (*model.Elk, error) {
 	}
 
 	for k, v := range elk.Tasks {
-		task, err := mapTask(v)
+		task, err := mapTask(v, k)
 		if err != nil {
 			return nil, err
 		}
@@ -38,9 +38,10 @@ func mapElk(elk *ox.Elk) (*model.Elk, error) {
 	return &elkModel, nil
 }
 
-func mapTask(task ox.Task) (*model.Task, error) {
+func mapTask(task ox.Task, name string) (*model.Task, error) {
 	taskModel := model.Task{
 		Title:       task.Title,
+		Name:        name,
 		Tags:        uniqueString(task.Tags),
 		Cmds:        []*string{},
 		Env:         map[string]interface{}{},

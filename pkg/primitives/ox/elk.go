@@ -2,12 +2,13 @@ package ox
 
 import (
 	"fmt"
-	"github.com/jjzcru/elk/pkg/file"
-	"github.com/jjzcru/elk/pkg/maps"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/jjzcru/elk/pkg/file"
+	"github.com/jjzcru/elk/pkg/maps"
+	"gopkg.in/yaml.v2"
 )
 
 // Elk is the structure of the application
@@ -173,6 +174,7 @@ func (e *Elk) getDependencyGraph(task *Task) (map[string][]string, error) {
 	return dependencyGraph, nil
 }
 
+// FromFile loads an elk object from a file
 func FromFile(filePath string) (*Elk, error) {
 	elk := Elk{}
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -208,4 +210,30 @@ func FromFile(filePath string) (*Elk, error) {
 	}
 
 	return &elk, nil
+}
+
+// ToFile saves an elk object to a file
+func ToFile(elk *Elk, filePath string) error {
+	dataBytes, err := yaml.Marshal(elk)
+	if err != nil {
+		return err
+	}
+
+	file, err := os.OpenFile(
+		filePath,
+		os.O_WRONLY|os.O_TRUNC|os.O_CREATE,
+		0666)
+
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	_, err = file.Write(dataBytes)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -27,6 +27,9 @@ type Mutation {
     
     # Kills a particular detached task by its id
     kill(id: ID!): DetachedTask
+
+    # Remove a task by its name
+    remove(name: String!): Task
 }
 
 enum DetachedTaskStatus {

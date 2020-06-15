@@ -77,6 +77,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		Detached func(childComplexity int, tasks []string, properties *model.TaskProperties, config *model.RunConfig) int
 		Kill     func(childComplexity int, id string) int
+		Remove   func(childComplexity int, name string) int
 		Run      func(childComplexity int, tasks []string, properties *model.TaskProperties) int
 	}
 
@@ -114,6 +115,7 @@ type MutationResolver interface {
 	Run(ctx context.Context, tasks []string, properties *model.TaskProperties) ([]*model.Output, error)
 	Detached(ctx context.Context, tasks []string, properties *model.TaskProperties, config *model.RunConfig) (*model.DetachedTask, error)
 	Kill(ctx context.Context, id string) (*model.DetachedTask, error)
+	Remove(ctx context.Context, name string) (*model.Task, error)
 }
 type QueryResolver interface {
 	Health(ctx context.Context) (bool, error)
@@ -279,6 +281,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.Kill(childComplexity, args["id"].(string)), true
+
+	case "Mutation.remove":
+		if e.complexity.Mutation.Remove == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_remove_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Remove(childComplexity, args["name"].(string)), true
 
 	case "Mutation.run":
 		if e.complexity.Mutation.Run == nil {
@@ -535,6 +549,9 @@ type Mutation {
     
     # Kills a particular detached task by its id
     kill(id: ID!): DetachedTask
+
+    # Remove a task by its name
+    remove(name: String!): Task
 }
 
 enum DetachedTaskStatus {
@@ -675,6 +692,20 @@ func (ec *executionContext) field_Mutation_kill_args(ctx context.Context, rawArg
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_remove_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
 	return args, nil
 }
 
@@ -1464,6 +1495,44 @@ func (ec *executionContext) _Mutation_kill(ctx context.Context, field graphql.Co
 	res := resTmp.(*model.DetachedTask)
 	fc.Result = res
 	return ec.marshalODetachedTask2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedTask(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_remove(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_remove_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Remove(rctx, args["name"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Task)
+	fc.Result = res
+	return ec.marshalOTask2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTask(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Output_task(ctx context.Context, field graphql.CollectedField, obj *model.Output) (ret graphql.Marshaler) {
@@ -3531,6 +3600,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_detached(ctx, field)
 		case "kill":
 			out.Values[i] = ec._Mutation_kill(ctx, field)
+		case "remove":
+			out.Values[i] = ec._Mutation_remove(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4876,6 +4947,17 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 		return graphql.Null
 	}
 	return ec.marshalOString2string(ctx, sel, *v)
+}
+
+func (ec *executionContext) marshalOTask2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTask(ctx context.Context, sel ast.SelectionSet, v model.Task) graphql.Marshaler {
+	return ec._Task(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOTask2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTask(ctx context.Context, sel ast.SelectionSet, v *model.Task) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Task(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOTaskProperties2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskProperties(ctx context.Context, v interface{}) (model.TaskProperties, error) {
