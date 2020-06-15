@@ -3,6 +3,7 @@ package graph
 import (
 	"io"
 	"os"
+	"regexp"
 
 	"github.com/jjzcru/elk/pkg/engine"
 	"github.com/jjzcru/elk/pkg/primitives/ox"
@@ -99,6 +100,7 @@ type QLWriter struct {
 }
 
 func (w QLWriter) Write(p []byte) (int, error) {
-	w.output <- map[string]string{w.task: string(p)}
+	re := regexp.MustCompile(`\r?\n`)
+	w.output <- map[string]string{w.task: re.ReplaceAllString(string(p), " ")}
 	return len(p), nil
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
+	"regexp"
 	"sync"
 	"time"
 
@@ -15,6 +17,11 @@ type detachedContext struct {
 	cancel context.CancelFunc
 }
 
+type detachedLogger struct {
+	outChan chan map[string]string
+	errChan chan map[string]string
+}
+
 // ServerCtx stores the context on which the server is running
 var ServerCtx context.Context
 
@@ -23,6 +30,9 @@ var DetachedTasksMap = make(map[string]*model.DetachedTask)
 
 // DetachedCtxMap stores the context of each task using an id
 var DetachedCtxMap = make(map[string]*detachedContext)
+
+// DetachedLoggerMap stores the output of each task using an id
+var DetachedLoggerMap = make(map[string]*detachedLogger)
 
 func getDetachedTaskID() string {
 	hash := md5.New()
@@ -117,4 +127,69 @@ func getDelayDuration(delay *time.Duration, start *time.Time) time.Duration {
 	}
 
 	return 0
+}
+
+func getDetachedTasksByStatus(status []model.DetachedTaskStatus) []string {
+	var response []string
+	for id, task := range DetachedTasksMap {
+		for _, s := range status {
+			if task.Status == s.String() {
+				response = append(response, id)
+			}
+		}
+	}
+
+	return response
+}
+
+func getDetachedTasksByID(ids []string, detachedTaskIDs []string) []string {
+	var response []string
+
+	if len(ids) == 0 {
+		return detachedTaskIDs
+	}
+
+	for _, id := range ids {
+		for _, detachedTaskID := range detachedTaskIDs {
+			match, _ := regexp.MatchString(fmt.Sprintf("%s.*", id), detachedTaskID)
+			if match {
+				response = append(response, detachedTaskID)
+			}
+		}
+	}
+
+	return response
+}
+
+func getDetachedTaskFromIDs(detachedTaskIDs []string) []*model.DetachedTask {
+	var detachedTasks []*model.DetachedTask
+	detachedTaskMap := make(map[string]*model.DetachedTask)
+
+	setDuration := func(task *model.DetachedTask) {
+		if task.Status == "running" {
+			endAt := time.Now()
+			duration := endAt.Sub(task.StartAt)
+			task.Duration = duration
+		}
+	}
+
+	for _, id := range detachedTaskIDs {
+		detachedTaskMap[id] = DetachedTasksMap[id]
+	}
+
+	for _, task := range detachedTaskMap {
+		setDuration(task)
+		detachedTasks = append(detachedTasks, task)
+	}
+
+	return detachedTasks
+}
+
+func getDetachedTaskIDs() []string {
+	var detachedTaskIDs []string
+	for id := range DetachedTasksMap {
+		detachedTaskIDs = append(detachedTaskIDs, id)
+	}
+
+	return detachedTaskIDs
 }

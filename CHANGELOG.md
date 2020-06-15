@@ -1,3 +1,11 @@
+## [v0.8.0](https://github.com/jjzcru/elk/tree/v0.8.0) (2020-06-15)
+[Release](https://github.com/jjzcru/elk/releases/tag/v0.8.0)
+
+**Server ⚛️:**
+- Add support for create/update in `graphql` server with the mutation `put`
+- Enable to subscribe to a `detached` task by its id
+- Enable `remove` a task in `graphql` by its id
+
 ## [v0.7.4](https://github.com/jjzcru/elk/tree/v0.7.4) (2020-06-14)
 [Release](https://github.com/jjzcru/elk/releases/tag/v0.7.4)
 

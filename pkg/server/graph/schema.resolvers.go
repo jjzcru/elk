@@ -5,8 +5,7 @@ package graph
 
 import (
 	"context"
-	"fmt"
-	"regexp"
+	"errors"
 	"sync"
 	"time"
 
@@ -231,7 +230,7 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 	detachedTasks, err := func() ([]*model.Task, error) {
 		var result []*model.Task
 		for _, task := range tasks {
-			taskModel, err := mapTask(elk.Tasks[task])
+			taskModel, err := mapTask(elk.Tasks[task], task)
 			if err != nil {
 				return nil, err
 			}
@@ -262,6 +261,10 @@ func (r *mutationResolver) Detached(ctx context.Context, tasks []string, propert
 	}
 
 	DetachedTasksMap[id] = &response
+	DetachedLoggerMap[id] = &detachedLogger{
+		outChan: outChan,
+		errChan: errTaskChan,
+	}
 
 	go func(id string) {
 		for {
@@ -361,6 +364,63 @@ func (r *mutationResolver) Kill(ctx context.Context, id string) (*model.Detached
 	return nil, nil
 }
 
+func (r *mutationResolver) Remove(ctx context.Context, name string) (*model.Task, error) {
+	err := auth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	elkFilePath := ctx.Value(ElkFileKey).(string)
+
+	elk, err := utils.GetElk(elkFilePath, true)
+	if err != nil {
+		return nil, err
+	}
+
+	task, err := elk.GetTask(name)
+	if err != nil {
+		return nil, err
+	}
+
+	task.Title = name
+	taskModel, err := mapTask(*task, name)
+	if err != nil {
+		return nil, err
+	}
+
+	delete(elk.Tasks, name)
+
+	return taskModel, utils.SetElk(elk, elkFilePath)
+}
+
+func (r *mutationResolver) Put(ctx context.Context, task model.TaskInput) (*model.Task, error) {
+	err := auth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	elkFilePath := ctx.Value(ElkFileKey).(string)
+
+	elk, err := utils.GetElk(elkFilePath, true)
+	if err != nil {
+		return nil, err
+	}
+
+	t := mapTaskInput(task)
+
+	if _, exist := elk.Tasks[task.Name]; exist {
+		t = mergeTaskInput(task, t)
+	}
+
+	elk.Tasks[task.Name] = t
+	taskModel, err := mapTask(t, task.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return taskModel, utils.SetElk(elk, elkFilePath)
+}
+
 func (r *queryResolver) Health(ctx context.Context) (bool, error) {
 	return true, nil
 }
@@ -437,66 +497,52 @@ func (r *queryResolver) Detached(ctx context.Context, ids []string, status []mod
 	return getDetachedTaskFromIDs(detachedTaskIDs), nil
 }
 
-func getDetachedTasksByStatus(status []model.DetachedTaskStatus) []string {
-	var response []string
-	for id, task := range DetachedTasksMap {
-		for _, s := range status {
-			if task.Status == s.String() {
-				response = append(response, id)
+func (r *subscriptionResolver) Detached(ctx context.Context, id string) (<-chan *model.DetachedLog, error) {
+	response := make(chan *model.DetachedLog)
+
+	if _, exist := DetachedLoggerMap[id]; !exist {
+		return nil, errors.New("task not found")
+	}
+
+	go func(id string) {
+		logger := DetachedLoggerMap[id]
+		outChan := logger.outChan
+		errChan := logger.errChan
+
+		for {
+			select {
+			case out, ok := <-outChan:
+				if ok {
+					for _, value := range out {
+						if len(value) > 1 {
+							typeOut := model.DetachedLogTypeOut
+							output := model.DetachedLog{
+								Type: &typeOut,
+								Out:  value,
+							}
+							response <- &output
+						}
+					}
+				}
+			case err, ok := <-errChan:
+				if ok {
+					for _, value := range err {
+						if len(value) > 1 {
+							typeOut := model.DetachedLogTypeError
+							output := model.DetachedLog{
+								Type: &typeOut,
+								Out:  value,
+							}
+							response <- &output
+						}
+					}
+				}
 			}
+
 		}
-	}
+	}(id)
 
-	return response
-}
-func getDetachedTasksByID(ids []string, detachedTaskIDs []string) []string {
-	var response []string
-
-	if len(ids) == 0 {
-		return detachedTaskIDs
-	}
-
-	for _, id := range ids {
-		for _, detachedTaskID := range detachedTaskIDs {
-			match, _ := regexp.MatchString(fmt.Sprintf("%s.*", id), detachedTaskID)
-			if match {
-				response = append(response, detachedTaskID)
-			}
-		}
-	}
-
-	return response
-}
-func getDetachedTaskFromIDs(detachedTaskIDs []string) []*model.DetachedTask {
-	var detachedTasks []*model.DetachedTask
-	detachedTaskMap := make(map[string]*model.DetachedTask)
-
-	setDuration := func(task *model.DetachedTask) {
-		if task.Status == "running" {
-			endAt := time.Now()
-			duration := endAt.Sub(task.StartAt)
-			task.Duration = duration
-		}
-	}
-
-	for _, id := range detachedTaskIDs {
-		detachedTaskMap[id] = DetachedTasksMap[id]
-	}
-
-	for _, task := range detachedTaskMap {
-		setDuration(task)
-		detachedTasks = append(detachedTasks, task)
-	}
-
-	return detachedTasks
-}
-func getDetachedTaskIDs() []string {
-	var detachedTaskIDs []string
-	for id := range DetachedTasksMap {
-		detachedTaskIDs = append(detachedTaskIDs, id)
-	}
-
-	return detachedTaskIDs
+	return response, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
@@ -505,5 +551,9 @@ func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResol
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+// Subscription returns generated.SubscriptionResolver implementation.
+func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subscriptionResolver{r} }
+
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type subscriptionResolver struct{ *Resolver }

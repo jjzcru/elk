@@ -34,6 +34,11 @@ func GetElk(filePath string, isGlobal bool) (*ox.Elk, error) {
 	return response, nil
 }
 
+// SetElk saves elk object in a file
+func SetElk(elk *ox.Elk, filePath string) error {
+	return ox.ToFile(elk, filePath)
+}
+
 func getElkFilePath(isGlobal bool) (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -39,6 +40,7 @@ type Config struct {
 type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
+	Subscription() SubscriptionResolver
 }
 
 type DirectiveRoot struct {
@@ -48,6 +50,11 @@ type ComplexityRoot struct {
 	Dep struct {
 		Detached func(childComplexity int) int
 		Name     func(childComplexity int) int
+	}
+
+	DetachedLog struct {
+		Out  func(childComplexity int) int
+		Type func(childComplexity int) int
 	}
 
 	DetachedTask struct {
@@ -77,6 +84,8 @@ type ComplexityRoot struct {
 	Mutation struct {
 		Detached func(childComplexity int, tasks []string, properties *model.TaskProperties, config *model.RunConfig) int
 		Kill     func(childComplexity int, id string) int
+		Put      func(childComplexity int, task model.TaskInput) int
+		Remove   func(childComplexity int, name string) int
 		Run      func(childComplexity int, tasks []string, properties *model.TaskProperties) int
 	}
 
@@ -91,6 +100,10 @@ type ComplexityRoot struct {
 		Elk      func(childComplexity int) int
 		Health   func(childComplexity int) int
 		Tasks    func(childComplexity int, name *string) int
+	}
+
+	Subscription struct {
+		Detached func(childComplexity int, id string) int
 	}
 
 	Task struct {
@@ -114,12 +127,17 @@ type MutationResolver interface {
 	Run(ctx context.Context, tasks []string, properties *model.TaskProperties) ([]*model.Output, error)
 	Detached(ctx context.Context, tasks []string, properties *model.TaskProperties, config *model.RunConfig) (*model.DetachedTask, error)
 	Kill(ctx context.Context, id string) (*model.DetachedTask, error)
+	Remove(ctx context.Context, name string) (*model.Task, error)
+	Put(ctx context.Context, task model.TaskInput) (*model.Task, error)
 }
 type QueryResolver interface {
 	Health(ctx context.Context) (bool, error)
 	Elk(ctx context.Context) (*model.Elk, error)
 	Tasks(ctx context.Context, name *string) ([]*model.Task, error)
 	Detached(ctx context.Context, ids []string, status []model.DetachedTaskStatus) ([]*model.DetachedTask, error)
+}
+type SubscriptionResolver interface {
+	Detached(ctx context.Context, id string) (<-chan *model.DetachedLog, error)
 }
 
 type executableSchema struct {
@@ -150,6 +168,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Dep.Name(childComplexity), true
+
+	case "DetachedLog.out":
+		if e.complexity.DetachedLog.Out == nil {
+			break
+		}
+
+		return e.complexity.DetachedLog.Out(childComplexity), true
+
+	case "DetachedLog.type":
+		if e.complexity.DetachedLog.Type == nil {
+			break
+		}
+
+		return e.complexity.DetachedLog.Type(childComplexity), true
 
 	case "DetachedTask.duration":
 		if e.complexity.DetachedTask.Duration == nil {
@@ -280,6 +312,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Kill(childComplexity, args["id"].(string)), true
 
+	case "Mutation.put":
+		if e.complexity.Mutation.Put == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_put_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Put(childComplexity, args["task"].(model.TaskInput)), true
+
+	case "Mutation.remove":
+		if e.complexity.Mutation.Remove == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_remove_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Remove(childComplexity, args["name"].(string)), true
+
 	case "Mutation.run":
 		if e.complexity.Mutation.Run == nil {
 			break
@@ -350,6 +406,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Tasks(childComplexity, args["name"].(*string)), true
+
+	case "Subscription.detached":
+		if e.complexity.Subscription.Detached == nil {
+			break
+		}
+
+		args, err := ec.field_Subscription_detached_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Subscription.Detached(childComplexity, args["id"].(string)), true
 
 	case "Task.cmds":
 		if e.complexity.Task.Cmds == nil {
@@ -480,6 +548,23 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 				Data: buf.Bytes(),
 			}
 		}
+	case ast.Subscription:
+		next := ec._Subscription(ctx, rc.Operation.SelectionSet)
+
+		var buf bytes.Buffer
+		return func(ctx context.Context) *graphql.Response {
+			buf.Reset()
+			data := next()
+
+			if data == nil {
+				return nil
+			}
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
+		}
 
 	default:
 		return graphql.OneShot(graphql.ErrorResponse(ctx, "unsupported GraphQL operation"))
@@ -535,6 +620,58 @@ type Mutation {
     
     # Kills a particular detached task by its id
     kill(id: ID!): DetachedTask
+
+    # Remove a task by its name
+    remove(name: String!): Task
+
+    # Put a task in elk file
+    put(task: TaskInput!): Task
+}
+
+type Subscription {
+  detached(id: ID!): DetachedLog!
+}
+
+input TaskInput {
+    name: String!
+    title: String
+    tags: [String!]
+    cmds: [String!]
+    env: Map
+    vars: Map
+    envFile: String
+    description: String
+    dir: String
+    log: TaskLog
+    sources: String
+    deps: [TaskDep!]
+    ignoreError: Boolean
+}
+
+input TaskDep {
+    name: String!
+    detached: Boolean!
+    ignoreError: Boolean!
+}
+
+input TaskLog {
+    out: String!
+    error: String!
+    format: TaskLogFormat
+}
+
+enum TaskLogFormat {
+    ANSIC
+    UnixDate
+    RubyDate
+    RFC822
+    RFC822Z
+    RFC850
+    RFC1123
+    RFC1123Z
+    RFC3339
+    RFC3339Nano
+    Kitchen
 }
 
 enum DetachedTaskStatus {
@@ -626,6 +763,16 @@ type Output {
     task: String!
     out: [String!]!
     error: [String!]!
+}
+
+type DetachedLog {
+    type: DetachedLogType
+    out: String!
+}
+
+enum DetachedLogType {
+    error
+    out
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -675,6 +822,34 @@ func (ec *executionContext) field_Mutation_kill_args(ctx context.Context, rawArg
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_put_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.TaskInput
+	if tmp, ok := rawArgs["task"]; ok {
+		arg0, err = ec.unmarshalNTaskInput2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["task"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_remove_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
 	return args, nil
 }
 
@@ -747,6 +922,20 @@ func (ec *executionContext) field_Query_tasks_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Subscription_detached_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -852,6 +1041,71 @@ func (ec *executionContext) _Dep_detached(ctx context.Context, field graphql.Col
 	res := resTmp.(bool)
 	fc.Result = res
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetachedLog_type(ctx context.Context, field graphql.CollectedField, obj *model.DetachedLog) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "DetachedLog",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.DetachedLogType)
+	fc.Result = res
+	return ec.marshalODetachedLogType2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedLogType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetachedLog_out(ctx context.Context, field graphql.CollectedField, obj *model.DetachedLog) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "DetachedLog",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Out, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DetachedTask_id(ctx context.Context, field graphql.CollectedField, obj *model.DetachedTask) (ret graphql.Marshaler) {
@@ -1466,6 +1720,82 @@ func (ec *executionContext) _Mutation_kill(ctx context.Context, field graphql.Co
 	return ec.marshalODetachedTask2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedTask(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_remove(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_remove_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Remove(rctx, args["name"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Task)
+	fc.Result = res
+	return ec.marshalOTask2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTask(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_put(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_put_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Put(rctx, args["task"].(model.TaskInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Task)
+	fc.Result = res
+	return ec.marshalOTask2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTask(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Output_task(ctx context.Context, field graphql.CollectedField, obj *model.Output) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1785,6 +2115,57 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Subscription_detached(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Subscription",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Subscription_detached_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().Detached(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-resTmp.(<-chan *model.DetachedLog)
+		if !ok {
+			return nil
+		}
+		return graphql.WriterFunc(func(w io.Writer) {
+			w.Write([]byte{'{'})
+			graphql.MarshalString(field.Alias).MarshalGQL(w)
+			w.Write([]byte{':'})
+			ec.marshalNDetachedLog2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedLog(ctx, field.Selections, res).MarshalGQL(w)
+			w.Write([]byte{'}'})
+		})
+	}
 }
 
 func (ec *executionContext) _Task_title(ctx context.Context, field graphql.CollectedField, obj *model.Task) (ret graphql.Marshaler) {
@@ -3305,6 +3686,156 @@ func (ec *executionContext) unmarshalInputRunConfig(ctx context.Context, obj int
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputTaskDep(ctx context.Context, obj interface{}) (model.TaskDep, error) {
+	var it model.TaskDep
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "detached":
+			var err error
+			it.Detached, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "ignoreError":
+			var err error
+			it.IgnoreError, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputTaskInput(ctx context.Context, obj interface{}) (model.TaskInput, error) {
+	var it model.TaskInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "title":
+			var err error
+			it.Title, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "tags":
+			var err error
+			it.Tags, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "cmds":
+			var err error
+			it.Cmds, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "env":
+			var err error
+			it.Env, err = ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "vars":
+			var err error
+			it.Vars, err = ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "envFile":
+			var err error
+			it.EnvFile, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "dir":
+			var err error
+			it.Dir, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "log":
+			var err error
+			it.Log, err = ec.unmarshalOTaskLog2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLog(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "sources":
+			var err error
+			it.Sources, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "deps":
+			var err error
+			it.Deps, err = ec.unmarshalOTaskDep2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskDepᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "ignoreError":
+			var err error
+			it.IgnoreError, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputTaskLog(ctx context.Context, obj interface{}) (model.TaskLog, error) {
+	var it model.TaskLog
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "out":
+			var err error
+			it.Out, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "error":
+			var err error
+			it.Error, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "format":
+			var err error
+			it.Format, err = ec.unmarshalOTaskLogFormat2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLogFormat(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputTaskProperties(ctx context.Context, obj interface{}) (model.TaskProperties, error) {
 	var it model.TaskProperties
 	var asMap = obj.(map[string]interface{})
@@ -3367,6 +3898,35 @@ func (ec *executionContext) _Dep(ctx context.Context, sel ast.SelectionSet, obj 
 			}
 		case "detached":
 			out.Values[i] = ec._Dep_detached(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var detachedLogImplementors = []string{"DetachedLog"}
+
+func (ec *executionContext) _DetachedLog(ctx context.Context, sel ast.SelectionSet, obj *model.DetachedLog) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, detachedLogImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DetachedLog")
+		case "type":
+			out.Values[i] = ec._DetachedLog_type(ctx, field, obj)
+		case "out":
+			out.Values[i] = ec._DetachedLog_out(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -3531,6 +4091,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_detached(ctx, field)
 		case "kill":
 			out.Values[i] = ec._Mutation_kill(ctx, field)
+		case "remove":
+			out.Values[i] = ec._Mutation_remove(ctx, field)
+		case "put":
+			out.Values[i] = ec._Mutation_put(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3663,6 +4227,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		return graphql.Null
 	}
 	return out
+}
+
+var subscriptionImplementors = []string{"Subscription"}
+
+func (ec *executionContext) _Subscription(ctx context.Context, sel ast.SelectionSet) func() graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, subscriptionImplementors)
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Subscription",
+	})
+	if len(fields) != 1 {
+		ec.Errorf(ctx, "must subscribe to exactly one stream")
+		return nil
+	}
+
+	switch fields[0].Name {
+	case "detached":
+		return ec._Subscription_detached(ctx, fields[0])
+	default:
+		panic("unknown field " + strconv.Quote(fields[0].Name))
+	}
 }
 
 var taskImplementors = []string{"Task"}
@@ -4033,6 +4617,20 @@ func (ec *executionContext) marshalNDep2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkg�
 	return ret
 }
 
+func (ec *executionContext) marshalNDetachedLog2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedLog(ctx context.Context, sel ast.SelectionSet, v model.DetachedLog) graphql.Marshaler {
+	return ec._DetachedLog(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDetachedLog2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedLog(ctx context.Context, sel ast.SelectionSet, v *model.DetachedLog) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._DetachedLog(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNDetachedTask2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedTask(ctx context.Context, sel ast.SelectionSet, v model.DetachedTask) graphql.Marshaler {
 	return ec._DetachedTask(ctx, sel, &v)
 }
@@ -4270,6 +4868,22 @@ func (ec *executionContext) marshalNTask2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋ
 		return graphql.Null
 	}
 	return ec._Task(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNTaskDep2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskDep(ctx context.Context, v interface{}) (model.TaskDep, error) {
+	return ec.unmarshalInputTaskDep(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNTaskDep2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskDep(ctx context.Context, v interface{}) (*model.TaskDep, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNTaskDep2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskDep(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalNTaskInput2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskInput(ctx context.Context, v interface{}) (model.TaskInput, error) {
+	return ec.unmarshalInputTaskInput(ctx, v)
 }
 
 func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
@@ -4544,6 +5158,30 @@ func (ec *executionContext) marshalODep2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋs
 		return graphql.Null
 	}
 	return ec._Dep(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalODetachedLogType2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedLogType(ctx context.Context, v interface{}) (model.DetachedLogType, error) {
+	var res model.DetachedLogType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalODetachedLogType2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedLogType(ctx context.Context, sel ast.SelectionSet, v model.DetachedLogType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalODetachedLogType2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedLogType(ctx context.Context, v interface{}) (*model.DetachedLogType, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalODetachedLogType2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedLogType(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalODetachedLogType2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedLogType(ctx context.Context, sel ast.SelectionSet, v *model.DetachedLogType) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalODetachedTask2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedTask(ctx context.Context, sel ast.SelectionSet, v model.DetachedTask) graphql.Marshaler {
@@ -4876,6 +5514,73 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 		return graphql.Null
 	}
 	return ec.marshalOString2string(ctx, sel, *v)
+}
+
+func (ec *executionContext) marshalOTask2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTask(ctx context.Context, sel ast.SelectionSet, v model.Task) graphql.Marshaler {
+	return ec._Task(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOTask2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTask(ctx context.Context, sel ast.SelectionSet, v *model.Task) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Task(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOTaskDep2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskDepᚄ(ctx context.Context, v interface{}) ([]*model.TaskDep, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.TaskDep, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNTaskDep2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskDep(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOTaskLog2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLog(ctx context.Context, v interface{}) (model.TaskLog, error) {
+	return ec.unmarshalInputTaskLog(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOTaskLog2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLog(ctx context.Context, v interface{}) (*model.TaskLog, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOTaskLog2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLog(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalOTaskLogFormat2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLogFormat(ctx context.Context, v interface{}) (model.TaskLogFormat, error) {
+	var res model.TaskLogFormat
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOTaskLogFormat2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLogFormat(ctx context.Context, sel ast.SelectionSet, v model.TaskLogFormat) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOTaskLogFormat2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLogFormat(ctx context.Context, v interface{}) (*model.TaskLogFormat, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOTaskLogFormat2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLogFormat(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOTaskLogFormat2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskLogFormat(ctx context.Context, sel ast.SelectionSet, v *model.TaskLogFormat) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOTaskProperties2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskProperties(ctx context.Context, v interface{}) (model.TaskProperties, error) {
