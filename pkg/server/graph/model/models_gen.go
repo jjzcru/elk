@@ -15,6 +15,8 @@ type Dep struct {
 }
 
 type DetachedLog struct {
+	ID   string           `json:"id"`
+	Task string           `json:"task"`
 	Type *DetachedLogType `json:"type"`
 	Out  string           `json:"out"`
 }

@@ -3,10 +3,11 @@ package server
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"time"
+
 	"github.com/jjzcru/elk/pkg/server"
 	"github.com/jjzcru/elk/pkg/utils"
 	"github.com/spf13/cobra"
-	"time"
 )
 
 var usageTemplate = `Usage:

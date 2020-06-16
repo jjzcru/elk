@@ -425,6 +425,15 @@ func (r *queryResolver) Health(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
+func (r *queryResolver) HasAccess(ctx context.Context) (bool, error) {
+	err := auth(ctx)
+	if err != nil {
+		return false, nil
+	}
+
+	return true, nil
+}
+
 func (r *queryResolver) Elk(ctx context.Context) (*model.Elk, error) {
 	err := auth(ctx)
 	if err != nil {
@@ -513,10 +522,12 @@ func (r *subscriptionResolver) Detached(ctx context.Context, id string) (<-chan 
 			select {
 			case out, ok := <-outChan:
 				if ok {
-					for _, value := range out {
+					for task, value := range out {
 						if len(value) > 1 {
 							typeOut := model.DetachedLogTypeOut
 							output := model.DetachedLog{
+								ID:   id,
+								Task: task,
 								Type: &typeOut,
 								Out:  value,
 							}
@@ -526,10 +537,12 @@ func (r *subscriptionResolver) Detached(ctx context.Context, id string) (<-chan 
 				}
 			case err, ok := <-errChan:
 				if ok {
-					for _, value := range err {
+					for task, value := range err {
 						if len(value) > 1 {
 							typeOut := model.DetachedLogTypeError
 							output := model.DetachedLog{
+								ID:   id,
+								Task: task,
 								Type: &typeOut,
 								Out:  value,
 							}

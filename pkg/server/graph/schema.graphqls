@@ -8,6 +8,9 @@ type Query {
     # Health check
     health: Boolean!
 
+    # Check if the request has auth access
+    hasAccess: Boolean!
+
     # Show the current state of the configuration file
     elk: Elk!
 
@@ -173,6 +176,8 @@ type Output {
 }
 
 type DetachedLog {
+    id: ID!
+    task: String!
     type: DetachedLogType
     out: String!
 }

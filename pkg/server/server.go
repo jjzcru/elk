@@ -27,12 +27,23 @@ func Start(port int, filePath string, isQueryEnable bool, token string) error {
 
 	domain := "localhost"
 
+	isCorsEnable := true
+
 	addContext := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if isCorsEnable {
+				allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token"
+				if origin := r.Header.Get("Origin"); origin != "" {
+					w.Header().Set("Access-Control-Allow-Origin", "*")
+					w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+					w.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
+					w.Header().Set("Access-Control-Expose-Headers", "Authorization")
+				}
+			}
 
 			ctx := context.WithValue(r.Context(), graph.ElkFileKey, filePath)
 			ctx = context.WithValue(ctx, graph.TokenKey, token)
-			ctx = context.WithValue(ctx, graph.AuthorizationKey, r.Header.Get("auth-token"))
+			ctx = context.WithValue(ctx, graph.AuthorizationKey, r.Header.Get("Authorization"))
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

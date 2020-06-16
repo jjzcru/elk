@@ -53,7 +53,9 @@ type ComplexityRoot struct {
 	}
 
 	DetachedLog struct {
+		ID   func(childComplexity int) int
 		Out  func(childComplexity int) int
+		Task func(childComplexity int) int
 		Type func(childComplexity int) int
 	}
 
@@ -96,10 +98,11 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Detached func(childComplexity int, ids []string, status []model.DetachedTaskStatus) int
-		Elk      func(childComplexity int) int
-		Health   func(childComplexity int) int
-		Tasks    func(childComplexity int, name *string) int
+		Detached  func(childComplexity int, ids []string, status []model.DetachedTaskStatus) int
+		Elk       func(childComplexity int) int
+		HasAccess func(childComplexity int) int
+		Health    func(childComplexity int) int
+		Tasks     func(childComplexity int, name *string) int
 	}
 
 	Subscription struct {
@@ -132,6 +135,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	Health(ctx context.Context) (bool, error)
+	HasAccess(ctx context.Context) (bool, error)
 	Elk(ctx context.Context) (*model.Elk, error)
 	Tasks(ctx context.Context, name *string) ([]*model.Task, error)
 	Detached(ctx context.Context, ids []string, status []model.DetachedTaskStatus) ([]*model.DetachedTask, error)
@@ -169,12 +173,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Dep.Name(childComplexity), true
 
+	case "DetachedLog.id":
+		if e.complexity.DetachedLog.ID == nil {
+			break
+		}
+
+		return e.complexity.DetachedLog.ID(childComplexity), true
+
 	case "DetachedLog.out":
 		if e.complexity.DetachedLog.Out == nil {
 			break
 		}
 
 		return e.complexity.DetachedLog.Out(childComplexity), true
+
+	case "DetachedLog.task":
+		if e.complexity.DetachedLog.Task == nil {
+			break
+		}
+
+		return e.complexity.DetachedLog.Task(childComplexity), true
 
 	case "DetachedLog.type":
 		if e.complexity.DetachedLog.Type == nil {
@@ -387,6 +405,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Elk(childComplexity), true
+
+	case "Query.hasAccess":
+		if e.complexity.Query.HasAccess == nil {
+			break
+		}
+
+		return e.complexity.Query.HasAccess(childComplexity), true
 
 	case "Query.health":
 		if e.complexity.Query.Health == nil {
@@ -601,6 +626,9 @@ type Query {
     # Health check
     health: Boolean!
 
+    # Check if the request has auth access
+    hasAccess: Boolean!
+
     # Show the current state of the configuration file
     elk: Elk!
 
@@ -766,6 +794,8 @@ type Output {
 }
 
 type DetachedLog {
+    id: ID!
+    task: String!
     type: DetachedLogType
     out: String!
 }
@@ -1041,6 +1071,74 @@ func (ec *executionContext) _Dep_detached(ctx context.Context, field graphql.Col
 	res := resTmp.(bool)
 	fc.Result = res
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetachedLog_id(ctx context.Context, field graphql.CollectedField, obj *model.DetachedLog) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "DetachedLog",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetachedLog_task(ctx context.Context, field graphql.CollectedField, obj *model.DetachedLog) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "DetachedLog",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Task, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DetachedLog_type(ctx context.Context, field graphql.CollectedField, obj *model.DetachedLog) (ret graphql.Marshaler) {
@@ -1916,6 +2014,40 @@ func (ec *executionContext) _Query_health(ctx context.Context, field graphql.Col
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Query().Health(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_hasAccess(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().HasAccess(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3923,6 +4055,16 @@ func (ec *executionContext) _DetachedLog(ctx context.Context, sel ast.SelectionS
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("DetachedLog")
+		case "id":
+			out.Values[i] = ec._DetachedLog_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "task":
+			out.Values[i] = ec._DetachedLog_task(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "type":
 			out.Values[i] = ec._DetachedLog_type(ctx, field, obj)
 		case "out":
@@ -4167,6 +4309,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_health(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "hasAccess":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_hasAccess(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
