@@ -53,13 +53,15 @@ type ComplexityRoot struct {
 	}
 
 	DetachedLog struct {
-		ID   func(childComplexity int) int
-		Out  func(childComplexity int) int
-		Task func(childComplexity int) int
-		Type func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Out       func(childComplexity int) int
+		Task      func(childComplexity int) int
+		Timestamp func(childComplexity int) int
+		Type      func(childComplexity int) int
 	}
 
 	DetachedTask struct {
+		Created  func(childComplexity int) int
 		Duration func(childComplexity int) int
 		EndAt    func(childComplexity int) int
 		ID       func(childComplexity int) int
@@ -88,7 +90,6 @@ type ComplexityRoot struct {
 		Kill     func(childComplexity int, id string) int
 		Put      func(childComplexity int, task model.TaskInput) int
 		Remove   func(childComplexity int, name string) int
-		Run      func(childComplexity int, tasks []string, properties *model.TaskProperties) int
 	}
 
 	Output struct {
@@ -107,6 +108,7 @@ type ComplexityRoot struct {
 
 	Subscription struct {
 		Detached func(childComplexity int, id string) int
+		Run      func(childComplexity int, tasks []string, properties *model.TaskProperties) int
 	}
 
 	Task struct {
@@ -127,7 +129,6 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	Run(ctx context.Context, tasks []string, properties *model.TaskProperties) ([]*model.Output, error)
 	Detached(ctx context.Context, tasks []string, properties *model.TaskProperties, config *model.RunConfig) (*model.DetachedTask, error)
 	Kill(ctx context.Context, id string) (*model.DetachedTask, error)
 	Remove(ctx context.Context, name string) (*model.Task, error)
@@ -142,6 +143,7 @@ type QueryResolver interface {
 }
 type SubscriptionResolver interface {
 	Detached(ctx context.Context, id string) (<-chan *model.DetachedLog, error)
+	Run(ctx context.Context, tasks []string, properties *model.TaskProperties) (<-chan *model.DetachedLog, error)
 }
 
 type executableSchema struct {
@@ -194,12 +196,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DetachedLog.Task(childComplexity), true
 
+	case "DetachedLog.timestamp":
+		if e.complexity.DetachedLog.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.DetachedLog.Timestamp(childComplexity), true
+
 	case "DetachedLog.type":
 		if e.complexity.DetachedLog.Type == nil {
 			break
 		}
 
 		return e.complexity.DetachedLog.Type(childComplexity), true
+
+	case "DetachedTask.created":
+		if e.complexity.DetachedTask.Created == nil {
+			break
+		}
+
+		return e.complexity.DetachedTask.Created(childComplexity), true
 
 	case "DetachedTask.duration":
 		if e.complexity.DetachedTask.Duration == nil {
@@ -354,18 +370,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Remove(childComplexity, args["name"].(string)), true
 
-	case "Mutation.run":
-		if e.complexity.Mutation.Run == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_run_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.Run(childComplexity, args["tasks"].([]string), args["properties"].(*model.TaskProperties)), true
-
 	case "Output.error":
 		if e.complexity.Output.Error == nil {
 			break
@@ -443,6 +447,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Subscription.Detached(childComplexity, args["id"].(string)), true
+
+	case "Subscription.run":
+		if e.complexity.Subscription.Run == nil {
+			break
+		}
+
+		args, err := ec.field_Subscription_run_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Subscription.Run(childComplexity, args["tasks"].([]string), args["properties"].(*model.TaskProperties)), true
 
 	case "Task.cmds":
 		if e.complexity.Task.Cmds == nil {
@@ -640,9 +656,6 @@ type Query {
 }
 
 type Mutation {
-    # Runs a task in sync mode, do not use for long running task since the request could be dropped
-    run(tasks: [String!]!, properties: TaskProperties): [Output]
-
     # Runs a task in detached mode and returns an object with the metadata of the task so can be fetch later
     detached(tasks: [String!]!, properties: TaskProperties, config: RunConfig): DetachedTask
     
@@ -658,6 +671,7 @@ type Mutation {
 
 type Subscription {
   detached(id: ID!): DetachedLog!
+  run(tasks: [String!]!, properties: TaskProperties): DetachedLog!
 }
 
 input TaskInput {
@@ -768,6 +782,9 @@ type DetachedTask {
 
     # Time when the task achive a final state: success, error or killed
     endAt: Time
+
+    # Time when the task was created
+    created: Time!
 }
 
 # Overwrite properties to send to the task
@@ -798,6 +815,7 @@ type DetachedLog {
     task: String!
     type: DetachedLogType
     out: String!
+    timestamp: Time!
 }
 
 enum DetachedLogType {
@@ -883,28 +901,6 @@ func (ec *executionContext) field_Mutation_remove_args(ctx context.Context, rawA
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_run_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 []string
-	if tmp, ok := rawArgs["tasks"]; ok {
-		arg0, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["tasks"] = arg0
-	var arg1 *model.TaskProperties
-	if tmp, ok := rawArgs["properties"]; ok {
-		arg1, err = ec.unmarshalOTaskProperties2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskProperties(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["properties"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -966,6 +962,28 @@ func (ec *executionContext) field_Subscription_detached_args(ctx context.Context
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Subscription_run_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []string
+	if tmp, ok := rawArgs["tasks"]; ok {
+		arg0, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["tasks"] = arg0
+	var arg1 *model.TaskProperties
+	if tmp, ok := rawArgs["properties"]; ok {
+		arg1, err = ec.unmarshalOTaskProperties2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐTaskProperties(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["properties"] = arg1
 	return args, nil
 }
 
@@ -1206,6 +1224,40 @@ func (ec *executionContext) _DetachedLog_out(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _DetachedLog_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.DetachedLog) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "DetachedLog",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _DetachedTask_id(ctx context.Context, field graphql.CollectedField, obj *model.DetachedTask) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1436,6 +1488,40 @@ func (ec *executionContext) _DetachedTask_endAt(ctx context.Context, field graph
 	res := resTmp.(*time.Time)
 	fc.Result = res
 	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetachedTask_created(ctx context.Context, field graphql.CollectedField, obj *model.DetachedTask) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "DetachedTask",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Created, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Elk_version(ctx context.Context, field graphql.CollectedField, obj *model.Elk) (ret graphql.Marshaler) {
@@ -1702,44 +1788,6 @@ func (ec *executionContext) _Log_error(ctx context.Context, field graphql.Collec
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_run(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_run_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Run(rctx, args["tasks"].([]string), args["properties"].(*model.TaskProperties))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*model.Output)
-	fc.Result = res
-	return ec.marshalOOutput2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐOutput(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_detached(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2274,6 +2322,57 @@ func (ec *executionContext) _Subscription_detached(ctx context.Context, field gr
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Subscription().Detached(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-resTmp.(<-chan *model.DetachedLog)
+		if !ok {
+			return nil
+		}
+		return graphql.WriterFunc(func(w io.Writer) {
+			w.Write([]byte{'{'})
+			graphql.MarshalString(field.Alias).MarshalGQL(w)
+			w.Write([]byte{':'})
+			ec.marshalNDetachedLog2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐDetachedLog(ctx, field.Selections, res).MarshalGQL(w)
+			w.Write([]byte{'}'})
+		})
+	}
+}
+
+func (ec *executionContext) _Subscription_run(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Subscription",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Subscription_run_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().Run(rctx, args["tasks"].([]string), args["properties"].(*model.TaskProperties))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4072,6 +4171,11 @@ func (ec *executionContext) _DetachedLog(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "timestamp":
+			out.Values[i] = ec._DetachedLog_timestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4123,6 +4227,11 @@ func (ec *executionContext) _DetachedTask(ctx context.Context, sel ast.Selection
 			}
 		case "endAt":
 			out.Values[i] = ec._DetachedTask_endAt(ctx, field, obj)
+		case "created":
+			out.Values[i] = ec._DetachedTask_created(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4227,8 +4336,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "run":
-			out.Values[i] = ec._Mutation_run(ctx, field)
 		case "detached":
 			out.Values[i] = ec._Mutation_detached(ctx, field)
 		case "kill":
@@ -4400,6 +4507,8 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 	switch fields[0].Name {
 	case "detached":
 		return ec._Subscription_detached(ctx, fields[0])
+	case "run":
+		return ec._Subscription_run(ctx, fields[0])
 	default:
 		panic("unknown field " + strconv.Quote(fields[0].Name))
 	}
@@ -5514,50 +5623,6 @@ func (ec *executionContext) marshalOMap2map(ctx context.Context, sel ast.Selecti
 	return graphql.MarshalMap(v)
 }
 
-func (ec *executionContext) marshalOOutput2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐOutput(ctx context.Context, sel ast.SelectionSet, v model.Output) graphql.Marshaler {
-	return ec._Output(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOOutput2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐOutput(ctx context.Context, sel ast.SelectionSet, v []*model.Output) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOOutput2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐOutput(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
 func (ec *executionContext) marshalOOutput2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐOutputᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Output) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -5596,13 +5661,6 @@ func (ec *executionContext) marshalOOutput2ᚕᚖgithubᚗcomᚋjjzcruᚋelkᚋp
 	}
 	wg.Wait()
 	return ret
-}
-
-func (ec *executionContext) marshalOOutput2ᚖgithubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐOutput(ctx context.Context, sel ast.SelectionSet, v *model.Output) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Output(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalORunConfig2githubᚗcomᚋjjzcruᚋelkᚋpkgᚋserverᚋgraphᚋmodelᚐRunConfig(ctx context.Context, v interface{}) (model.RunConfig, error) {

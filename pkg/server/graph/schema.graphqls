@@ -22,9 +22,6 @@ type Query {
 }
 
 type Mutation {
-    # Runs a task in sync mode, do not use for long running task since the request could be dropped
-    run(tasks: [String!]!, properties: TaskProperties): [Output]
-
     # Runs a task in detached mode and returns an object with the metadata of the task so can be fetch later
     detached(tasks: [String!]!, properties: TaskProperties, config: RunConfig): DetachedTask
     
@@ -40,6 +37,7 @@ type Mutation {
 
 type Subscription {
   detached(id: ID!): DetachedLog!
+  run(tasks: [String!]!, properties: TaskProperties): DetachedLog!
 }
 
 input TaskInput {
@@ -150,6 +148,9 @@ type DetachedTask {
 
     # Time when the task achive a final state: success, error or killed
     endAt: Time
+
+    # Time when the task was created
+    created: Time!
 }
 
 # Overwrite properties to send to the task
@@ -180,6 +181,7 @@ type DetachedLog {
     task: String!
     type: DetachedLogType
     out: String!
+    timestamp: Time!
 }
 
 enum DetachedLogType {

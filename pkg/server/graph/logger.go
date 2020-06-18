@@ -101,6 +101,7 @@ type QLWriter struct {
 
 func (w QLWriter) Write(p []byte) (int, error) {
 	re := regexp.MustCompile(`\r?\n`)
-	w.output <- map[string]string{w.task: re.ReplaceAllString(string(p), " ")}
+	message := re.ReplaceAllString(string(p), " ")
+	w.output <- map[string]string{w.task: message}
 	return len(p), nil
 }

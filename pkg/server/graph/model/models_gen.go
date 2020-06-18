@@ -15,10 +15,11 @@ type Dep struct {
 }
 
 type DetachedLog struct {
-	ID   string           `json:"id"`
-	Task string           `json:"task"`
-	Type *DetachedLogType `json:"type"`
-	Out  string           `json:"out"`
+	ID        string           `json:"id"`
+	Task      string           `json:"task"`
+	Type      *DetachedLogType `json:"type"`
+	Out       string           `json:"out"`
+	Timestamp time.Time        `json:"timestamp"`
 }
 
 type DetachedTask struct {
@@ -29,6 +30,7 @@ type DetachedTask struct {
 	StartAt  time.Time     `json:"startAt"`
 	Duration time.Duration `json:"duration"`
 	EndAt    *time.Time    `json:"endAt"`
+	Created  time.Time     `json:"created"`
 }
 
 type Elk struct {

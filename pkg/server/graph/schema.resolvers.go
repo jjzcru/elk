@@ -15,122 +15,6 @@ import (
 	"github.com/jjzcru/elk/pkg/utils"
 )
 
-func (r *mutationResolver) Run(ctx context.Context, tasks []string, properties *model.TaskProperties) ([]*model.Output, error) {
-	err := auth(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	elkFilePath := ctx.Value(ElkFileKey).(string)
-	elk, err := utils.GetElk(elkFilePath, true)
-	if err != nil {
-		return nil, err
-	}
-
-	if properties != nil && properties.EnvFile != nil {
-		if len(*properties.EnvFile) > 0 {
-			elk.EnvFile = *properties.EnvFile
-		}
-	}
-
-	err = elk.Build()
-	if err != nil {
-		return nil, err
-	}
-
-	outputs := make(map[string]model.Output)
-	for _, task := range tasks {
-		outputs[task] = model.Output{
-			Task:  task,
-			Out:   []string{},
-			Error: []string{},
-		}
-	}
-
-	logger, outChan, errTaskChan, err := gqlLogger(elk.Tasks, tasks)
-	if err != nil {
-		return nil, err
-	}
-
-	loadTaskProperties(elk, properties)
-
-	errChan := make(chan map[string]error)
-
-	clientEngine := &engine.Engine{
-		Elk: elk,
-		Executer: engine.DefaultExecuter{
-			Logger: logger,
-		},
-	}
-
-	closeChannels := func() {
-		close(outChan)
-		close(errTaskChan)
-		close(errChan)
-	}
-
-	go func() {
-		defer closeChannels()
-		var wg sync.WaitGroup
-		for _, task := range tasks {
-			wg.Add(1)
-			go TaskWG(ctx, clientEngine, task, &wg, errChan)
-		}
-
-		wg.Wait()
-	}()
-
-	for {
-		select {
-		case out, ok := <-outChan:
-			if !ok {
-				outChan = nil
-			} else {
-				for taskName, value := range out {
-					if len(value) > 1 {
-						output := outputs[taskName]
-						output.Out = append(output.Out, value)
-						outputs[taskName] = output
-					}
-				}
-			}
-		case err, ok := <-errTaskChan:
-			if !ok {
-				errTaskChan = nil
-			} else {
-				for taskName, value := range err {
-					if len(value) > 1 {
-						output := outputs[taskName]
-						output.Error = append(output.Error, value)
-						outputs[taskName] = output
-					}
-				}
-			}
-		case err, ok := <-errChan:
-			if !ok {
-				errChan = nil
-			} else {
-				for _, taskError := range err {
-					return nil, taskError
-				}
-			}
-		}
-
-		if outChan == nil && errTaskChan == nil {
-			break
-		}
-	}
-
-	var response []*model.Output
-
-	for task := range outputs {
-		resp := outputs[task]
-		response = append(response, &resp)
-	}
-
-	return response, nil
-}
-
 func (r *mutationResolver) Detached(ctx context.Context, tasks []string, properties *model.TaskProperties, config *model.RunConfig) (*model.DetachedTask, error) {
 	err := auth(ctx)
 	if err != nil {
@@ -554,6 +438,112 @@ func (r *subscriptionResolver) Detached(ctx context.Context, id string) (<-chan 
 
 		}
 	}(id)
+
+	return response, nil
+}
+
+func (r *subscriptionResolver) Run(ctx context.Context, tasks []string, properties *model.TaskProperties) (<-chan *model.DetachedLog, error) {
+	err := auth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	elkFilePath := ctx.Value(ElkFileKey).(string)
+	elk, err := utils.GetElk(elkFilePath, true)
+	if err != nil {
+		return nil, err
+	}
+
+	if properties != nil && properties.EnvFile != nil {
+		if len(*properties.EnvFile) > 0 {
+			elk.EnvFile = *properties.EnvFile
+		}
+	}
+
+	err = elk.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	response := make(chan *model.DetachedLog)
+
+	logger, outChan, errTaskChan, err := gqlLogger(elk.Tasks, tasks)
+	if err != nil {
+		return nil, err
+	}
+
+	loadTaskProperties(elk, properties)
+
+	errChan := make(chan map[string]error)
+
+	clientEngine := &engine.Engine{
+		Elk: elk,
+		Executer: engine.DefaultExecuter{
+			Logger: logger,
+		},
+	}
+
+	closeChannels := func() {
+		close(outChan)
+		close(errTaskChan)
+	}
+
+	go func() {
+		defer closeChannels()
+		var wg sync.WaitGroup
+		for _, task := range tasks {
+			wg.Add(1)
+			go TaskWG(ctx, clientEngine, task, &wg, errChan)
+		}
+
+		wg.Wait()
+		close(response)
+	}()
+
+	go func() {
+	loop:
+		for {
+			select {
+			case out, ok := <-outChan:
+				if ok {
+					for task, value := range out {
+						if len(value) > 1 {
+
+							typeOut := model.DetachedLogTypeOut
+							output := model.DetachedLog{
+								ID:        "",
+								Task:      task,
+								Type:      &typeOut,
+								Out:       value,
+								Timestamp: time.Now(),
+							}
+							response <- &output
+						}
+					}
+				}
+			case <-ctx.Done():
+				break loop
+			case <-errChan:
+				break loop
+			case err, ok := <-errTaskChan:
+				if ok {
+					for task, value := range err {
+						if len(value) > 1 {
+							typeOut := model.DetachedLogTypeError
+							output := model.DetachedLog{
+								ID:        "",
+								Task:      task,
+								Type:      &typeOut,
+								Out:       value,
+								Timestamp: time.Now(),
+							}
+							response <- &output
+						}
+					}
+				}
+			}
+		}
+	}()
 
 	return response, nil
 }
